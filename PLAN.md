@@ -93,6 +93,18 @@ These are all the tables from the spec, with uuid primary keys, `created_at`/`up
   - `POST /api/admin/emails/send`
   - `GET /api/feed`: cursor pagination with filters.
 
+## Component list
+- `components/ui`: Button/ButtonLink, SubmitButton, Field/Input/TextArea/Select/FormAlert, Badge/StatusPill, Stars, EmptyState, Img, icons
+- `components/layout`: SiteHeader, SiteFooter, DashboardShell
+- `components/feed`: FeedTabs, Filters · `components/editorial`: CollectionCard
+- `components/product`: ProductCard/ProductGrid/ProductGridSkeleton, SaveButton, Gallery, PurchasePanel (pill variants + sticky mobile CTA), TrustBlock, Reviews
+- `components/maker`: MakerByline, FollowButton
+- `components/messaging`: Composer (preset chips, client moderation), ThreadView (polling), ThreadList, ContextCard, StartThreadForm, ProtectionNotice
+- `components/forms`: AuthForms, CommissionForm, ImageUploader, PilotNotice
+- `components/account`: OrderCard, ReviewForm, MeasurementsForm, QuoteCard
+- `components/seller`: ListingForm, ProfileForm, FulfilmentActions, QuoteForm, Stat
+- `components/admin`: CreateSellerForm, RefundForm, CollectionForm, ManualEmailForm
+
 ## Pure domain modules (unit-tested, `lib/domain`)
 - `cart.ts`: totals and per-maker grouping and shipping.
 - `split.ts`: multi-maker order splitting.

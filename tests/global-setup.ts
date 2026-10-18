@@ -15,4 +15,6 @@ export default async function setup() {
   }
   const { migrate } = await import('../scripts/db-setup');
   await migrate(url, { reset: true });
+  const { seed } = await import('../scripts/seed');
+  await seed(url);
 }

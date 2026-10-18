@@ -59,8 +59,8 @@ export default async function MakerPage({ params }: { params: { slug: string } }
         )}
       </div>
       <div className="container-page">
-        <div className="-mt-12 flex flex-col gap-5 sm:-mt-14 sm:flex-row sm:items-end sm:justify-between">
-          <div className="flex items-end gap-4">
+        <div className="relative -mt-12 flex flex-col gap-5 sm:-mt-14 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-4">
             <span className="relative h-24 w-24 shrink-0 overflow-hidden rounded-full border-4 border-paper bg-stone-light sm:h-28 sm:w-28">
               {maker.avatarUrl && (
                 <Image src={maker.avatarUrl} alt="" fill sizes="112px" className="object-cover" />

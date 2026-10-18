@@ -500,6 +500,13 @@ export async function seed(databaseUrl: string) {
             response_time_hours = excluded.response_time_hours,
             custom_commissions_enabled = excluded.custom_commissions_enabled, status = 'approved',
             shipping_standard_cents = excluded.shipping_standard_cents,
+            -- Swap mock Connect ids when switching drivers, but never overwrite a real account.
+            stripe_account_id = case when public.makers.stripe_account_id is null or public.makers.stripe_account_id like 'acct_mock_%'
+              then excluded.stripe_account_id else public.makers.stripe_account_id end,
+            stripe_onboarding_complete = case when public.makers.stripe_account_id is null or public.makers.stripe_account_id like 'acct_mock_%'
+              then excluded.stripe_onboarding_complete else public.makers.stripe_onboarding_complete end,
+            stripe_payouts_enabled = case when public.makers.stripe_account_id is null or public.makers.stripe_account_id like 'acct_mock_%'
+              then excluded.stripe_payouts_enabled else public.makers.stripe_payouts_enabled end,
             free_shipping_over_cents = excluded.free_shipping_over_cents, dispatch_days = excluded.dispatch_days`;
         await tx`
           insert into public.reply_templates (id, maker_id, title, body) values
