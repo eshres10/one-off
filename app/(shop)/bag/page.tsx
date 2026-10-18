@@ -51,8 +51,8 @@ export default async function BagPage({ searchParams }: { searchParams: { cancel
           Checkout was cancelled — your bag is saved.
         </p>
       )}
-      <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_380px]">
-        <div className="space-y-8">
+      <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="min-w-0 space-y-8">
           {totals.groups.map((group) => (
             <section
               key={group.makerId}
@@ -115,7 +115,7 @@ export default async function BagPage({ searchParams }: { searchParams: { cancel
                             {line.problem}
                           </p>
                         )}
-                        <div className="mt-3 flex items-center gap-4">
+                        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
                           {line.productType !== 'one_of_one' && (
                             <form action={updateCartAction} className="flex items-center gap-2">
                               <input type="hidden" name="itemId" value={line.id} />
@@ -169,7 +169,7 @@ export default async function BagPage({ searchParams }: { searchParams: { cancel
           ))}
         </div>
 
-        <aside className="lg:sticky lg:top-24 lg:self-start">
+        <aside className="min-w-0 lg:sticky lg:top-24 lg:self-start">
           <div className="card space-y-4 p-5">
             <h2 className="font-sans text-base font-semibold">Order summary</h2>
             <dl className="space-y-2 text-sm">
