@@ -24,6 +24,8 @@ export interface ProductCard {
   leadTimeDays: number | null;
   colours: string[];
   badges: ProductBadge[];
+  /** Sample listing: labelled and never purchasable (see lib/domain/preview.ts). */
+  previewOnly: boolean;
 }
 
 interface CardRow extends Omit<ProductCard, 'badges'> {
@@ -34,7 +36,7 @@ interface CardRow extends Omit<ProductCard, 'badges'> {
 const cardColumns = () =>
   sql().unsafe(`
   p.id, p.slug, p.title, p.price_cents, p.product_type, p.lead_time_days, p.colours,
-  m.display_name as maker_name, m.slug as maker_slug, m.city as maker_city,
+  ('preview-only' = any(p.tags)) as preview_only, m.display_name as maker_name, m.slug as maker_slug, m.city as maker_city,
   img.public_url as image_url, img.alt_text as image_alt,
   coalesce(st.total_stock, 0)::int as total_stock, coalesce(st.has_low, false) as has_low`);
 

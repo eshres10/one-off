@@ -38,10 +38,19 @@ export function ProductCard({
           )}
         </div>
       </Link>
-      {badge && (
-        <span className="pointer-events-none absolute left-2 top-2 md:left-3 md:top-3">
-          <ProductBadgePill badge={badge} />
+      {product.previewOnly ? (
+        <span
+          className="pointer-events-none absolute left-2 top-2 bg-ink px-2 py-[3px] text-[10px] uppercase leading-4 tracking-[0.14em] text-ground md:left-3 md:top-3"
+          data-testid="preview-only-badge"
+        >
+          Preview only
         </span>
+      ) : (
+        badge && (
+          <span className="pointer-events-none absolute left-2 top-2 md:left-3 md:top-3">
+            <ProductBadgePill badge={badge} />
+          </span>
+        )
       )}
       <div className="absolute right-0 top-0">
         <SaveButton productId={product.id} saved={saved} title={product.title} />

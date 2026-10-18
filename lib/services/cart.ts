@@ -1,3 +1,4 @@
+import { PREVIEW_ONLY_LABEL, PREVIEW_ONLY_TAG } from '@/lib/domain/preview';
 import { randomUUID } from 'node:crypto';
 import { sql, type Db } from '@/lib/db';
 import { assertCheckoutEnabled } from '@/lib/features';
@@ -180,14 +181,17 @@ export async function addToCart(input: {
         productType: ProductType;
         unitPriceCents: number;
         visible: boolean;
+        previewOnly: boolean;
       }[]
     >`
       select v.stock_quantity, v.is_active, v.low_stock_threshold, p.product_type,
              coalesce(v.price_cents, p.price_cents) as unit_price_cents,
-             (p.status = 'approved' and m.status = 'approved') as visible
+             (p.status = 'approved' and m.status = 'approved') as visible,
+             ${PREVIEW_ONLY_TAG} = any(p.tags) as preview_only
       from public.product_variants v join public.products p on p.id = v.product_id join public.makers m on m.id = p.maker_id
       where v.id = ${input.variantId} and v.product_id = ${input.productId}`;
     if (!variant || !variant.visible) throw new CartError('This piece is no longer available.');
+    if (variant.previewOnly) throw new CartError(`${PREVIEW_ONLY_LABEL}.`);
 
     const [cart] = await db<{ id: string }[]>`
       insert into public.carts (session_id, user_id) values (${input.sessionId}, ${input.userId})

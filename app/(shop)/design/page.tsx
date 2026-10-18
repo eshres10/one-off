@@ -32,6 +32,7 @@ const COLOURS = [
 
 const card = {
   id: 'demo',
+  previewOnly: false,
   slug: 'rosalind-wrap-dress',
   title: 'Rosalind Wrap Dress',
   priceCents: 27500,

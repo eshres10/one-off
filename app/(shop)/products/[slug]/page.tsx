@@ -10,6 +10,7 @@ import { productBadges } from '@/lib/domain/stock';
 import { checkoutEnabled, PREVIEW_MESSAGE } from '@/lib/features';
 import { log } from '@/lib/log';
 import { isCustomType, returnsLine } from '@/lib/content/returns';
+import { PREVIEW_ONLY_LABEL, PREVIEW_ONLY_NOTE, isPreviewOnly } from '@/lib/domain/preview';
 import {
   getProduct,
   getRelated,
@@ -92,6 +93,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
   const totalStock = product.variants.reduce((s, v) => s + Math.max(0, v.stockQuantity), 0);
   const shippingText = `Shipping ${m.freeShippingOverCents ? `free over ${formatPrice(m.freeShippingOverCents)}, otherwise ` : ''}${formatPrice(m.shippingStandardCents)} [placeholder], shown before you pay.`;
   const custom = isCustomType(product.productType);
+  const previewOnly = isPreviewOnly(product.tags);
   const saved = savedIds.has(product.id);
   const modelLine = product.modelHeightCm
     ? `Model is ${product.modelHeightCm} cm and wears size ${product.modelSizeWorn ?? '—'}.`
@@ -158,7 +160,15 @@ export default async function ProductPage({ params }: { params: { slug: string }
           <div className="md:mt-5">
             <MakerStrip maker={m} />
           </div>
-          <div className="mt-5">
+          <div className="mt-5 flex flex-wrap gap-2">
+            {previewOnly && (
+              <span
+                className="inline-flex items-center bg-ink px-2 py-[3px] text-[10px] uppercase leading-4 tracking-[0.14em] text-ground"
+                data-testid="preview-only-label"
+              >
+                {PREVIEW_ONLY_LABEL}
+              </span>
+            )}
             <ProductBadgePill badge={primaryBadge} outlined />
           </div>
           <h1 className="mt-3 text-[40px] leading-[0.95] md:text-[clamp(44px,4vw,58px)]">
@@ -191,8 +201,8 @@ export default async function ProductPage({ params }: { params: { slug: string }
                   : undefined
               }
               modelLine={modelLine}
-              checkoutEnabled={checkoutEnabled()}
-              previewMessage={PREVIEW_MESSAGE}
+              checkoutEnabled={checkoutEnabled() && !previewOnly}
+              previewMessage={previewOnly ? PREVIEW_ONLY_NOTE : PREVIEW_MESSAGE}
             />
           </div>
 
