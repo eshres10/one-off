@@ -129,3 +129,21 @@ export const PlusIcon = (p: P) => (
     <path d="M12 5v14M5 12h14" />
   </svg>
 );
+export const HomeIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M4 10.5 12 4l8 6.5V20h-5.5v-5.5h-5V20H4v-9.5Z" />
+  </svg>
+);
+export const CameraIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M4 8h3.5L9 6h6l1.5 2H20v11H4V8Z" />
+    <circle cx="12" cy="13" r="3.5" />
+  </svg>
+);
+export const MoreIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <circle cx="5.5" cy="12" r="0.9" fill="currentColor" />
+    <circle cx="12" cy="12" r="0.9" fill="currentColor" />
+    <circle cx="18.5" cy="12" r="0.9" fill="currentColor" />
+  </svg>
+);

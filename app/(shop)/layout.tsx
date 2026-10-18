@@ -1,5 +1,6 @@
 import { SiteFooter } from '@/components/layout/SiteFooter';
 import { SiteHeader } from '@/components/layout/SiteHeader';
+import { AppTabBar } from '@/components/layout/AppTabBar';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,6 +12,7 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
         {children}
       </main>
       <SiteFooter />
+      <AppTabBar />
     </>
   );
 }
