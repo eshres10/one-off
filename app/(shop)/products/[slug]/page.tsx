@@ -1,3 +1,4 @@
+import { ShareButton } from '@/components/product/ShareButton';
 import type { Metadata } from 'next';
 import { createHash } from 'node:crypto';
 import { headers } from 'next/headers';
@@ -132,11 +133,12 @@ export default async function ProductPage({ params }: { params: { slug: string }
                 <Link
                   href="/"
                   aria-label="Back to Discover"
-                  className="absolute left-3 top-3 flex h-11 w-11 items-center justify-center bg-[rgba(246,244,240,0.92)] md:hidden"
+                  className="glass-chip absolute left-3 top-3 flex h-11 w-11 items-center justify-center md:hidden"
                 >
                   <ChevronIcon dir="left" width={18} height={18} />
                 </Link>
-                <div className="absolute right-3 top-3">
+                <div className="absolute right-3 top-3 flex gap-2">
+                  <ShareButton title={product.title} className="glass-chip md:hidden" />
                   <SaveButton productId={product.id} saved={saved} title={product.title} boxed />
                 </div>
               </>

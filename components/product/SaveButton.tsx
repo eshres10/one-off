@@ -38,7 +38,7 @@ export function SaveButton({
           else router.refresh();
         });
       }}
-      className={`relative z-10 flex h-11 w-11 items-center justify-center text-ink ${boxed ? 'bg-[rgba(246,244,240,0.92)]' : ''} ${className}`}
+      className={`relative z-10 flex h-11 w-11 items-center justify-center text-ink ${boxed ? 'glass-chip' : ''} ${className}`}
     >
       <HeartIcon filled={optimistic} width={16} height={16} />
     </button>

@@ -16,13 +16,13 @@ export function DashboardShell({
 }) {
   return (
     <div className="min-h-screen bg-ground">
-      <header className="glass-light sticky top-0 z-40">
+      <header className="glass-dark sticky top-0 z-40 border-x-0 border-t-0 text-ground">
         <div className="container-page flex h-[60px] items-center justify-between gap-3">
           <div className="flex items-center gap-4">
             <Link href="/" aria-label="Back to the shop">
               <Wordmark size="footer" />
             </Link>
-            <span className="text-[11px] uppercase tracking-label text-muted-2">{title}</span>
+            <span className="text-[10px] uppercase tracking-label text-ground/70">{title}</span>
             {badge}
           </div>
           <form action={logoutAction}>
@@ -33,7 +33,7 @@ export function DashboardShell({
         </div>
         <nav
           aria-label={title}
-          className="no-scrollbar container-page flex gap-6 overflow-x-auto border-t border-line"
+          className="no-scrollbar container-page flex gap-6 overflow-x-auto border-t border-white/15"
         >
           {links.map((l) => (
             <Link
@@ -43,7 +43,7 @@ export function DashboardShell({
             >
               {l.label}
               {l.count ? (
-                <span className="bg-ink px-1.5 text-[10px] text-ground">{l.count}</span>
+                <span className="bg-ground px-1.5 text-[10px] text-ink">{l.count}</span>
               ) : null}
             </Link>
           ))}

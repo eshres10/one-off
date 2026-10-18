@@ -1,3 +1,4 @@
+import { DEFAULT_MAKER_BANNER } from '@/lib/editorial';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -80,17 +81,18 @@ export default async function MakerPage({
 
   return (
     <div>
-      <section className="relative -mt-[var(--header-h)] flex min-h-[520px] items-center justify-center overflow-hidden text-ground md:min-h-[620px]">
-        {maker.coverUrl && (
-          <Image
-            src={maker.coverUrl}
-            alt={`${maker.displayName} studio`}
-            fill
-            priority
-            sizes="100vw"
-            className="object-cover"
-          />
-        )}
+      <section
+        data-hero
+        className="relative -mt-[var(--header-h)] flex min-h-[520px] items-center justify-center overflow-hidden bg-ink text-ground md:min-h-[620px]"
+      >
+        <Image
+          src={maker.coverUrl ?? DEFAULT_MAKER_BANNER}
+          alt={`${maker.displayName} studio`}
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover"
+        />
         <span aria-hidden className="absolute inset-0 bg-[rgba(0,0,0,0.28)]" />
         <div className="relative px-4 pt-[var(--header-h)] text-center">
           <p className="text-[11px] uppercase tracking-wide2">{maker.location}</p>

@@ -24,3 +24,14 @@ export const FEED_EDITORIAL: EditorialTileData[] = [
     imageUrl: '/seed/editorial/studio.svg',
   },
 ];
+
+/** Homepage hero. An editorial placement (slot `home_hero`) can override the image and link. */
+export const HERO = {
+  eyebrow: 'Melbourne-made · Straight from the maker',
+  title: 'Bespoke pieces made just for you',
+  imageUrl: '/seed/hero-linen-suit.jpg',
+  href: '/?tab=new',
+};
+
+/** Banner behind a maker's profile header until they upload their own cover. */
+export const DEFAULT_MAKER_BANNER = '/seed/banner-velvet-sofa.jpg';

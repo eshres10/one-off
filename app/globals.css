@@ -152,20 +152,73 @@
     opacity: 0.03;
     mix-blend-mode: multiply;
   }
+
+  /* Light glass chips floating over imagery (product gallery back / save / share). */
+  .glass-chip {
+    position: relative;
+    isolation: isolate;
+    background: rgba(246, 244, 240, 0.5);
+    -webkit-backdrop-filter: blur(24px) saturate(140%);
+    backdrop-filter: blur(24px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+  }
+  .glass-chip::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: url(/textures/grain.png) repeat;
+    background-size: 128px 128px;
+    opacity: 0.025;
+    mix-blend-mode: multiply;
+  }
 }
 
-/* Frosted-glass site header. Values are the brand spec; don't tweak them ad hoc. */
-.glass-nav {
+/*
+ * Site header. Fixed and fully transparent at the top of the page; once scrolled, the client adds
+ * `.glass-nav` (the frosted recipe below). Values are the brand spec; don't tweak them ad hoc.
+ */
+.site-header {
   position: fixed;
   inset: 0 0 auto 0;
   z-index: 50;
+  color: var(--ink);
+  background: transparent;
+  border-bottom: 1px solid transparent; /* keeps the height constant in both states */
+  box-shadow: none;
+  transition:
+    background-color 350ms ease,
+    border-color 350ms ease,
+    box-shadow 350ms ease,
+    color 350ms ease;
+}
+.site-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: url(/textures/grain.png) repeat;
+  background-size: 128px 128px;
+  opacity: 0;
+  mix-blend-mode: multiply;
+  transition: opacity 350ms ease;
+}
+/* Over a full-bleed hero, the transparent header is white. */
+.site-header[data-variant='overlay']:not([data-scrolled]),
+:root:has([data-hero]) .site-header[data-variant='auto']:not([data-scrolled]) {
+  color: #ffffff;
+}
+
+/* Frosted glass: the scrolled header, and the phone tab bar (always). */
+.glass-nav {
   background: rgba(246, 244, 240, 0.55); /* see-through, not solid */
   -webkit-backdrop-filter: blur(24px) saturate(140%);
   backdrop-filter: blur(24px) saturate(140%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.45);
+  border-bottom: 1px solid rgba(226, 222, 215, 0.7);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    0 1px 0 rgba(17, 17, 17, 0.04);
+    0 8px 24px rgba(17, 17, 17, 0.06);
 }
 .glass-nav::before {
   /* grain sits on its own layer */
@@ -178,9 +231,11 @@
   opacity: 0.025; /* barely there */
   mix-blend-mode: multiply;
 }
+
 /* fallback for browsers without backdrop-filter */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .glass-nav {
+  .glass-nav,
+  .glass-chip {
     background: rgba(246, 244, 240, 0.92);
   }
   .glass-dark {
@@ -214,9 +269,14 @@
 html {
   scroll-padding-top: var(--header-h);
 }
+/* Height of the phone tab bar (0 where it isn't shown); floating bars sit on top of it. */
+:root {
+  --tabbar-h: 0px;
+}
 
 @media (prefers-reduced-transparency: reduce) {
-  .glass-nav {
+  .glass-nav,
+  .glass-chip {
     background: var(--ground);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
@@ -245,6 +305,7 @@ html {
 
 @media print {
   .glass-nav,
+  .glass-chip,
   .glass-light,
   .glass-dark {
     background: none;

@@ -4,8 +4,9 @@ import { getSessionUser } from '@/lib/auth/session';
 import { cartCount } from '@/lib/services/cart';
 import { checkoutEnabled } from '@/lib/features';
 import { getCartSessionId } from '@/lib/actions/util';
-import { BagIcon } from '@/components/ui/icons';
 import { Wordmark } from '@/components/ui/Wordmark';
+import { unreadCount } from '@/lib/services/messaging';
+import { HeaderFrame, type HeaderVariant } from './HeaderFrame';
 import { MobileMenu } from './MobileMenu';
 
 const PRIMARY = [
@@ -21,11 +22,17 @@ const strip =
 
 const navLink = 'text-[11px] uppercase tracking-label hover:underline hover:underline-offset-[6px]';
 
-export async function SiteHeader() {
+/** Where the signed-in user's inbox lives (makers answer from the studio). */
+export function messagesHref(role: string | undefined) {
+  return role === 'seller' ? '/seller/messages' : '/messages';
+}
+
+export async function SiteHeader({ variant = 'auto' }: { variant?: HeaderVariant } = {}) {
   const checkoutOn = checkoutEnabled();
-  const [user, count] = await Promise.all([
-    getSessionUser(),
+  const user = await getSessionUser();
+  const [count, unread] = await Promise.all([
     checkoutOn ? cartCount(getCartSessionId()) : Promise.resolve(0),
+    user ? unreadCount(user).catch(() => 0) : Promise.resolve(0),
   ]);
   const accountHref = user
     ? user.role === 'seller'
@@ -44,15 +51,8 @@ export async function SiteHeader() {
   const menuLinks = [
     ...PRIMARY,
     { href: '/search', label: 'Search' },
-    { href: '/account/saved', label: 'Saved' },
-    ...(user
-      ? [
-          {
-            href: user.role === 'seller' ? '/seller/messages' : '/account/messages',
-            label: 'Messages',
-          },
-        ]
-      : []),
+    { href: '/saved', label: 'Saved' },
+    { href: messagesHref(user?.role), label: 'Messages' },
     { href: accountHref, label: accountLabel },
     { href: '/help/how-it-works', label: 'How it works' },
   ];
@@ -65,7 +65,7 @@ export async function SiteHeader() {
         Skip to content
       </a>
       {/* Fixed over the page; <main> and full-bleed heroes offset themselves by --header-h. */}
-      <header className="glass-nav">
+      <HeaderFrame variant={variant}>
         {!checkoutOn && (
           <p className={strip} data-preview-strip data-testid="preview-banner">
             <span className="line-clamp-2">
@@ -98,19 +98,19 @@ export async function SiteHeader() {
               <Link href="/search" className={navLink}>
                 Search
               </Link>
-              <Link href="/account/saved" className={navLink}>
-                Saved
-              </Link>
-              {user && (
-                <Link
-                  href={user.role === 'seller' ? '/seller/messages' : '/account/messages'}
-                  className={navLink}
-                >
-                  Messages
-                </Link>
-              )}
               <Link href={accountHref} className={navLink}>
                 {accountLabel}
+              </Link>
+              <Link href="/saved" className={navLink}>
+                Saved
+              </Link>
+              <Link
+                href={messagesHref(user?.role)}
+                className={navLink}
+                data-testid="header-messages"
+                aria-label={`Messages, ${unread} unread`}
+              >
+                Messages ({unread})
               </Link>
               {checkoutOn && (
                 <Link
@@ -123,23 +123,9 @@ export async function SiteHeader() {
                 </Link>
               )}
             </nav>
-            {checkoutOn && (
-              <Link
-                href="/bag"
-                className="relative flex h-11 w-11 items-center justify-center md:hidden"
-                aria-label={`Bag, ${count} ${count === 1 ? 'item' : 'items'}`}
-              >
-                <BagIcon />
-                {count > 0 && (
-                  <span aria-hidden className="absolute right-1 top-1.5 text-[10px] font-medium">
-                    {count}
-                  </span>
-                )}
-              </Link>
-            )}
           </div>
         </div>
-      </header>
+      </HeaderFrame>
     </>
   );
 }

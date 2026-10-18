@@ -216,7 +216,7 @@ export function PurchasePanel({
 
       {/* Sticky mobile buy bar */}
       <div
-        className="fixed inset-x-0 bottom-0 z-30 bg-ink px-4 pb-[max(env(safe-area-inset-bottom),12px)] pt-3 text-ground md:hidden"
+        className="glass-dark fixed inset-x-0 bottom-[var(--tabbar-h)] z-30 border-x-0 border-b-0 px-4 pb-3 pt-3 text-ground md:hidden"
         data-product={productSlug}
       >
         <div className="flex items-center gap-3">

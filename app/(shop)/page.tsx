@@ -12,7 +12,7 @@ import {
   parseFilters,
   type FeedFilters,
 } from '@/lib/queries/catalog';
-import { FEED_EDITORIAL } from '@/lib/editorial';
+import { FEED_EDITORIAL, HERO } from '@/lib/editorial';
 import { CollectionChips, FeedTabs } from '@/components/feed/FeedTabs';
 import { FilterBar } from '@/components/feed/FilterBar';
 import { CollectionCard } from '@/components/editorial/CollectionCard';
@@ -139,13 +139,21 @@ export default async function DiscoverPage({ searchParams }: { searchParams: Sea
     getCollections(),
     getMakersDirectory(),
   ]);
-  const hero = placements.find((p) => p.slot === 'home_hero');
+  const placement = placements.find((p) => p.slot === 'home_hero');
+  // Placements can swap the image and link; the headline is the brand line.
+  const hero = {
+    title: HERO.title,
+    subtitle: HERO.eyebrow,
+    imageUrl: placement?.imageUrl ?? HERO.imageUrl,
+    href: placement?.href ?? HERO.href,
+  };
   const isDefault = filters.tab === 'for-you' && activeFilterCount(filters) === 0 && !filters.page;
 
   return (
     <div>
-      {isDefault && hero && (
+      {isDefault && (
         <section
+          data-hero
           aria-labelledby="hero-title"
           className="relative -mt-[var(--header-h)] flex h-[min(88vh,860px)] min-h-[560px] items-center justify-center overflow-hidden text-ground"
         >
