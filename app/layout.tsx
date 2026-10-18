@@ -1,15 +1,8 @@
 import type { Metadata, Viewport } from 'next';
-import { Bodoni_Moda, Instrument_Serif, Jost } from 'next/font/google';
+import { Instrument_Serif, Jost } from 'next/font/google';
 import { BRAND } from '@/lib/brand';
 import './globals.css';
 
-// Variable font so optical sizing (opsz) is available; the wordmark uses weight 500.
-const wordmark = Bodoni_Moda({
-  subsets: ['latin'],
-  variable: '--font-wordmark',
-  display: 'swap',
-  axes: ['opsz'],
-});
 const display = Instrument_Serif({
   subsets: ['latin'],
   weight: ['400'],
@@ -37,7 +30,7 @@ export const viewport: Viewport = { themeColor: '#F6F4F0', width: 'device-width'
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-AU" className={`${wordmark.variable} ${display.variable} ${sans.variable}`}>
+    <html lang="en-AU" className={`${display.variable} ${sans.variable}`}>
       <body className="min-h-screen">{children}</body>
     </html>
   );

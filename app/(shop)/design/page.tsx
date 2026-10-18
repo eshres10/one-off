@@ -63,13 +63,17 @@ export default function DesignPage() {
       <p className="eyebrow">Development only</p>
       <h1 className="mt-2 text-[64px] leading-none">Design system</h1>
 
-      <Section title="Wordmark">
+      <Section title="Logo">
         <div className="flex flex-wrap items-end gap-10">
           <Wordmark />
           <Wordmark size="mobile" />
           <Wordmark size="footer" />
           <span className="bg-ink px-6 py-4 text-ground">
             <Wordmark size="footer" />
+          </span>
+          <Wordmark variant="stacked" className="!h-[96px]" />
+          <span className="bg-ink p-4 text-ground">
+            <Wordmark variant="stacked" className="!h-[64px]" />
           </span>
         </div>
       </Section>

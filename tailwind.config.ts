@@ -42,7 +42,6 @@ const config: Config = {
         alert: { DEFAULT: v('error'), light: v('error-bg') },
       },
       fontFamily: {
-        wordmark: ['var(--font-wordmark)', 'Didot', 'serif'],
         display: ['var(--font-display)', 'Georgia', 'serif'],
         sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
       },
