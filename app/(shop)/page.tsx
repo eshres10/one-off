@@ -6,7 +6,6 @@ import {
   getCollections,
   getFacetOptions,
   getFeed,
-  getMakersDirectory,
   getPlacements,
   getSavedProductIds,
   parseFilters,
@@ -17,7 +16,16 @@ import { CollectionChips, FeedTabs } from '@/components/feed/FeedTabs';
 import { FilterBar } from '@/components/feed/FilterBar';
 import { CollectionCard } from '@/components/editorial/CollectionCard';
 import { TrustStrip } from '@/components/editorial/TrustStrip';
-import { ProductGrid, ProductGridSkeleton } from '@/components/product/ProductCard';
+import { EditorialTile, ProductGrid, ProductGridSkeleton } from '@/components/product/ProductCard';
+import { Rail } from '@/components/rails/Rail';
+import { MakerTileCard, NewMakerCard, RailProductCard } from '@/components/rails/RailCards';
+import {
+  getFollowedMakerIds,
+  getMostPopular,
+  getNewMakers,
+  getShopByMaker,
+  getUnder,
+} from '@/lib/queries/rails';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { BoxButtonGroup, ButtonLink, boxButtonClass } from '@/components/ui/Button';
 import { Img as Image } from '@/components/ui/Img';
@@ -42,6 +50,76 @@ function queryString(
   }
   const s = params.toString();
   return s ? `/?${s}` : '/';
+}
+
+async function HomeRails() {
+  const user = await getSessionUser();
+  const [popular, newMakers, makers, under, savedIds, following] = await Promise.all([
+    getMostPopular(10),
+    getNewMakers(10),
+    getShopByMaker(16),
+    getUnder(30000, 12),
+    getSavedProductIds(user?.id ?? null),
+    getFollowedMakerIds(user?.id ?? null),
+  ]);
+  return (
+    <div className="mt-6">
+      {popular.length > 0 && (
+        <Rail
+          title="Most popular"
+          subtitle="The pieces everyone is saving this week."
+          viewAllHref="/?tab=for-you#pieces"
+          testId="rail-popular"
+        >
+          {popular.map((p) => (
+            <RailProductCard key={p.id} product={p} saved={savedIds.has(p.id)} />
+          ))}
+        </Rail>
+      )}
+      {FEED_EDITORIAL[1] && (
+        <div className="md:hidden">
+          <EditorialTile tile={FEED_EDITORIAL[1]} />
+        </div>
+      )}
+      {newMakers.length > 0 && (
+        <Rail
+          title="New makers"
+          subtitle="Just joined One Off. Every studio visited in person before going live."
+          viewAllHref="/makers"
+          gapClass="gap-[10px] md:gap-4"
+          testId="rail-new-makers"
+        >
+          {newMakers.map((m) => (
+            <NewMakerCard key={m.id} maker={m} following={following.has(m.id)} />
+          ))}
+        </Rail>
+      )}
+      {makers.length > 0 && (
+        <Rail
+          title="Shop by maker"
+          subtitle="We visit every studio before a label goes live. No resellers, no dropshippers — just people who make clothes in Melbourne."
+          viewAllHref="/makers"
+          testId="rail-makers"
+        >
+          {makers.map((m) => (
+            <MakerTileCard key={m.id} maker={m} />
+          ))}
+        </Rail>
+      )}
+      {under.length > 0 && (
+        <Rail
+          title="Under A$300"
+          subtitle="Made in Melbourne, without the occasion price tag."
+          viewAllHref="/search?filter=under_300"
+          testId="rail-under-300"
+        >
+          {under.map((p) => (
+            <RailProductCard key={p.id} product={p} saved={savedIds.has(p.id)} />
+          ))}
+        </Rail>
+      )}
+    </div>
+  );
 }
 
 async function Feed({ filters }: { filters: FeedFilters }) {
@@ -133,11 +211,10 @@ async function Feed({ filters }: { filters: FeedFilters }) {
 
 export default async function DiscoverPage({ searchParams }: { searchParams: SearchParams }) {
   const filters = parseFilters(searchParams);
-  const [placements, options, collections, makers] = await Promise.all([
+  const [placements, options, collections] = await Promise.all([
     getPlacements(),
     getFacetOptions(),
     getCollections(),
-    getMakersDirectory(),
   ]);
   const placement = placements.find((p) => p.slot === 'home_hero');
   // Placements can swap the image and link; the headline is the brand line.
@@ -197,7 +274,7 @@ export default async function DiscoverPage({ searchParams }: { searchParams: Sea
       </div>
       <div className="mt-6">{filters.tab !== 'collections' && <FilterBar options={options} />}</div>
 
-      <section aria-label="Pieces" className="mt-[2px]">
+      <section id="pieces" aria-label="Pieces" className="mt-[2px]">
         <Suspense key={JSON.stringify(filters)} fallback={<ProductGridSkeleton />}>
           <Feed filters={filters} />
         </Suspense>
@@ -205,43 +282,7 @@ export default async function DiscoverPage({ searchParams }: { searchParams: Sea
 
       {isDefault && (
         <>
-          <section aria-labelledby="makers-title" className="container-page mt-24 text-center">
-            <h2 id="makers-title" className="text-[44px] leading-none md:text-[64px]">
-              Every maker, hand-selected
-            </h2>
-            <p className="mx-auto mt-4 max-w-xl text-[15px] text-muted">
-              Independent studios across Australia, reviewed one by one before they go live. No
-              resellers, no dropshippers — just people who make clothes.
-            </p>
-          </section>
-          <ul
-            className="no-scrollbar bleed mt-10 flex gap-[2px] overflow-x-auto md:grid md:grid-cols-4 md:overflow-visible"
-            role="list"
-          >
-            {makers.slice(0, 4).map((m) => (
-              <li key={m.id} className="w-[44vw] shrink-0 md:w-auto">
-                <Link href={`/makers/${m.slug}`} className="group block">
-                  <span className="relative block aspect-4/5 overflow-hidden bg-stone-light">
-                    {m.coverUrl && (
-                      <Image
-                        src={m.coverUrl}
-                        alt=""
-                        fill
-                        sizes="(min-width: 768px) 25vw, 45vw"
-                        className="object-cover"
-                      />
-                    )}
-                  </span>
-                  <span className="mt-3 block px-1 text-left font-display text-[24px] leading-tight group-hover:underline md:text-[28px]">
-                    {m.displayName}
-                  </span>
-                  <span className="block px-1 text-left text-[11px] uppercase tracking-label text-muted-2">
-                    {m.city}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <HomeRails />
           <div className="mt-16">
             <TrustStrip />
           </div>

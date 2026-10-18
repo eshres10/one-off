@@ -7,21 +7,21 @@ export const FEED_EDITORIAL: EditorialTileData[] = [
     title: 'Wedding guest, but not boring',
     cta: 'Shop the edit',
     href: '/collections/wedding-guest-but-not-boring',
-    imageUrl: '/seed/editorial/race-day.svg',
+    imageUrl: '/seed/tangerine-bias-maxi.jpg',
   },
   {
     kicker: 'Made to order',
     title: 'Cut to your measurements',
     cta: 'How it works',
     href: '/help/how-it-works',
-    imageUrl: '/seed/editorial/made-to-order.svg',
+    imageUrl: '/seed/lace-trim-maxi-dress.jpg',
   },
   {
     kicker: 'One of one',
     title: 'There is only one. Then it’s gone.',
     cta: 'Shop one-of-ones',
     href: '/collections/one-of-one-pieces',
-    imageUrl: '/seed/editorial/studio.svg',
+    imageUrl: '/seed/crochet-lace-maxi.jpg',
   },
 ];
 

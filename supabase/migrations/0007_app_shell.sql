@@ -73,3 +73,44 @@ grant all on public.size_watches to service_role;
 drop policy if exists size_watches_own on public.size_watches;
 create policy size_watches_own on public.size_watches for all
   using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- ---------------------------------------------------------------------------
+-- Homepage rails
+-- ---------------------------------------------------------------------------
+-- Most popular: saves plus views over the last `p_days` days. Security definer so the counts can
+-- include every shopper's saves without exposing whose they are.
+create or replace function public.popular_products(p_days integer default 7, p_limit integer default 10)
+returns table (product_id uuid, recent_saves integer, recent_views integer)
+language sql stable security definer set search_path = public as $$
+  select p.id,
+         coalesce(s.n, 0)::int,
+         coalesce(v.n, 0)::int
+  from public.products p
+  join public.makers m on m.id = p.maker_id
+  left join (select si.product_id, count(*) as n from public.saved_items si
+             where si.created_at > now() - make_interval(days => p_days) group by si.product_id) s on s.product_id = p.id
+  left join (select pv.product_id, count(*) as n from public.product_views pv
+             where pv.created_at > now() - make_interval(days => p_days) group by pv.product_id) v on v.product_id = p.id
+  where p.status = 'approved' and m.status = 'approved'
+  order by coalesce(s.n, 0) + coalesce(v.n, 0) desc, p.save_count desc, p.approved_at desc nulls last, p.id
+  limit least(greatest(p_limit, 1), 50)
+$$;
+
+-- Shop by maker: active makers, most recent sales first (paid items in the last 90 days).
+create or replace function public.makers_by_recent_sales()
+returns table (maker_id uuid, recent_sales integer, piece_count integer)
+language sql stable security definer set search_path = public as $$
+  select m.id,
+         (select count(*) from public.order_items oi join public.orders o on o.id = oi.order_id
+           where oi.maker_id = m.id and o.status in ('paid', 'partially_refunded')
+             and o.created_at > now() - interval '90 days')::int,
+         (select count(*) from public.products p where p.maker_id = m.id and p.status = 'approved')::int
+  from public.makers m
+  where m.status = 'approved'
+  order by 2 desc, m.approved_at desc nulls last, m.display_name
+$$;
+
+revoke all on function public.popular_products(integer, integer) from public;
+revoke all on function public.makers_by_recent_sales() from public;
+grant execute on function public.popular_products(integer, integer) to anon, authenticated, service_role;
+grant execute on function public.makers_by_recent_sales() to anon, authenticated, service_role;

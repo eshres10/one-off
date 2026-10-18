@@ -8,7 +8,7 @@ import type { ProductType } from '@/lib/domain/types';
  * Public catalogue reads. These run on the service connection with explicit visibility filters
  * (approved product AND approved maker) — the same rule the `products_select` RLS policy uses.
  */
-const VISIBLE = (alias = 'p', makerAlias = 'm') =>
+export const VISIBLE = (alias = 'p', makerAlias = 'm') =>
   sql().unsafe(`${alias}.status = 'approved' and ${makerAlias}.status = 'approved'`);
 
 export interface ProductCard {
@@ -29,19 +29,19 @@ export interface ProductCard {
   previewOnly: boolean;
 }
 
-interface CardRow extends Omit<ProductCard, 'badges'> {
+export interface CardRow extends Omit<ProductCard, 'badges'> {
   totalStock: number;
   hasLow: boolean;
 }
 
-const cardColumns = () =>
+export const cardColumns = () =>
   sql().unsafe(`
   p.id, p.slug, p.title, p.price_cents, p.product_type, p.lead_time_days, p.colours,
   ('preview-only' = any(p.tags)) as preview_only, m.display_name as maker_name, m.slug as maker_slug, m.city as maker_city,
   img.public_url as image_url, img.alt_text as image_alt,
   coalesce(st.total_stock, 0)::int as total_stock, coalesce(st.has_low, false) as has_low`);
 
-const cardJoins = () =>
+export const cardJoins = () =>
   sql().unsafe(`
   join public.makers m on m.id = p.maker_id
   left join lateral (
@@ -53,7 +53,7 @@ const cardJoins = () =>
     from public.product_variants v where v.product_id = p.id and v.is_active
   ) st on true`);
 
-function toCard(r: CardRow): ProductCard {
+export function toCard(r: CardRow): ProductCard {
   // Same rules as productBadges(), applied to aggregated variant stock.
   const badges: ProductBadge[] = [r.productType];
   if (r.totalStock <= 0) badges.push('sold_out');

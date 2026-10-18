@@ -14,7 +14,7 @@ export function FollowButton({
   makerId: string;
   following: boolean;
   makerName: string;
-  look?: 'outline' | 'box';
+  look?: 'outline' | 'box' | 'rail';
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -37,7 +37,9 @@ export function FollowButton({
       className={
         look === 'box'
           ? boxButtonClass('w-full')
-          : buttonClass(optimistic ? 'secondary' : 'primary', 'sm')
+          : look === 'rail'
+            ? buttonClass(optimistic ? 'primary' : 'secondary', 'sm', 'min-w-[120px]')
+            : buttonClass(optimistic ? 'secondary' : 'primary', 'sm')
       }
     >
       {optimistic ? 'Following' : 'Follow'}
