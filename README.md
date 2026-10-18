@@ -154,8 +154,8 @@ Put shoponeoff.com.au live before Stripe and Resend are connected. With `PREVIEW
 **What you need:** one free Supabase project, used for the database, logins and photo storage. Stripe and Resend can wait.
 
 1. Create a Supabase project (region: Sydney). Copy the **session pooler** connection string (Project settings → Database) and the URL, anon key and service-role key (Project settings → API).
-2. Apply the schema once: `DATABASE_URL="<connection string>" npm run db:migrate`
-3. Storage: create a public bucket named `marketplace`. Auth → URL configuration: Site URL `https://shoponeoff.com.au`, redirect URL `https://shoponeoff.com.au/auth/callback`.
+2. Apply the schema once, either by pasting `supabase/production-setup.sql` into **SQL Editor** and clicking Run (one transaction; regenerate it with `scripts/build-production-sql.sh` after adding a migration), or with `DATABASE_URL="<connection string>" npm run db:migrate`.
+3. Storage: create a public bucket named `marketplace` (JPEG/PNG/WebP, 8 MB limit). Auth → URL configuration: Site URL `https://shoponeoff.com.au`, redirect URL `https://shoponeoff.com.au/auth/callback`.
 4. In Vercel set: `PREVIEW_MODE=true`, `APP_URL=https://shoponeoff.com.au`, `DATABASE_URL`, `AUTH_DRIVER=supabase`, `STORAGE_DRIVER=supabase`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`. Leave payments and email on their defaults.
 5. Deploy, sign up on the site with your own email, then in the Supabase SQL editor run
    `update public.users set role = 'admin' where email = 'you@example.com';`
