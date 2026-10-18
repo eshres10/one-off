@@ -1,0 +1,14 @@
+node_modules
+.next
+out
+.env
+.env.local
+.env*.local
+.pgdata
+pg.log
+public/uploads
+public/seed
+playwright-report
+test-results
+*.tsbuildinfo
+.DS_Store

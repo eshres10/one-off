@@ -1,0 +1,9 @@
+node_modules
+.next
+.pgdata
+public/seed
+public/uploads
+playwright-report
+test-results
+package-lock.json
+PLAN.md

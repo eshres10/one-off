@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-paper font-sans text-ink antialiased;
+  }
+  h1,
+  h2,
+  h3 {
+    @apply font-display tracking-tight;
+  }
+  :focus-visible {
+    @apply outline-none ring-2 ring-ink ring-offset-2 ring-offset-paper;
+  }
+  ::selection {
+    @apply bg-clay-light;
+  }
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+  .eyebrow {
+    @apply text-[11px] font-medium uppercase tracking-[0.18em] text-ink-muted;
+  }
+  .input {
+    @apply block w-full rounded-lg border border-stone bg-white px-3 py-2.5 text-[15px] text-ink placeholder:text-ink-muted/70 focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink disabled:bg-stone-light;
+  }
+  .label {
+    @apply mb-1.5 block text-sm font-medium text-ink;
+  }
+  .card {
+    @apply rounded-2xl border border-stone/70 bg-white;
+  }
+  .link {
+    @apply underline decoration-stone-dark underline-offset-4 hover:decoration-ink;
+  }
+  .skeleton {
+    @apply animate-pulse bg-stone-light;
+  }
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
