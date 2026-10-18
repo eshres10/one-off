@@ -18,6 +18,7 @@ import {
   getReviews,
   getSavedProductIds,
   recordProductView,
+  watchSoldOutSizes,
 } from '@/lib/queries/catalog';
 import { Gallery } from '@/components/product/Gallery';
 import { PurchasePanel } from '@/components/product/PurchasePanel';
@@ -81,6 +82,8 @@ export default async function ProductPage({ params }: { params: { slug: string }
     recordProductView(product.id, product.maker.id, viewerKey).catch((err) =>
       log.warn({ err }, 'view tracking failed'),
     );
+    if (user)
+      watchSoldOutSizes(user, product.id).catch((err) => log.warn({ err }, 'size watch failed'));
   }
 
   const m = product.maker;

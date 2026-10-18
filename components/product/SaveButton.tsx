@@ -1,10 +1,15 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useOptimistic, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { toggleSaveAction } from '@/lib/actions/social';
+import { onLocalSavesChange, readLocalSaves, toggleLocalSave } from '@/lib/local-saves';
 import { HeartIcon } from '@/components/ui/icons';
 
+/**
+ * Heart toggle. Signed in, it saves to the account; signed out, it keeps the piece in this
+ * browser (merged into the account at sign-in) instead of forcing a login.
+ */
 export function SaveButton({
   productId,
   saved,
@@ -20,27 +25,38 @@ export function SaveButton({
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
-  const [optimistic, setOptimistic] = useOptimistic(saved);
+  const [on, setOn] = useState(saved);
+  useEffect(() => setOn(saved), [saved]);
+  useEffect(() => {
+    if (saved) return;
+    const sync = () => {
+      if (readLocalSaves().includes(productId)) setOn(true);
+    };
+    sync();
+    return onLocalSavesChange(sync);
+  }, [productId, saved]);
+
   return (
     <button
       type="button"
-      aria-pressed={optimistic}
-      aria-label={optimistic ? `Remove ${title} from saved` : `Save ${title}`}
+      aria-pressed={on}
+      aria-label={on ? `Remove ${title} from saved` : `Save ${title}`}
       disabled={pending}
+      data-testid="save-button"
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
+        const next = !on;
+        setOn(next);
         start(async () => {
-          setOptimistic(!optimistic);
           const res = await toggleSaveAction(productId);
-          if (res.needsLogin)
-            router.push(`/login?next=${encodeURIComponent(window.location.pathname)}`);
+          if (res.needsLogin) setOn(toggleLocalSave(productId));
           else router.refresh();
         });
       }}
       className={`relative z-10 flex h-11 w-11 items-center justify-center text-ink ${boxed ? 'glass-chip' : ''} ${className}`}
     >
-      <HeartIcon filled={optimistic} width={16} height={16} />
+      <HeartIcon filled={on} width={16} height={16} />
     </button>
   );
 }

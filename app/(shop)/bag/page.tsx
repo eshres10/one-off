@@ -56,7 +56,7 @@ export default async function BagPage({ searchParams }: { searchParams: { cancel
         <EmptyState
           title="Checkout opens at launch"
           action={
-            <ButtonLink href="/account/saved" variant="secondary">
+            <ButtonLink href="/saved" variant="secondary">
               View saved pieces
             </ButtonLink>
           }

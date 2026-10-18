@@ -49,3 +49,27 @@ create trigger makers_refresh_product_search after update of display_name on pub
 
 update public.products p set search_vector = public.product_search_document(p) where p.search_vector is null;
 create index if not exists products_search_idx on public.products using gin (search_vector);
+
+-- ---------------------------------------------------------------------------
+-- Saved pieces: price when saved (for price-drop alerts) and sold-out sizes a shopper looked at
+-- (for "Back in your size")
+-- ---------------------------------------------------------------------------
+alter table public.saved_items add column if not exists price_at_save integer
+  check (price_at_save is null or price_at_save > 0);
+update public.saved_items s set price_at_save = p.price_cents
+  from public.products p where p.id = s.product_id and s.price_at_save is null;
+
+create table if not exists public.size_watches (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.users (id) on delete cascade,
+  variant_id uuid not null references public.product_variants (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  unique (user_id, variant_id)
+);
+create index if not exists size_watches_variant_idx on public.size_watches (variant_id);
+alter table public.size_watches enable row level security;
+grant select, insert, delete on public.size_watches to authenticated;
+grant all on public.size_watches to service_role;
+drop policy if exists size_watches_own on public.size_watches;
+create policy size_watches_own on public.size_watches for all
+  using (user_id = auth.uid()) with check (user_id = auth.uid());

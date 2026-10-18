@@ -5,7 +5,7 @@ import { logoutAction } from '@/lib/actions/auth';
 const LINKS = [
   { href: '/account', label: 'Overview' },
   { href: '/account/orders', label: 'Orders' },
-  { href: '/account/saved', label: 'Saved' },
+  { href: '/saved', label: 'Saved' },
   { href: '/account/following', label: 'Following' },
   { href: '/account/messages', label: 'Messages' },
   { href: '/account/measurements', label: 'Measurements' },

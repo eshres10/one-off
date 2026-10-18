@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { sql } from '@/lib/db';
+import { sql, withUser } from '@/lib/db';
+import type { SessionUser } from '@/lib/auth/session';
 import type { ProductBadge } from '@/lib/domain/stock';
 import type { ProductType } from '@/lib/domain/types';
 
@@ -496,4 +497,19 @@ export async function searchProducts(
       (coalesce(st.total_stock, 0) > 0 or p.product_type = 'made_to_order') desc, p.save_count desc, p.id
     limit ${limit}`;
   return rows.map(toCard);
+}
+
+/**
+ * Remembers the sizes that were sold out when a signed-in shopper looked at a piece, so Saved
+ * can say "Back in your size" when one returns.
+ */
+export async function watchSoldOutSizes(user: Pick<SessionUser, 'id' | 'role'>, productId: string) {
+  await withUser(
+    user,
+    (db) => db`
+      insert into public.size_watches (user_id, variant_id)
+      select ${user.id}, v.id from public.product_variants v
+      where v.product_id = ${productId} and v.is_active and v.stock_quantity = 0
+      on conflict do nothing`,
+  );
 }
