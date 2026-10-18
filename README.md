@@ -98,7 +98,7 @@ See [`.env.example`](.env.example). Key variables:
 | Variable                                                                                 | Purpose                                                          |
 | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
 | `APP_URL`                                                                                | Public base URL (used for redirects, emails, Stripe return URLs) |
-| `DATABASE_URL`                                                                           | Postgres connection string (Supabase transaction pooler, :6543) |
+| `DATABASE_URL`                                                                           | Postgres connection string (Supabase transaction pooler, :6543)  |
 | `AUTH_DRIVER`                                                                            | `local` or `supabase`                                            |
 | `SESSION_SECRET`                                                                         | Local auth signing secret (32+ chars)                            |
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | Supabase Auth/Storage                                            |
