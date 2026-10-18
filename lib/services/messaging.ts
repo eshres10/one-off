@@ -239,14 +239,13 @@ export async function listThreads(user: Actor, as: 'buyer' | 'maker'): Promise<T
     (db) =>
       db<ThreadSummary[]>`
       select t.id, t.context, t.last_message_at, t.commission_request_id, m.slug as maker_slug,
-        ${as === 'buyer' ? db`m.display_name` : db`coalesce(u.display_name, 'Shopper')`} as counterpart_name,
+        ${as === 'buyer' ? db`m.display_name` : db`public.user_first_name(t.buyer_user_id)`} as counterpart_name,
         ${as === 'buyer' ? db`m.avatar_url` : db`null`} as counterpart_avatar,
         (select body from public.messages x where x.thread_id = t.id and (not x.is_flagged or x.sender_user_id = ${user.id})
            order by created_at desc limit 1) as last_body,
         (t.last_message_at > coalesce(${as === 'buyer' ? db`t.buyer_last_read_at` : db`t.maker_last_read_at`}, 'epoch')) as unread
       from public.message_threads t
       join public.makers m on m.id = t.maker_id
-      join public.users u on u.id = t.buyer_user_id
       where ${as === 'buyer' ? db`t.buyer_user_id = ${user.id}` : db`t.maker_id = ${user.makerId ?? null}`}
       order by t.last_message_at desc
       limit 100`,
@@ -286,8 +285,8 @@ export async function getThread(
     const [t] = await db<Omit<ThreadDetail, 'messages'>[]>`
       select t.id, t.buyer_user_id, t.maker_id, t.product_id, t.context, m.display_name as maker_name, m.slug as maker_slug,
              m.avatar_url as maker_avatar, m.response_time_hours as maker_response_hours,
-             coalesce(u.display_name, 'Shopper') as buyer_name
-      from public.message_threads t join public.makers m on m.id = t.maker_id join public.users u on u.id = t.buyer_user_id
+             public.user_first_name(t.buyer_user_id) as buyer_name
+      from public.message_threads t join public.makers m on m.id = t.maker_id
       where t.id = ${threadId}`;
     if (!t) return null;
     const messages = await db<ThreadMessage[]>`

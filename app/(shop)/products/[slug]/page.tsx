@@ -66,9 +66,18 @@ function Section({
 }
 
 export default async function ProductPage({ params }: { params: { slug: string } }) {
-  const product = await getProduct(params.slug);
-  if (!product) notFound();
   const user = await getSessionUser();
+  let product = await getProduct(params.slug);
+  let preview = false;
+  // Admins and the owning maker can preview listings that aren't live yet.
+  if (!product && user && (user.role === 'admin' || user.role === 'seller')) {
+    const draft = await getProduct(params.slug, { includeUnapproved: true });
+    if (draft && (user.role === 'admin' || draft.maker.id === user.makerId)) {
+      product = draft;
+      preview = true;
+    }
+  }
+  if (!product) notFound();
   const [related, reviews, savedIds] = await Promise.all([
     getRelated(product.id, product.maker.id, product.category, product.colours),
     getReviews({ productId: product.id }),
@@ -82,7 +91,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
       .update(`${h.get('x-forwarded-for') ?? ''}|${h.get('user-agent') ?? ''}`)
       .digest('hex')
       .slice(0, 24);
-  if (user?.id !== product.maker.userId) {
+  if (!preview && user?.id !== product.maker.userId) {
     recordProductView(product.id, product.maker.id, viewerKey).catch((err) =>
       log.warn({ err }, 'view tracking failed'),
     );
@@ -104,6 +113,11 @@ export default async function ProductPage({ params }: { params: { slug: string }
 
   return (
     <div className="container-page pb-28 pt-4 sm:pb-0 sm:pt-8">
+      {preview && (
+        <p className="mb-4 rounded-lg bg-clay-light px-3 py-2 text-sm text-clay" role="status">
+          Preview — this listing isn’t visible to shoppers yet.
+        </p>
+      )}
       <nav aria-label="Breadcrumb" className="mb-4 text-xs text-ink-muted">
         <Link href="/" className="hover:underline">
           Discover

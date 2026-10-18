@@ -15,6 +15,12 @@ language sql stable security definer set search_path = public as $$
   select role from public.users where id = auth.uid()
 $$;
 
+-- Exposes only a first name so makers can address buyers without reading the users table.
+create or replace function public.user_first_name(p_user_id uuid) returns text
+language sql stable security definer set search_path = public as $$
+  select split_part(coalesce(display_name, 'Shopper'), ' ', 1) from public.users where id = p_user_id
+$$;
+
 create or replace function public.my_maker_id() returns uuid
 language sql stable security definer set search_path = public as $$
   select id from public.makers where user_id = auth.uid()
