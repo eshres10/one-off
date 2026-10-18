@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useFormState } from 'react-dom';
 import { createSellerAction } from '@/lib/actions/admin';
 import type { FormState } from '@/lib/validation';
@@ -9,16 +10,40 @@ import { Field, FormAlert, Input, Select } from '@/components/ui/Field';
 export function CreateSellerForm() {
   const [state, action] = useFormState<FormState, FormData>(createSellerAction, undefined);
   const e = state?.errors ?? {};
+  // The shop address follows the label name until the admin edits it by hand.
+  const [slug, setSlug] = useState('');
+  const [slugEdited, setSlugEdited] = useState(false);
   return (
     <form action={action} className="card grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-5">
       <Field label="Email" name="email" error={e.email}>
         <Input name="email" type="email" required />
       </Field>
       <Field label="Label name" name="displayName" error={e.displayName}>
-        <Input name="displayName" required />
+        <Input
+          name="displayName"
+          required
+          onChange={(ev) => {
+            if (!slugEdited) setSlug(toSlug(ev.target.value));
+          }}
+        />
       </Field>
-      <Field label="Shop URL slug" name="slug" error={e.slug}>
-        <Input name="slug" required pattern="[a-z0-9-]{3,60}" placeholder="e.g. hobart-hem" />
+      <Field
+        label="Shop web address"
+        name="slug"
+        error={e.slug}
+        hint={`shoponeoff.com.au/makers/${slug || '…'}`}
+      >
+        <Input
+          name="slug"
+          required
+          pattern="[a-z0-9-]{3,60}"
+          placeholder="e.g. hobart-hem"
+          value={slug}
+          onChange={(ev) => {
+            setSlugEdited(true);
+            setSlug(toSlug(ev.target.value, { trim: false }));
+          }}
+        />
       </Field>
       <Field label="City" name="city" error={e.city}>
         <Input name="city" required />
@@ -38,4 +63,16 @@ export function CreateSellerForm() {
       </div>
     </form>
   );
+}
+
+/** Lowercase letters, numbers and single dashes, e.g. "Dylan & Co." → "dylan-co". */
+function toSlug(value: string, { trim = true } = {}) {
+  const slug = value
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+/, '')
+    .slice(0, 60);
+  return trim ? slug.replace(/-+$/, '') : slug;
 }
