@@ -1,37 +1,24 @@
 /**
- * Generates /public/textures/grain.png: a 256×256 lightly blurred noise tile at ~4% opacity,
- * tiled at 128px by the .glass-* utilities. Deterministic; no image libraries needed.
+ * Generates /public/textures/grain.png: a 128×128 monochrome noise tile on a transparent
+ * background at ~4% alpha. It is tiled at its natural 128px size (never stretched) by the
+ * .glass-* utilities. Deterministic; no image libraries needed.
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { deflateSync } from 'node:zlib';
 import { rng } from './seed-data';
 
-const SIZE = 256;
+const SIZE = 128;
+const ALPHA = 10; // 10/255 ≈ 4%
 const r = rng('grain');
-const raw = new Float32Array(SIZE * SIZE).map(() => r.next());
 
-// 3×3 box blur (wrapping) keeps the texture matte rather than gritty.
-const blurred = new Float32Array(SIZE * SIZE);
-for (let y = 0; y < SIZE; y++) {
-  for (let x = 0; x < SIZE; x++) {
-    let sum = 0;
-    for (let dy = -1; dy <= 1; dy++)
-      for (let dx = -1; dx <= 1; dx++)
-        sum += raw[((y + dy + SIZE) % SIZE) * SIZE + ((x + dx + SIZE) % SIZE)]!;
-    blurred[y * SIZE + x] = sum / 9;
-  }
-}
-
-// Grey + alpha rows, each prefixed with filter byte 0.
+// Grey + alpha rows, each prefixed with filter byte 0. Every pixel is a random grey.
 const rows = Buffer.alloc(SIZE * (1 + SIZE * 2));
 for (let y = 0; y < SIZE; y++) {
   const o = y * (1 + SIZE * 2);
   for (let x = 0; x < SIZE; x++) {
-    const n = blurred[y * SIZE + x]!;
-    const contrast = Math.min(1, Math.max(0, (n - 0.5) * 3 + 0.5));
-    rows[o + 1 + x * 2] = Math.round(contrast * 255);
-    rows[o + 2 + x * 2] = 10; // ≈4% opacity
+    rows[o + 1 + x * 2] = Math.floor(r.next() * 256);
+    rows[o + 2 + x * 2] = ALPHA;
   }
 }
 

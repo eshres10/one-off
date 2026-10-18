@@ -121,7 +121,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
         </p>
       )}
       <div className="md:grid md:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
-        <div className="md:sticky md:top-[76px] md:self-start">
+        <div className="md:sticky md:top-[var(--header-h)] md:self-start">
           <Gallery
             images={product.images}
             title={product.title}

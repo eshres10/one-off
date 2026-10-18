@@ -108,16 +108,19 @@
     display: none;
   }
 
-  /* Signature glass effects. Grain lives in ::before so it never affects text. */
-  .glass-light,
-  .glass-dark {
+  /* Signature glass effects. Grain is its own layer (::before), tiled at 128px, never stretched. */
+  .glass-light {
     position: relative;
     isolation: isolate;
     -webkit-backdrop-filter: blur(30px) saturate(120%);
     backdrop-filter: blur(30px) saturate(120%);
+    background-color: rgba(246, 244, 240, 0.5);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.45);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.5),
+      0 8px 24px rgba(17, 17, 17, 0.06);
   }
-  .glass-light::before,
-  .glass-dark::before {
+  .glass-light::before {
     content: '';
     position: absolute;
     inset: 0;
@@ -126,24 +129,98 @@
     background-image: url('/textures/grain.png');
     background-size: 128px 128px;
   }
-  .glass-light {
-    background-color: rgba(246, 244, 240, 0.5);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.45);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.5),
-      0 8px 24px rgba(17, 17, 17, 0.06);
-  }
+
+  /* Black glass buttons: the nav recipe with an ink tint. */
   .glass-dark {
-    background-color: rgba(17, 17, 17, 0.82);
+    position: relative;
+    background: rgba(17, 17, 17, 0.82);
     color: var(--ground);
+    -webkit-backdrop-filter: blur(24px) saturate(140%);
+    backdrop-filter: blur(24px) saturate(140%);
     border: 1px solid rgba(255, 255, 255, 0.14);
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.16),
       0 6px 18px rgba(17, 17, 17, 0.18);
   }
+  .glass-dark::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: url(/textures/grain.png) repeat;
+    background-size: 128px 128px;
+    opacity: 0.03;
+    mix-blend-mode: multiply;
+  }
+}
+
+/* Frosted-glass site header. Values are the brand spec; don't tweak them ad hoc. */
+.glass-nav {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 50;
+  background: rgba(246, 244, 240, 0.55); /* see-through, not solid */
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  backdrop-filter: blur(24px) saturate(140%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 1px 0 rgba(17, 17, 17, 0.04);
+}
+.glass-nav::before {
+  /* grain sits on its own layer */
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: url(/textures/grain.png) repeat;
+  background-size: 128px 128px; /* never stretched */
+  opacity: 0.025; /* barely there */
+  mix-blend-mode: multiply;
+}
+/* fallback for browsers without backdrop-filter */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass-nav {
+    background: rgba(246, 244, 240, 0.92);
+  }
+  .glass-dark {
+    background: rgba(17, 17, 17, 0.92);
+  }
+}
+
+/*
+ * The site header is fixed, so pages start underneath it. --header-h is the height of the
+ * announcement strip(s) plus the nav row; <main> is padded by it, and full-bleed heroes pull
+ * themselves back up under the glass and pad their content instead.
+ */
+:root {
+  --strip-h: 44px;
+  --nav-h: 60px;
+  --header-h: calc(var(--strip-h) + var(--nav-h) + 1px); /* + border */
+}
+@media (min-width: 640px) {
+  :root {
+    --strip-h: 32px;
+  }
+}
+@media (min-width: 768px) {
+  :root {
+    --nav-h: 76px;
+  }
+}
+:root:has([data-preview-strip]) {
+  --header-h: calc(var(--strip-h) * 2 + var(--nav-h) + 1px);
+}
+html {
+  scroll-padding-top: var(--header-h);
 }
 
 @media (prefers-reduced-transparency: reduce) {
+  .glass-nav {
+    background: var(--ground);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
   .glass-light {
     background-color: var(--ground);
     -webkit-backdrop-filter: none;
@@ -167,6 +244,7 @@
 }
 
 @media print {
+  .glass-nav,
   .glass-light,
   .glass-dark {
     background: none;

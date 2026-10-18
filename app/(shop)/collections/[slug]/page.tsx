@@ -48,7 +48,7 @@ export default async function CollectionPage({
   });
   return (
     <div>
-      <section className="relative -mt-[60px] flex min-h-[460px] items-end overflow-hidden text-ground md:-mt-[76px] md:min-h-[560px]">
+      <section className="relative -mt-[var(--header-h)] flex min-h-[460px] items-end overflow-hidden pt-[var(--header-h)] text-ground md:min-h-[560px]">
         {collection.heroImageUrl && (
           <Image
             src={collection.heroImageUrl}

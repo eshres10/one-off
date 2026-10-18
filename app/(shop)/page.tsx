@@ -147,7 +147,7 @@ export default async function DiscoverPage({ searchParams }: { searchParams: Sea
       {isDefault && hero && (
         <section
           aria-labelledby="hero-title"
-          className="relative -mt-[60px] flex h-[min(88vh,860px)] min-h-[560px] items-center justify-center overflow-hidden text-ground md:-mt-[76px]"
+          className="relative -mt-[var(--header-h)] flex h-[min(88vh,860px)] min-h-[560px] items-center justify-center overflow-hidden text-ground"
         >
           {hero.imageUrl && (
             <Image
@@ -160,7 +160,7 @@ export default async function DiscoverPage({ searchParams }: { searchParams: Sea
             />
           )}
           <span aria-hidden className="absolute inset-0 bg-[rgba(0,0,0,0.28)]" />
-          <div className="relative px-4 pt-16 text-center">
+          <div className="relative px-4 pt-[var(--header-h)] text-center">
             {hero.subtitle && (
               <p className="text-[11px] uppercase tracking-wide2">{hero.subtitle}</p>
             )}

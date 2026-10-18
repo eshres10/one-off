@@ -15,6 +15,10 @@ const PRIMARY = [
   { href: '/?tab=following', label: 'Following' },
 ];
 
+// Each strip is a fixed height (see --strip-h in globals.css) so pages can offset exactly.
+const strip =
+  'relative flex h-[var(--strip-h)] items-center justify-center bg-ink px-4 text-center text-[10px] leading-[14px] text-ground sm:text-[11px]';
+
 const navLink = 'text-[11px] uppercase tracking-label hover:underline hover:underline-offset-[6px]';
 
 export async function SiteHeader() {
@@ -60,11 +64,20 @@ export async function SiteHeader() {
       >
         Skip to content
       </a>
-      <p className="bg-ink px-4 py-2 text-center text-[10px] uppercase tracking-label text-ground sm:text-[11px]">
-        {BRAND.announcement}
-      </p>
-      <header className="glass-light sticky top-0 z-40">
-        <div className="container-page grid h-[60px] grid-cols-[1fr_auto_1fr] items-center md:h-[76px]">
+      {/* Fixed over the page; <main> and full-bleed heroes offset themselves by --header-h. */}
+      <header className="glass-nav">
+        {!checkoutOn && (
+          <p className={strip} data-preview-strip data-testid="preview-banner">
+            <span className="line-clamp-2">
+              Launching soon — explore the makers and save your favourites. Checkout opens at
+              launch.
+            </span>
+          </p>
+        )}
+        <p className={`${strip} uppercase tracking-label`}>
+          <span className="line-clamp-2">{BRAND.announcement}</span>
+        </p>
+        <div className="container-page relative grid h-[var(--nav-h)] grid-cols-[1fr_auto_1fr] items-center">
           <div className="flex items-center">
             <div className="md:hidden">
               <MobileMenu links={menuLinks} />

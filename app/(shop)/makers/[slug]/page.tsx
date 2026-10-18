@@ -80,7 +80,7 @@ export default async function MakerPage({
 
   return (
     <div>
-      <section className="relative -mt-[60px] flex min-h-[520px] items-center justify-center overflow-hidden text-ground md:-mt-[76px] md:min-h-[620px]">
+      <section className="relative -mt-[var(--header-h)] flex min-h-[520px] items-center justify-center overflow-hidden text-ground md:min-h-[620px]">
         {maker.coverUrl && (
           <Image
             src={maker.coverUrl}
@@ -92,7 +92,7 @@ export default async function MakerPage({
           />
         )}
         <span aria-hidden className="absolute inset-0 bg-[rgba(0,0,0,0.28)]" />
-        <div className="relative px-4 pt-16 text-center">
+        <div className="relative px-4 pt-[var(--header-h)] text-center">
           <p className="text-[11px] uppercase tracking-wide2">{maker.location}</p>
           <h1 className="mt-3 text-[64px] leading-[0.92] md:text-[120px]">{maker.displayName}</h1>
           <p className="mt-4 inline-flex items-center gap-2 text-[11px] uppercase tracking-wide2">
