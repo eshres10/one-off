@@ -764,6 +764,6 @@ export const BUYERS: BuyerSeed[] = BUYER_NAMES.map((name, i) => ({
 
 export const ADMIN = {
   id: seedId('user:admin'),
-  email: 'admin@atelierlocale.test',
+  email: 'admin@oneoff.test',
   name: 'Platform Admin',
 };

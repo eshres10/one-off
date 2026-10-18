@@ -1,3 +1,4 @@
+import { BRAND } from '@/lib/brand';
 import Link from 'next/link';
 import { Img as Image } from '@/components/ui/Img';
 import { getMakersDirectory } from '@/lib/queries/catalog';
@@ -12,8 +13,8 @@ export default async function MakersPage() {
       <p className="eyebrow">The studios</p>
       <h1 className="mt-2 text-4xl sm:text-5xl">Meet the makers</h1>
       <p className="mt-3 max-w-xl text-ink-soft">
-        Every label on {`Atelier Locale`} is independent, Australian and hand-selected. Most are one
-        or two people making in small batches.
+        Every label on {BRAND.name} is independent, Australian and hand-selected. Most are one or
+        two people making in small batches.
       </p>
       <ul className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3" role="list">
         {makers.map((m) => (

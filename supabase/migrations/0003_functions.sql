@@ -4,7 +4,7 @@ create sequence if not exists public.order_number_seq start 10001;
 
 create or replace function public.next_order_number() returns text
 language sql volatile security definer set search_path = public as $$
-  select 'AL-' || nextval('public.order_number_seq')::text
+  select 'OO-' || nextval('public.order_number_seq')::text
 $$;
 
 -- Fixed-window rate limiter. Returns true when the call is allowed.

@@ -60,7 +60,7 @@ test.describe.serial('marketplace smoke', () => {
 
     await expect(page.getByTestId('order-confirmation')).toBeVisible();
     orderNumber = (await page.getByTestId('order-number').innerText()).trim();
-    expect(orderNumber).toMatch(/^AL-\d+$/);
+    expect(orderNumber).toMatch(/^OO-\d+$/);
     await expect(page.getByTestId('order-confirmation')).toContainText(product.title);
     // Bag is emptied by the verified webhook.
     await page.goto('/bag');

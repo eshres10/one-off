@@ -12,6 +12,17 @@ const nextConfig = {
     serverComponentsExternalPackages: ['pino', 'postgres', 'bcryptjs'],
     instrumentationHook: true,
   },
+  async redirects() {
+    // Canonical domain: send www traffic to the apex.
+    return [
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'www.shoponeoff.com.au' }],
+        destination: 'https://shoponeoff.com.au/:path*',
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {
@@ -21,6 +32,7 @@ const nextConfig = {
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+          { key: 'Strict-Transport-Security', value: 'max-age=63072000' },
         ],
       },
     ];

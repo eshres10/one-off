@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { audit } from '@/lib/audit';
+import { BRAND } from '@/lib/brand';
 import { sql } from '@/lib/db';
 import { emails } from '@/lib/email/templates';
 import { sendEmail } from '@/lib/email/send';
@@ -54,8 +55,8 @@ export async function createSeller(
   await sendEmail({
     to: input.email,
     template: 'seller_invite',
-    subject: `You’re invited to sell on Atelier Locale`,
-    text: `Hi ${input.displayName},\n\nWe’d love to have you on Atelier Locale. Set up your maker profile, shipping, returns and payouts here:\n\n${
+    subject: `You’re invited to sell on ${BRAND.name}`,
+    text: `Hi ${input.displayName},\n\nWe’d love to have you on ${BRAND.name}. Set up your maker profile, shipping, returns and payouts here:\n\n${
       inviteLink ?? `${env().APP_URL}/login?next=/seller/onboarding`
     }\n\nOnce your profile is approved you can submit listings.`,
     related: { type: 'maker', id: makerId },

@@ -1,10 +1,12 @@
-# Atelier Locale — independent Australian fashion marketplace (MVP)
+# One Off — independent Australian fashion marketplace (MVP)
+
+Live domain: **[shoponeoff.com.au](https://shoponeoff.com.au)**
 
 > Discover and buy original fashion made by independent Australian makers.
 
 A mobile-first marketplace that **browses like Instagram and buys like a premium fashion store**: a visual discovery feed, product pages built for conversion, maker profiles with follows, structured “Ask the maker” messaging, a concierge custom-commission pilot, and Stripe Connect marketplace payments with per-maker payouts.
 
-“Atelier Locale” is a placeholder brand — rename it in `lib/brand.ts`.
+The brand name, domain and support email live in `lib/brand.ts`.
 
 ---
 
@@ -20,7 +22,7 @@ npm install && npm run local
 
 | Role   | Email                                                               | Password      |
 | ------ | ------------------------------------------------------------------- | ------------- |
-| Admin  | `admin@atelierlocale.test`                                          | `password123` |
+| Admin  | `admin@oneoff.test`                                                 | `password123` |
 | Seller | `studio@marlowe-atelier.test` (any `studio@<maker-slug>.test`)      | `password123` |
 | Buyer  | `ava@buyer.test` (20 buyers: `charlotte@`, `mia@`, … `@buyer.test`) | `password123` |
 
@@ -139,6 +141,20 @@ See [`.env.example`](.env.example). Key variables:
 ## Email (Resend)
 
 Set `EMAIL_DRIVER=resend`, `RESEND_API_KEY` and a verified `EMAIL_FROM` domain. Emails sent: order confirmation, maker new-order, shipped, delivered, new message, commission request/quote/status, seller invite, maker approved, listing decisions, magic links (local driver), dispute and payout-failure alerts.
+
+## Going live on shoponeoff.com.au
+
+The production URL is `https://shoponeoff.com.au` (apex). `www.shoponeoff.com.au` permanently redirects to it (`next.config.mjs`).
+
+1. **Vercel domain:** Project → Settings → Domains → add `shoponeoff.com.au` and `www.shoponeoff.com.au` (set www to redirect to the apex).
+2. **DNS at your .com.au registrar** (or move nameservers to Vercel):
+   - `A` record for `@` → `76.76.21.21`
+   - `CNAME` for `www` → `cname.vercel-dns.com`
+     Vercel shows the exact values on the Domains page and issues the TLS certificate automatically.
+3. **Environment:** `APP_URL=https://shoponeoff.com.au` (no trailing slash).
+4. **Email (Resend):** add the domain `shoponeoff.com.au` in Resend and create the SPF, DKIM and DMARC DNS records it lists. Use `EMAIL_FROM="One Off <hello@shoponeoff.com.au>"`. Set up a mailbox or forwarding for `hello@shoponeoff.com.au` (support address in `lib/brand.ts`) and choose an `ADMIN_NOTIFICATION_EMAIL`.
+5. **Supabase Auth:** Site URL `https://shoponeoff.com.au`; redirect URLs `https://shoponeoff.com.au/auth/callback` (keep `http://localhost:3000/auth/callback` for development). Optionally set a custom SMTP sender on the same domain.
+6. **Stripe:** webhook endpoints at `https://shoponeoff.com.au/api/webhooks/stripe` (platform + connected accounts, see above); add `shoponeoff.com.au` under Settings → Payment method domains for Apple Pay / Google Pay; set the public business name to “One Off” and the website to `https://shoponeoff.com.au` (it appears on card statements, Checkout and Connect onboarding).
 
 ## Deploying to Vercel
 

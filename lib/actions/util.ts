@@ -4,7 +4,7 @@ import { isUserFacing, pgMessage } from '@/lib/services/errors';
 import { newCartSessionId } from '@/lib/services/cart';
 import type { FormState } from '@/lib/validation';
 
-export const CART_COOKIE = 'al_cart';
+export const CART_COOKIE = 'oo_cart';
 
 export function getCartSessionId(): string | undefined {
   const v = cookies().get(CART_COOKIE)?.value;

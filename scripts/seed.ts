@@ -211,7 +211,7 @@ async function seedOrders(db: Sql) {
       insert into public.orders (id, order_number, buyer_user_id, buyer_email, buyer_name, status, subtotal_cents,
         shipping_total_cents, total_cents, platform_fee_total_cents, stripe_checkout_session_id, stripe_payment_intent_id,
         stripe_charge_id, shipping_address, paid_at, created_at)
-      values (${orderId}, ${'AL-S' + String(n + 1).padStart(4, '0')}, ${buyer.id}, ${buyer.email}, ${buyer.name}, 'paid',
+      values (${orderId}, ${'OO-S' + String(n + 1).padStart(4, '0')}, ${buyer.id}, ${buyer.email}, ${buyer.name}, 'paid',
         ${plan.subtotalCents}, ${plan.shippingTotalCents}, ${plan.totalCents}, ${plan.platformFeeTotalCents},
         ${'cs_seed_' + n}, ${'pi_seed_' + n}, ${'ch_seed_' + n}, ${db.json(address)}, ${created}, ${created})
       on conflict (id) do nothing`;

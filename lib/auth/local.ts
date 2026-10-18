@@ -5,7 +5,7 @@ import { env } from '@/lib/env';
 
 const key = () => new TextEncoder().encode(env().SESSION_SECRET);
 
-export const SESSION_COOKIE = 'al_session';
+export const SESSION_COOKIE = 'oo_session';
 export const SESSION_MAX_AGE = 60 * 60 * 24 * 30;
 
 export async function signSession(userId: string): Promise<string> {

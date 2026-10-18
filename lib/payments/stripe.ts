@@ -12,7 +12,7 @@ export function createStripeDriver(secretKey: string): PaymentsDriver {
   const stripe = new Stripe(secretKey, {
     typescript: true,
     maxNetworkRetries: 2,
-    appInfo: { name: 'atelier-locale' },
+    appInfo: { name: 'one-off', url: 'https://shoponeoff.com.au' },
   });
 
   return {

@@ -1,3 +1,4 @@
+import { BRAND } from '@/lib/brand';
 import { notFound } from 'next/navigation';
 import { env } from '@/lib/env';
 import { formatPrice } from '@/lib/domain/money';
@@ -42,7 +43,7 @@ export default async function MockCheckoutPage({
           <a href={session.cancelUrl} className="text-sm text-ink-muted hover:underline">
             ← Back to bag
           </a>
-          <p className="mt-6 text-sm text-ink-muted">Pay Atelier Locale</p>
+          <p className="mt-6 text-sm text-ink-muted">Pay {BRAND.name}</p>
           <p className="text-4xl font-semibold" data-testid="mock-total">
             {formatPrice(session.amountTotal)}
           </p>
