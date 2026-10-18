@@ -98,7 +98,7 @@ See [`.env.example`](.env.example). Key variables:
 | Variable                                                                                 | Purpose                                                          |
 | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
 | `APP_URL`                                                                                | Public base URL (used for redirects, emails, Stripe return URLs) |
-| `DATABASE_URL`                                                                           | Postgres connection string (Supabase session pooler or direct)   |
+| `DATABASE_URL`                                                                           | Postgres connection string (Supabase transaction pooler, :6543) |
 | `AUTH_DRIVER`                                                                            | `local` or `supabase`                                            |
 | `SESSION_SECRET`                                                                         | Local auth signing secret (32+ chars)                            |
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | Supabase Auth/Storage                                            |
@@ -153,7 +153,7 @@ Put shoponeoff.com.au live before Stripe and Resend are connected. With `PREVIEW
 
 **What you need:** one free Supabase project, used for the database, logins and photo storage. Stripe and Resend can wait.
 
-1. Create a Supabase project (region: Sydney). Copy the **session pooler** connection string (Project settings → Database) and the URL, anon key and service-role key (Project settings → API).
+1. Create a Supabase project (region: Sydney). Copy the **transaction pooler** connection string (port 6543) (Project settings → Database) and the URL, anon key and service-role key (Project settings → API).
 2. Apply the schema once, either by pasting `supabase/production-setup.sql` into **SQL Editor** and clicking Run (one transaction; regenerate it with `scripts/build-production-sql.sh` after adding a migration), or with `DATABASE_URL="<connection string>" npm run db:migrate`.
 3. Storage: create a public bucket named `marketplace` (JPEG/PNG/WebP, 8 MB limit). Auth → URL configuration: Site URL `https://shoponeoff.com.au`, redirect URL `https://shoponeoff.com.au/auth/callback`.
 4. In Vercel set: `PREVIEW_MODE=true`, `APP_URL=https://shoponeoff.com.au`, `DATABASE_URL`, `AUTH_DRIVER=supabase`, `STORAGE_DRIVER=supabase`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`. Leave payments and email on their defaults.

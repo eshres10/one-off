@@ -14,7 +14,13 @@ const schema = z
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
     APP_URL: z.string().url().default('http://localhost:3000'),
     DATABASE_URL: z.string().min(1).default('postgres://postgres@127.0.0.1:54329/marketplace'),
-    DATABASE_POOL_MAX: z.coerce.number().int().positive().default(10),
+    // Serverless instances each hold their own pool, so keep it small on Vercel; Supabase's
+    // poolers cap total client connections.
+    DATABASE_POOL_MAX: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(process.env.VERCEL ? 3 : 10),
 
     AUTH_DRIVER: z.enum(['local', 'supabase']).default('local'),
     SESSION_SECRET: z.string().min(32).default(DEFAULT_SESSION_SECRET),
