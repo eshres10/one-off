@@ -69,7 +69,8 @@ export async function readLocalFile(
 
 /** Only accept image URLs we issued ourselves (prevents hot-linking arbitrary URLs in UGC). */
 export function isOwnImageUrl(url: string): boolean {
-  if (url.startsWith('/api/files/') || url.startsWith('/seed/')) return !url.includes('..');
+  if (url.startsWith('/api/files/') || url.startsWith('/seed/') || url.startsWith('/preview/'))
+    return !url.includes('..');
   const base = env().NEXT_PUBLIC_SUPABASE_URL;
   return Boolean(base && url.startsWith(`${base}/storage/v1/object/public/`));
 }
