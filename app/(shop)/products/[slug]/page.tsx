@@ -7,6 +7,7 @@ import { getSessionUser } from '@/lib/auth/session';
 import { estimateDelivery, formatDateRange } from '@/lib/domain/leadTime';
 import { formatPrice } from '@/lib/domain/money';
 import { productBadges } from '@/lib/domain/stock';
+import { checkoutEnabled, PREVIEW_MESSAGE } from '@/lib/features';
 import { log } from '@/lib/log';
 import {
   getProduct,
@@ -197,6 +198,8 @@ export default async function ProductPage({ params }: { params: { slug: string }
               colours={product.colours}
               variants={product.variants}
               askHref={askHref}
+              checkoutEnabled={checkoutEnabled()}
+              previewMessage={PREVIEW_MESSAGE}
             />
           </div>
 

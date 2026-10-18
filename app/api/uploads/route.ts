@@ -3,6 +3,7 @@ import { getSessionUser } from '@/lib/auth/session';
 import { rateLimit } from '@/lib/rate-limit';
 import { isUserFacing } from '@/lib/services/errors';
 import { storeImage } from '@/lib/storage';
+import { uploadsEnabled } from '@/lib/features';
 import { reportError } from '@/lib/log';
 
 const KINDS = ['products', 'messages', 'commissions', 'makers', 'reviews'] as const;
@@ -12,6 +13,9 @@ export async function POST(req: Request) {
   const user = await getSessionUser();
   if (!user)
     return NextResponse.json({ error: 'Please sign in to upload images.' }, { status: 401 });
+  if (!uploadsEnabled()) {
+    return NextResponse.json({ error: 'Photo uploads open at launch.' }, { status: 503 });
+  }
   try {
     await rateLimit('upload', user.id);
     const form = await req.formData();

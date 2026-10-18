@@ -3,6 +3,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { env } from '@/lib/env';
+import { magicLinksEnabled } from '@/lib/features';
 import { audit } from '@/lib/audit';
 import {
   createLocalAuthUser,
@@ -108,6 +109,8 @@ export async function magicLinkAction(_prev: FormState, form: FormData): Promise
   if (!parsed.success) return { ok: false, errors: fieldErrors(parsed.error) };
   const { email } = parsed.data;
   const next = safeNext(form.get('next'));
+  if (!magicLinksEnabled())
+    return { ok: false, message: 'Email sign-in links aren’t available yet. Use your password.' };
   try {
     await rateLimit('auth', `${clientIp()}:magic:${email}`);
     if (env().AUTH_DRIVER === 'supabase') {

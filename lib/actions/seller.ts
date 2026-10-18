@@ -8,6 +8,7 @@ import { requireSeller } from '@/lib/auth/session';
 import { sql, withUser } from '@/lib/db';
 import { env } from '@/lib/env';
 import { sanitizeText } from '@/lib/domain/moderation';
+import { mockPaymentsReachable } from '@/lib/features';
 import { payments } from '@/lib/payments';
 import { createQuote, respondToCommission } from '@/lib/services/commissions';
 import { updateFulfilment } from '@/lib/services/fulfilment';
@@ -152,6 +153,8 @@ export async function submitProfileForReviewAction() {
 /** Creates (once) the maker's Stripe Connect Express account and sends them to onboarding. */
 export async function startPayoutOnboardingAction() {
   const seller = await requireSeller();
+  if (env().PAYMENTS_DRIVER === 'mock' && !mockPaymentsReachable())
+    redirect('/seller/payouts?unavailable=1');
   const [m] = await sql()<{ stripeAccountId: string | null; displayName: string; email: string }[]>`
     select m.stripe_account_id, m.display_name, u.email from public.makers m join public.users u on u.id = m.user_id
     where m.id = ${seller.makerId}`;

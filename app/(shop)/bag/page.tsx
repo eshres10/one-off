@@ -5,6 +5,7 @@ import { formatPrice } from '@/lib/domain/money';
 import { updateCartAction } from '@/lib/actions/cart';
 import { getCartSessionId } from '@/lib/actions/util';
 import { getCart } from '@/lib/services/cart';
+import { checkoutEnabled } from '@/lib/features';
 import { CheckoutForm } from '@/components/cart/CheckoutForm';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ButtonLink } from '@/components/ui/Button';
@@ -14,6 +15,19 @@ import { TrustBlock } from '@/components/product/TrustBlock';
 export const metadata = { title: 'Your bag' };
 
 export default async function BagPage({ searchParams }: { searchParams: { cancelled?: string } }) {
+  if (!checkoutEnabled()) {
+    return (
+      <div className="container-page pt-12">
+        <h1 className="sr-only">Your bag</h1>
+        <EmptyState
+          title="Checkout opens at launch"
+          action={<ButtonLink href="/account/saved">View saved pieces</ButtonLink>}
+        >
+          Save the pieces you love and we’ll let you know as soon as you can buy them.
+        </EmptyState>
+      </div>
+    );
+  }
   const [cart, user] = await Promise.all([getCart(getCartSessionId()), getSessionUser()]);
   if (!cart.lines.length) {
     return (

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { BRAND } from '@/lib/brand';
 import { getSessionUser } from '@/lib/auth/session';
 import { cartCount } from '@/lib/services/cart';
+import { checkoutEnabled } from '@/lib/features';
 import { getCartSessionId } from '@/lib/actions/util';
 import { BagIcon, ChatIcon, HeartIcon, UserIcon } from '@/components/ui/icons';
 
@@ -13,6 +14,7 @@ const NAV = [
 ];
 
 export async function SiteHeader() {
+  const checkoutOn = checkoutEnabled();
   const [user, count] = await Promise.all([getSessionUser(), cartCount(getCartSessionId())]);
   const iconLink =
     'relative inline-flex h-10 w-10 items-center justify-center rounded-full hover:bg-stone-light';
@@ -75,22 +77,24 @@ export async function SiteHeader() {
           >
             <UserIcon />
           </Link>
-          <Link
-            href="/bag"
-            className={iconLink}
-            aria-label={`Bag, ${count} ${count === 1 ? 'item' : 'items'}`}
-            data-testid="bag-link"
-          >
-            <BagIcon />
-            {count > 0 && (
-              <span
-                className="absolute right-0.5 top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-ink px-1 text-[10px] font-semibold text-paper"
-                aria-hidden
-              >
-                {count}
-              </span>
-            )}
-          </Link>
+          {checkoutOn && (
+            <Link
+              href="/bag"
+              className={iconLink}
+              aria-label={`Bag, ${count} ${count === 1 ? 'item' : 'items'}`}
+              data-testid="bag-link"
+            >
+              <BagIcon />
+              {count > 0 && (
+                <span
+                  className="absolute right-0.5 top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-ink px-1 text-[10px] font-semibold text-paper"
+                  aria-hidden
+                >
+                  {count}
+                </span>
+              )}
+            </Link>
+          )}
         </div>
       </div>
       <nav

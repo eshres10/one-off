@@ -9,7 +9,7 @@ import { Field, FormAlert, Input } from '@/components/ui/Field';
 
 type Mode = 'password' | 'magic' | 'signup';
 
-export function AuthForms({ next }: { next: string }) {
+export function AuthForms({ next, magicLinks = true }: { next: string; magicLinks?: boolean }) {
   const [mode, setMode] = useState<Mode>('password');
   const [loginState, login] = useFormState<FormState, FormData>(loginAction, undefined);
   const [magicState, magic] = useFormState<FormState, FormData>(magicLinkAction, undefined);
@@ -51,7 +51,7 @@ export function AuthForms({ next }: { next: string }) {
         className="flex gap-1 rounded-full border border-stone bg-white p-1"
       >
         {tab('password', 'Sign in')}
-        {tab('magic', 'Email me a link')}
+        {magicLinks && tab('magic', 'Email me a link')}
         {tab('signup', 'Create account')}
       </div>
 

@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getSessionUser } from '@/lib/auth/session';
 import { AuthForms } from '@/components/forms/AuthForms';
+import { magicLinksEnabled } from '@/lib/features';
 
 export const metadata = { title: 'Sign in' };
 
@@ -27,7 +28,7 @@ export default async function LoginPage({
         </p>
       )}
       <div className="mt-8">
-        <AuthForms next={next} />
+        <AuthForms next={next} magicLinks={magicLinksEnabled()} />
       </div>
     </div>
   );

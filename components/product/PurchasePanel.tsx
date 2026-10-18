@@ -45,6 +45,8 @@ export function PurchasePanel({
   colours,
   variants,
   askHref,
+  checkoutEnabled = true,
+  previewMessage,
 }: {
   productId: string;
   productSlug: string;
@@ -53,6 +55,9 @@ export function PurchasePanel({
   colours: string[];
   variants: Variant[];
   askHref: string;
+  /** False in preview mode: sizes stay browsable but nothing can be added to the bag. */
+  checkoutEnabled?: boolean;
+  previewMessage?: string;
 }) {
   const [colour, setColour] = useState<string | null>(colours[0] ?? null);
   const visible = useMemo(
@@ -76,13 +81,15 @@ export function PurchasePanel({
   }, [colour, selected, colours.length]);
 
   const allSoldOut = variants.every((v) => v.stockQuantity <= 0);
-  const label = allSoldOut
-    ? 'Sold out'
-    : !selected
-      ? productType === 'one_of_one'
-        ? 'Add to bag'
-        : 'Select a size'
-      : 'Add to bag';
+  const label = !checkoutEnabled
+    ? 'Launching soon'
+    : allSoldOut
+      ? 'Sold out'
+      : !selected
+        ? productType === 'one_of_one'
+          ? 'Add to bag'
+          : 'Select a size'
+        : 'Add to bag';
 
   return (
     <form action={action} className="space-y-5" aria-describedby="purchase-status">
@@ -159,7 +166,11 @@ export function PurchasePanel({
       </fieldset>
 
       <div className="hidden gap-3 sm:flex">
-        <AddButton disabled={allSoldOut || !selected} label={label} className="flex-1" />
+        <AddButton
+          disabled={!checkoutEnabled || allSoldOut || !selected}
+          label={label}
+          className="flex-1"
+        />
       </div>
       <Link
         href={`${askHref}${variantId ? `?variant=${variantId}` : ''}`}
@@ -169,6 +180,14 @@ export function PurchasePanel({
       </Link>
 
       <div id="purchase-status" aria-live="polite">
+        {!checkoutEnabled && previewMessage && (
+          <p
+            className="rounded-lg bg-stone-light px-3 py-2 text-sm text-ink-soft"
+            data-testid="preview-notice"
+          >
+            {previewMessage}
+          </p>
+        )}
         {state?.ok === false && state.message && (
           <p className="rounded-lg bg-alert-light px-3 py-2 text-sm text-alert">{state.message}</p>
         )}
@@ -203,7 +222,11 @@ export function PurchasePanel({
                 : 'Choose your size'}
             </p>
           </div>
-          <AddButton disabled={allSoldOut || !selected} label={label} className="flex-[1.4]" />
+          <AddButton
+            disabled={!checkoutEnabled || allSoldOut || !selected}
+            label={label}
+            className="flex-[1.4]"
+          />
         </div>
       </div>
     </form>

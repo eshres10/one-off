@@ -15,7 +15,7 @@ export const metadata = { title: 'Payouts' };
 export default async function PayoutsPage({
   searchParams,
 }: {
-  searchParams: { return?: string; onboarded?: string };
+  searchParams: { return?: string; onboarded?: string; unavailable?: string };
 }) {
   const seller = await requireSeller();
   if (searchParams.return) await syncStripeAccount(seller.makerId);
@@ -27,6 +27,11 @@ export default async function PayoutsPage({
   return (
     <div className="space-y-8">
       <h1 className="text-3xl">Payouts</h1>
+      {searchParams.unavailable && (
+        <p className="rounded-lg bg-stone-light px-3 py-2 text-sm" role="status">
+          Payout setup opens shortly before launch. We’ll email you when it’s ready.
+        </p>
+      )}
       <section className="card flex flex-wrap items-center justify-between gap-4 p-5">
         <div>
           <p className="font-medium">Stripe Express account</p>

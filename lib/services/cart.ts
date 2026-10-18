@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { sql, type Db } from '@/lib/db';
+import { assertCheckoutEnabled } from '@/lib/features';
 import { computeCartTotals, type CartTotals } from '@/lib/domain/cart';
 import { estimateDelivery, formatDateRange } from '@/lib/domain/leadTime';
 import { validateStock } from '@/lib/domain/stock';
@@ -168,6 +169,7 @@ export async function addToCart(input: {
   variantId: string;
   quantity: number;
 }): Promise<void> {
+  assertCheckoutEnabled();
   await sql().begin(async (tx) => {
     const db = tx as unknown as Db;
     const [variant] = await db<

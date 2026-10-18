@@ -142,6 +142,29 @@ See [`.env.example`](.env.example). Key variables:
 
 Set `EMAIL_DRIVER=resend`, `RESEND_API_KEY` and a verified `EMAIL_FROM` domain. Emails sent: order confirmation, maker new-order, shipped, delivered, new message, commission request/quote/status, seller invite, maker approved, listing decisions, magic links (local driver), dispute and payout-failure alerts.
 
+## Preview mode (browse-only launch)
+
+Put shoponeoff.com.au live before Stripe and Resend are connected. With `PREVIEW_MODE=true`:
+
+- Shoppers can browse the feed, collections, makers and products, create an account, save pieces, follow makers and message makers.
+- “Add to bag” becomes **Launching soon**, the bag icon is hidden, and the bag and checkout are switched off on the server (not just hidden).
+- The mock Stripe pages and mock-signed webhooks return 404, so no fake orders can be created.
+- Sellers can fill in their profiles and draft listings; “Set up payouts” shows a “coming soon” note until Stripe is connected.
+
+**What you need:** one free Supabase project, used for the database, logins and photo storage. Stripe and Resend can wait.
+
+1. Create a Supabase project (region: Sydney). Copy the **session pooler** connection string (Project settings → Database) and the URL, anon key and service-role key (Project settings → API).
+2. Apply the schema once: `DATABASE_URL="<connection string>" npm run db:migrate`
+3. Storage: create a public bucket named `marketplace`. Auth → URL configuration: Site URL `https://shoponeoff.com.au`, redirect URL `https://shoponeoff.com.au/auth/callback`.
+4. In Vercel set: `PREVIEW_MODE=true`, `APP_URL=https://shoponeoff.com.au`, `DATABASE_URL`, `AUTH_DRIVER=supabase`, `STORAGE_DRIVER=supabase`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`. Leave payments and email on their defaults.
+5. Deploy, sign up on the site with your own email, then in the Supabase SQL editor run
+   `update public.users set role = 'admin' where email = 'you@example.com';`
+6. Invite makers from **Admin → Makers**. Supabase sends their invite email (its built-in sender is rate-limited, which is fine for a handful of makers). Other app emails are recorded at **Admin → Emails** until Resend is connected.
+
+**Don’t run `npm run db:seed` against production** — it creates demo accounts with the password `password123`.
+
+**At launch:** connect Stripe and Resend (sections above), then set `PREVIEW_MODE=false`.
+
 ## Going live on shoponeoff.com.au
 
 The production URL is `https://shoponeoff.com.au` (apex). `www.shoponeoff.com.au` permanently redirects to it (`next.config.mjs`).

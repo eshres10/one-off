@@ -3,11 +3,12 @@
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { env } from '@/lib/env';
+import { mockPaymentsReachable } from '@/lib/features';
 import { mockStripe } from '@/lib/payments/mock';
 import { payments } from '@/lib/payments';
 
 function assertMock() {
-  if (env().PAYMENTS_DRIVER !== 'mock') throw new Error('Mock payments are disabled');
+  if (!mockPaymentsReachable()) throw new Error('Mock payments are disabled');
 }
 
 const paySchema = z.object({

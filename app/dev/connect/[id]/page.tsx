@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { env } from '@/lib/env';
+import { mockPaymentsReachable } from '@/lib/features';
 import { mockCompleteOnboardingAction } from '@/lib/actions/dev';
 
 export const dynamic = 'force-dynamic';
@@ -12,7 +12,7 @@ export default function MockConnectPage({
   params: { id: string };
   searchParams: { dashboard?: string };
 }) {
-  if (env().PAYMENTS_DRIVER !== 'mock') notFound();
+  if (!mockPaymentsReachable()) notFound();
   return (
     <main className="mx-auto max-w-md px-4 py-16">
       <div className="mb-6 rounded bg-[#635BFF] px-3 py-2 text-center text-xs font-medium text-white">

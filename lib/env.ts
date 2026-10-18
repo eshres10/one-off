@@ -7,6 +7,8 @@ import { z } from 'zod';
  * Local defaults let `npm run local` work with zero configuration (local Postgres, mock Stripe,
  * email outbox). Production refuses to start on local drivers unless explicitly allowed.
  */
+const DEFAULT_SESSION_SECRET = 'local-dev-session-secret-change-me-please-0123456789';
+
 const schema = z
   .object({
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -15,10 +17,7 @@ const schema = z
     DATABASE_POOL_MAX: z.coerce.number().int().positive().default(10),
 
     AUTH_DRIVER: z.enum(['local', 'supabase']).default('local'),
-    SESSION_SECRET: z
-      .string()
-      .min(32)
-      .default('local-dev-session-secret-change-me-please-0123456789'),
+    SESSION_SECRET: z.string().min(32).default(DEFAULT_SESSION_SECRET),
     NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional(),
     NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().optional(),
     SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
@@ -37,6 +36,11 @@ const schema = z
     ADMIN_NOTIFICATION_EMAIL: z.string().email().default('admin@oneoff.test'),
 
     PLATFORM_FEE_BPS: z.coerce.number().int().min(0).max(5000).default(1500),
+    /** Browse-only launch mode: checkout, bag and payment webhooks are switched off. */
+    PREVIEW_MODE: z
+      .enum(['true', 'false'])
+      .default('false')
+      .transform((v) => v === 'true'),
     ALLOW_LOCAL_DRIVERS_IN_PRODUCTION: z
       .enum(['true', 'false'])
       .default('false')
@@ -86,15 +90,25 @@ export function env(): Env {
   }
   const value = parsed.data;
   const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
+  const isProductionRuntime = value.NODE_ENV === 'production' && !isBuildPhase && !process.env.CI;
   if (
-    value.NODE_ENV === 'production' &&
-    !isBuildPhase &&
+    isProductionRuntime &&
+    value.AUTH_DRIVER === 'local' &&
+    value.SESSION_SECRET === DEFAULT_SESSION_SECRET
+  ) {
+    throw new Error(
+      'Local auth in production needs a real SESSION_SECRET (32+ random characters).',
+    );
+  }
+  if (
+    isProductionRuntime &&
+    // Preview mode can't take payments, so the mock payment driver is never reachable.
+    !value.PREVIEW_MODE &&
     !value.ALLOW_LOCAL_DRIVERS_IN_PRODUCTION &&
-    !process.env.CI &&
     (value.PAYMENTS_DRIVER === 'mock' || value.AUTH_DRIVER === 'local')
   ) {
     throw new Error(
-      'Refusing to run production with mock payments or local auth. Set PAYMENTS_DRIVER=stripe and AUTH_DRIVER=supabase, or ALLOW_LOCAL_DRIVERS_IN_PRODUCTION=true for demos/e2e.',
+      'Refusing to run production with mock payments or local auth. Set PAYMENTS_DRIVER=stripe and AUTH_DRIVER=supabase, PREVIEW_MODE=true for a browse-only launch, or ALLOW_LOCAL_DRIVERS_IN_PRODUCTION=true for demos/e2e.',
     );
   }
   cached = value;

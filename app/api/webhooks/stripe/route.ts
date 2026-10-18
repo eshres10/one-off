@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type Stripe from 'stripe';
 import { env } from '@/lib/env';
+import { mockPaymentsReachable } from '@/lib/features';
 import { log, reportError } from '@/lib/log';
 import { payments } from '@/lib/payments';
 import { handleStripeEvent } from '@/lib/services/webhook';
@@ -15,6 +16,11 @@ export const dynamic = 'force-dynamic';
  * against the raw body before anything else happens.
  */
 export async function POST(req: Request) {
+  // With the mock driver the signing secret has a public default, so never accept mock
+  // webhooks on a real deployment (e.g. preview mode).
+  if (env().PAYMENTS_DRIVER === 'mock' && !mockPaymentsReachable()) {
+    return NextResponse.json({ error: 'not found' }, { status: 404 });
+  }
   const signature = req.headers.get('stripe-signature');
   if (!signature) return NextResponse.json({ error: 'missing signature' }, { status: 400 });
   const raw = await req.text();

@@ -1,6 +1,6 @@
 import { BRAND } from '@/lib/brand';
 import { notFound } from 'next/navigation';
-import { env } from '@/lib/env';
+import { mockPaymentsReachable } from '@/lib/features';
 import { formatPrice } from '@/lib/domain/money';
 import { payments } from '@/lib/payments';
 import { mockPayAction } from '@/lib/actions/dev';
@@ -20,7 +20,7 @@ export default async function MockCheckoutPage({
   params: { id: string };
   searchParams: { declined?: string };
 }) {
-  if (env().PAYMENTS_DRIVER !== 'mock') notFound();
+  if (!mockPaymentsReachable()) notFound();
   const session = (await payments()
     .retrieveCheckoutSession(params.id)
     .catch(() => null)) as

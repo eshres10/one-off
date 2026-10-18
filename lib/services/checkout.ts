@@ -1,6 +1,7 @@
 import { sql, type Db } from '@/lib/db';
 import { env } from '@/lib/env';
 import { audit } from '@/lib/audit';
+import { assertCheckoutEnabled } from '@/lib/features';
 import { estimateDelivery, toIsoDate } from '@/lib/domain/leadTime';
 import { splitOrder } from '@/lib/domain/split';
 import { payments } from '@/lib/payments';
@@ -22,6 +23,7 @@ export async function createCheckout(input: {
   userId: string | null;
   email: string | null;
 }): Promise<CheckoutResult> {
+  assertCheckoutEnabled();
   const e = env();
   const cart = await getCart(input.sessionId);
   if (!cart.cartId || cart.lines.length === 0) throw new CartError('Your bag is empty.');
