@@ -14,6 +14,7 @@ function create(): postgres.Sql {
   return postgres(e.DATABASE_URL, {
     max: e.DATABASE_POOL_MAX,
     idle_timeout: 20,
+    connect_timeout: 10,
     // Column names only: JSON payloads (Stripe metadata, addresses) keep their original keys.
     transform: { column: { from: postgres.toCamel, to: postgres.fromCamel } },
     onnotice: () => {},
@@ -27,8 +28,28 @@ function create(): postgres.Sql {
  * visibility filters, webhooks, admin tooling (after a role check), seeding and jobs.
  */
 export function sql(): postgres.Sql {
+  recycleIfStale();
   if (!globalThis.__marketplaceSql) globalThis.__marketplaceSql = create();
   return globalThis.__marketplaceSql;
+}
+
+/**
+ * Vercel freezes idle instances. While frozen, Supabase's pooler drops the idle sockets, and
+ * postgres.js would hang forever on the dead socket after the instance resumes. Wall-clock
+ * time keeps moving while frozen, so a long gap since the last query means the sockets can't
+ * be trusted: start a fresh client and let the old one close in the background.
+ */
+const RECYCLE_AFTER_MS = 10_000;
+let lastUsedAt = 0;
+
+function recycleIfStale() {
+  const now = Date.now();
+  const stale = globalThis.__marketplaceSql;
+  if (process.env.VERCEL && stale && now - lastUsedAt > RECYCLE_AFTER_MS) {
+    globalThis.__marketplaceSql = undefined;
+    stale.end({ timeout: 5 }).catch(() => {});
+  }
+  lastUsedAt = now;
 }
 
 export async function withService<T>(fn: (tx: Db) => Promise<T>): Promise<T> {
