@@ -1,3 +1,4 @@
+import type { AgreedSpecData } from '@/components/commissions/AgreedSpec';
 import { withUser } from '@/lib/db';
 import type { SessionUser } from '@/lib/auth/session';
 import type { FulfilmentStatus, ProductType } from '@/lib/domain/types';
@@ -87,6 +88,7 @@ export interface SellerOrder {
   estimatedDeliveryTo: Date | null;
   shippingAddress: Record<string, string> | null;
   buyerEmail: string;
+  agreedSpec: AgreedSpecData | null;
   items: Array<{
     id: string;
     productTitle: string;
@@ -105,7 +107,7 @@ export async function getSellerOrders(s: Seller, fulfilmentId?: string): Promise
     const rows = await db<Omit<SellerOrder, 'items'>[]>`
       select f.id, f.order_id, o.order_number, f.status, f.created_at, o.buyer_name, f.subtotal_cents, f.shipping_cents,
              f.platform_commission_cents, f.seller_net_cents, f.transfer_status, f.carrier, f.tracking_number,
-             f.estimated_dispatch_date, f.estimated_delivery_to, o.shipping_address, o.buyer_email
+             f.estimated_dispatch_date, f.estimated_delivery_to, o.shipping_address, o.buyer_email, o.agreed_spec
       from public.fulfilments f join public.orders o on o.id = f.order_id
       where f.maker_id = ${s.makerId} and o.status not in ('pending', 'failed', 'cancelled')
         ${fulfilmentId ? db`and f.id = ${fulfilmentId}` : db``}
@@ -203,6 +205,8 @@ export interface SellerCommission {
   inspirationImageUrls: string[];
   buyerName: string | null;
   createdAt: Date;
+  agreedSpec: AgreedSpecData | null;
+  agreedAt: Date | null;
 }
 
 export async function getSellerCommissions(s: Seller, id?: string) {
@@ -210,7 +214,7 @@ export async function getSellerCommissions(s: Seller, id?: string) {
     const requests = await db<SellerCommission[]>`
       select c.id, c.garment_type, c.occasion, c.status, c.budget_min_cents, c.budget_max_cents, c.deadline_date, c.measurements,
              c.fabric_preferences, c.colour_preferences, c.notes, c.inspiration_image_urls, c.created_at,
-             public.user_first_name(c.buyer_user_id) as buyer_name
+             c.agreed_spec, c.agreed_at, public.user_first_name(c.buyer_user_id) as buyer_name
       from public.commission_requests c
       where c.maker_id = ${s.makerId} ${id ? db`and c.id = ${id}` : db``}
       order by c.created_at desc`;

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { returnsLine } from '@/lib/content/returns';
 import { Img as Image } from '@/components/ui/Img';
 import { getSessionUser } from '@/lib/auth/session';
 import { formatPrice } from '@/lib/domain/money';
@@ -145,6 +146,9 @@ export default async function BagPage({ searchParams }: { searchParams: { cancel
                 </p>
                 <p className="mt-0.5 text-muted" data-dynamic>
                   Estimated delivery {line.deliveryEstimate}
+                </p>
+                <p className="mt-1 text-[12px] text-muted-2" data-testid="bag-returns-note">
+                  {returnsLine(line.productType)}
                 </p>
                 {line.problem && (
                   <p className="mt-2 bg-error-bg px-2 py-1 text-error" role="alert">

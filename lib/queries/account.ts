@@ -1,6 +1,8 @@
+import type { AgreedSpecData } from '@/components/commissions/AgreedSpec';
 import { withUser } from '@/lib/db';
 import type { SessionUser } from '@/lib/auth/session';
 import type { FulfilmentStatus, ProductType } from '@/lib/domain/types';
+import type { ClaimStatus } from '@/lib/domain/claims';
 
 type Actor = Pick<SessionUser, 'id' | 'role'>;
 
@@ -15,6 +17,9 @@ export interface BuyerOrderItem {
   productType: ProductType;
   fulfilmentStatus: FulfilmentStatus;
   reviewed: boolean;
+  deliveredAt: Date | null;
+  claimId: string | null;
+  claimStatus: ClaimStatus | null;
 }
 
 export interface BuyerFulfilment {
@@ -40,6 +45,7 @@ export interface BuyerOrder {
   refundedCents: number;
   createdAt: Date;
   shippingAddress: Record<string, string> | null;
+  agreedSpec: AgreedSpecData | null;
   fulfilments: BuyerFulfilment[];
 }
 
@@ -47,7 +53,8 @@ export interface BuyerOrder {
 export async function getBuyerOrders(user: Actor, orderId?: string): Promise<BuyerOrder[]> {
   return withUser(user, async (db) => {
     const orders = await db<Omit<BuyerOrder, 'fulfilments'>[]>`
-      select id, order_number, status, total_cents, subtotal_cents, shipping_total_cents, refunded_cents, created_at, shipping_address
+      select id, order_number, status, total_cents, subtotal_cents, shipping_total_cents, refunded_cents, created_at, shipping_address,
+             agreed_spec
       from public.orders
       where buyer_user_id = ${user.id} and status <> 'pending' and status <> 'failed'
         ${orderId ? db`and id = ${orderId}` : db``}
@@ -62,8 +69,15 @@ export async function getBuyerOrders(user: Actor, orderId?: string): Promise<Buy
     const items = await db<(BuyerOrderItem & { fulfilmentId: string })[]>`
       select oi.id, oi.fulfilment_id, oi.product_title, p.slug as product_slug, oi.variant_label, oi.quantity, oi.line_total_cents,
              oi.image_url, oi.product_type, oi.fulfilment_status,
-             exists (select 1 from public.reviews r where r.order_item_id = oi.id) as reviewed
-      from public.order_items oi left join public.products p on p.id = oi.product_id
+             exists (select 1 from public.reviews r where r.order_item_id = oi.id) as reviewed,
+             coalesce(oi.delivered_at, f.delivered_at) as delivered_at, c.id as claim_id, c.status as claim_status
+      from public.order_items oi
+      join public.fulfilments f on f.id = oi.fulfilment_id
+      left join public.products p on p.id = oi.product_id
+      left join lateral (
+        select rc.id, rc.status from public.return_claims rc
+        where rc.order_item_id = oi.id order by rc.created_at desc limit 1
+      ) c on true
       where oi.order_id in ${db(ids)}`;
     return orders.map((o) => ({
       ...o,
@@ -138,6 +152,8 @@ export interface BuyerCommission {
   colourPreferences: string | null;
   notes: string | null;
   inspirationImageUrls: string[];
+  agreedSpec: AgreedSpecData | null;
+  agreedAt: Date | null;
 }
 
 export interface QuoteView {
@@ -158,7 +174,7 @@ export async function getBuyerCommissions(user: Actor, id?: string) {
     const requests = await db<BuyerCommission[]>`
       select c.id, c.garment_type, c.occasion, c.status, c.budget_min_cents, c.budget_max_cents, c.deadline_date, c.created_at,
              c.measurements, c.fabric_preferences, c.colour_preferences, c.notes, c.inspiration_image_urls,
-             m.display_name as maker_name, m.slug as maker_slug
+             c.agreed_spec, c.agreed_at, m.display_name as maker_name, m.slug as maker_slug
       from public.commission_requests c left join public.makers m on m.id = c.maker_id
       where c.buyer_user_id = ${user.id} ${id ? db`and c.id = ${id}` : db``}
       order by c.created_at desc`;

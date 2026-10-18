@@ -17,7 +17,7 @@ export default async function SellerHome() {
   ]);
   const checklist = [
     {
-      done: Boolean(maker.story && maker.city && maker.returnPolicy),
+      done: Boolean(maker.story && maker.city),
       label: 'Complete your maker profile',
       href: '/seller/onboarding',
     },

@@ -179,6 +179,7 @@ describe('webhook security & idempotency', () => {
       sessionId,
       userId: null,
       email: 'unpaid@buyer.test',
+      returnsAck: true,
     });
     const [o] = await sql()<
       { cs: string }[]

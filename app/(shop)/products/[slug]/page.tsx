@@ -9,6 +9,7 @@ import { formatPrice } from '@/lib/domain/money';
 import { productBadges } from '@/lib/domain/stock';
 import { checkoutEnabled, PREVIEW_MESSAGE } from '@/lib/features';
 import { log } from '@/lib/log';
+import { isCustomType, returnsLine } from '@/lib/content/returns';
 import {
   getProduct,
   getRelated,
@@ -90,7 +91,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
   const primaryBadge = badges.find((b) => b === 'sold_out') ?? badges[0]!;
   const totalStock = product.variants.reduce((s, v) => s + Math.max(0, v.stockQuantity), 0);
   const shippingText = `Shipping ${m.freeShippingOverCents ? `free over ${formatPrice(m.freeShippingOverCents)}, otherwise ` : ''}${formatPrice(m.shippingStandardCents)} [placeholder], shown before you pay.`;
-  const returnsText = product.returnPolicy ?? m.returnPolicy;
+  const custom = isCustomType(product.productType);
   const saved = savedIds.has(product.id);
   const modelLine = product.modelHeightCm
     ? `Model is ${product.modelHeightCm} cm and wears size ${product.modelSizeWorn ?? '—'}.`
@@ -200,6 +201,14 @@ export default async function ProductPage({ params }: { params: { slug: string }
           </div>
 
           <div className="mt-2">
+            <Accordion id="returns" title="Returns" open={custom}>
+              <p data-testid="returns-row">
+                {returnsLine(product.productType)}{' '}
+                <Link href="/returns" className="link">
+                  Read more
+                </Link>
+              </p>
+            </Accordion>
             <Accordion title="Description" open>
               <p className="whitespace-pre-line">{product.description}</p>
             </Accordion>
@@ -248,9 +257,8 @@ export default async function ProductPage({ params }: { params: { slug: string }
                 <p>Ask the maker for exact measurements.</p>
               )}
             </Accordion>
-            <Accordion title="Shipping and returns">
+            <Accordion title="Shipping">
               <p>{shippingText}</p>
-              <p className="mt-2">{returnsText}</p>
             </Accordion>
           </div>
         </div>

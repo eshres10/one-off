@@ -5,6 +5,7 @@ import { assertCheckoutEnabled } from '@/lib/features';
 import { estimateDelivery, toIsoDate } from '@/lib/domain/leadTime';
 import { splitOrder } from '@/lib/domain/split';
 import { payments } from '@/lib/payments';
+import { RETURNS_POLICY_VERSION, RETURNS_STRIPE_SUBMIT } from '@/lib/content/returns';
 import { CartError, getCart, shippingMap } from './cart';
 
 export interface CheckoutResult {
@@ -22,8 +23,12 @@ export async function createCheckout(input: {
   sessionId: string;
   userId: string | null;
   email: string | null;
+  /** The buyer ticked "I understand One Off pieces can't be returned for change of mind." */
+  returnsAck: boolean;
 }): Promise<CheckoutResult> {
   assertCheckoutEnabled();
+  if (!input.returnsAck)
+    throw new CartError('Please confirm you understand the returns policy before checking out.');
   const e = env();
   const cart = await getCart(input.sessionId);
   if (!cart.cartId || cart.lines.length === 0) throw new CartError('Your bag is empty.');
@@ -43,6 +48,7 @@ export async function createCheckout(input: {
   const shipping = shippingMap(makerRows);
   const plan = splitOrder(cart.lines, shipping, e.PLATFORM_FEE_BPS);
   const now = new Date();
+  const returnsAckAt = now.toISOString();
 
   const orderId = await sql().begin(async (tx) => {
     const db = tx as unknown as Db;
@@ -52,9 +58,10 @@ export async function createCheckout(input: {
     const orderNumber = numbered!.orderNumber;
     const [order] = await db<{ id: string }[]>`
       insert into public.orders (order_number, buyer_user_id, buyer_email, status, subtotal_cents, shipping_total_cents,
-        total_cents, platform_fee_total_cents)
+        total_cents, platform_fee_total_cents, returns_ack_at, returns_policy_version)
       values (${orderNumber}, ${input.userId}, ${input.email ?? 'pending@checkout.invalid'}, 'pending', ${plan.subtotalCents},
-        ${plan.shippingTotalCents}, ${plan.totalCents}, ${plan.platformFeeTotalCents})
+        ${plan.shippingTotalCents}, ${plan.totalCents}, ${plan.platformFeeTotalCents}, ${returnsAckAt},
+        ${RETURNS_POLICY_VERSION})
       returning id`;
     for (const f of plan.fulfilments) {
       const dispatchDays = shipping.get(f.makerId)!.dispatchDays;
@@ -108,6 +115,10 @@ export async function createCheckout(input: {
     customerEmail: input.email,
     successUrl: `${e.APP_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
     cancelUrl: `${e.APP_URL}/bag?cancelled=1`,
+    returnsAckAt,
+    returnsPolicyVersion: RETURNS_POLICY_VERSION,
+    submitMessage: RETURNS_STRIPE_SUBMIT,
+    termsUrl: `${e.APP_URL}/terms`,
   });
   await sql()`update public.orders set stripe_checkout_session_id = ${session.id} where id = ${orderId.id}`;
   await audit(

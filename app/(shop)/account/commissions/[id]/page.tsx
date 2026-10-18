@@ -8,6 +8,7 @@ import { formatPrice } from '@/lib/domain/money';
 import { StatusPill } from '@/components/ui/Badge';
 import { QuoteCard } from '@/components/account/QuoteCard';
 import { PilotNotice } from '@/components/forms/PilotNotice';
+import { AgreedSpec } from '@/components/commissions/AgreedSpec';
 import { SubmitButton } from '@/components/ui/SubmitButton';
 
 export const metadata = { title: 'Custom request' };
@@ -49,6 +50,7 @@ export default async function CommissionDetailPage({
         <StatusPill status={r.status} />
       </div>
       <PilotNotice />
+      {r.agreedSpec && <AgreedSpec spec={r.agreedSpec} agreedAt={r.agreedAt} />}
       <dl className="card grid gap-3 p-5 text-sm sm:grid-cols-2">
         <div>
           <dt className="text-ink-muted">Occasion</dt>

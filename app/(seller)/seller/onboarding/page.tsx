@@ -27,8 +27,8 @@ export default async function OnboardingPage() {
       {maker.status === 'draft' && (
         <div className="card flex flex-wrap items-center justify-between gap-3 p-4 text-sm">
           <p>
-            When your profile, shipping, returns and payouts are ready, submit it for review. You
-            can’t publish listings until it’s approved.
+            When your profile, shipping and payouts are ready, submit it for review. You can’t
+            publish listings until it’s approved.
           </p>
           <form action={submitProfileForReviewAction}>
             <SubmitButton size="sm" disabled={!maker.story || !maker.stripeOnboardingComplete}>

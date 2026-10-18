@@ -11,7 +11,7 @@ export function generateMetadata({ params }: { params: { topic: string } }) {
 const NAV = [
   ['how-it-works', 'How it works'],
   ['shipping', 'Shipping'],
-  ['returns-and-fit', 'Returns & fit'],
+  ['returns-and-fit', 'Fit & sizing'],
   ['contact', 'Contact & help'],
   ['about', 'About'],
   ['sell-with-us', 'Sell with us'],
@@ -32,6 +32,14 @@ export default function HelpPage({ params }: { params: { topic: string } }) {
       <div className="mt-14 grid gap-12 md:grid-cols-[200px_minmax(0,1fr)]">
         <nav aria-label="Help topics" className="hidden md:block">
           <ul className="space-y-3 border-t border-ink pt-4">
+            <li>
+              <a
+                href="/returns"
+                className="text-[11px] uppercase tracking-label text-muted-2 hover:text-ink"
+              >
+                Returns & faults
+              </a>
+            </li>
             {NAV.map(([slug, label]) => (
               <li key={slug}>
                 <a

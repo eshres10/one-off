@@ -54,6 +54,7 @@ test.describe.serial('marketplace smoke', () => {
     await expect(page.getByTestId('bag-line')).toHaveCount(1);
     await expect(page.getByText(`Ships from ${product.maker.displayName}`)).toBeVisible();
     await page.getByLabel(/Email for your receipt/).fill('e2e-guest@buyer.test');
+    await page.getByLabel(/returned for change of mind/).check();
     await page.getByTestId('checkout-button').click();
 
     await page.waitForURL(/\/dev\/checkout\//);
@@ -61,6 +62,7 @@ test.describe.serial('marketplace smoke', () => {
     await page.locator('input[name=line1]').fill('10 Brunswick St');
     await page.locator('input[name=city]').fill('Fitzroy');
     await page.locator('input[name=postalCode]').fill('3065');
+    await page.getByTestId('mock-tos').check();
     await page.getByTestId('mock-pay').click();
 
     await expect(page.getByTestId('order-confirmation')).toBeVisible();

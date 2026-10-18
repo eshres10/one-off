@@ -4,6 +4,8 @@ import { z } from 'zod';
 import { requireUser } from '@/lib/auth/session';
 import { getBuyerOrders } from '@/lib/queries/account';
 import { OrderCard } from '@/components/account/OrderCard';
+import { AgreedSpec } from '@/components/commissions/AgreedSpec';
+import { RETURNS } from '@/lib/content/returns';
 
 export const metadata = { title: 'Order' };
 
@@ -18,11 +20,12 @@ export default async function OrderPage({ params }: { params: { id: string } }) 
         ← All orders
       </Link>
       <OrderCard order={order} detailed />
+      {order.agreedSpec && <AgreedSpec spec={order.agreedSpec} />}
       <p className="text-sm text-ink-muted">
-        Questions about a piece? Message the maker from the product page. Something wrong with your
-        order? Our buyer protection has you covered —{' '}
-        <Link href="/help/buyer-protection" className="link">
-          get help
+        Questions about a piece? Message the maker from the product page. Something wrong? Use
+        “Report a problem” on the piece within {RETURNS.reportWindowDays} days of delivery —{' '}
+        <Link href="/returns" className="link">
+          returns &amp; faults
         </Link>
         .
       </p>

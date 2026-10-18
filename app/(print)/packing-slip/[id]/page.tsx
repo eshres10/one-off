@@ -1,3 +1,4 @@
+import { RETURNS } from '@/lib/content/returns';
 import { notFound } from 'next/navigation';
 import { z } from 'zod';
 import { requireSeller } from '@/lib/auth/session';
@@ -74,7 +75,10 @@ export default async function PackingSlip({ params }: { params: { id: string } }
         Thank you for supporting independent Australian making. Questions? Message{' '}
         {maker.displayName} from your {BRAND.name} account.
       </p>
-      <p className="mt-2 text-xs text-ink-muted">Returns: {maker.returnPolicy}</p>
+      <p className="mt-2 text-xs text-ink-muted">
+        {RETURNS.short} Report a problem within {RETURNS.reportWindowDays} days of delivery from
+        your order page at {BRAND.domain}. {RETURNS.aclNote}
+      </p>
       <PrintButton />
     </main>
   );

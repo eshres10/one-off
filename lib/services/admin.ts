@@ -56,7 +56,7 @@ export async function createSeller(
     to: input.email,
     template: 'seller_invite',
     subject: `You’re invited to sell on ${BRAND.name}`,
-    text: `Hi ${input.displayName},\n\nWe’d love to have you on ${BRAND.name}. Set up your maker profile, shipping, returns and payouts here:\n\n${
+    text: `Hi ${input.displayName},\n\nWe’d love to have you on ${BRAND.name}. Set up your maker profile, shipping and payouts here:\n\n${
       inviteLink ?? `${env().APP_URL}/login?next=/seller/onboarding`
     }\n\nOnce your profile is approved you can submit listings.`,
     related: { type: 'maker', id: makerId },

@@ -13,14 +13,15 @@ const COLS = [
   [
     { href: '/help/how-it-works', label: 'How it works' },
     { href: '/help/shipping', label: 'Shipping' },
-    { href: '/help/returns-and-fit', label: 'Returns & fit' },
+    { href: '/returns', label: 'Returns' },
+    { href: '/help/returns-and-fit', label: 'Fit & sizing' },
     { href: '/help/contact', label: 'Contact & help' },
   ],
   [
     { href: '/help/sell-with-us', label: 'Sell with us' },
     { href: '/help/about', label: 'About' },
     { href: '/help/privacy', label: 'Privacy' },
-    { href: '/help/terms', label: 'Terms' },
+    { href: '/terms', label: 'Terms' },
   ],
 ];
 

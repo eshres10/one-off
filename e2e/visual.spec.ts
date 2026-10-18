@@ -82,12 +82,14 @@ test.describe.serial('visual', () => {
     await snap(page, 'bag');
 
     await page.getByLabel(/Email for your receipt/).fill('visual-guest@buyer.test');
+    await page.getByLabel(/returned for change of mind/).check();
     await page.getByTestId('checkout-button').click();
     await page.waitForURL(/\/dev\/checkout\//);
     await page.locator('input[name=name]').fill('Visual Guest');
     await page.locator('input[name=line1]').fill('10 Brunswick St');
     await page.locator('input[name=city]').fill('Fitzroy');
     await page.locator('input[name=postalCode]').fill('3065');
+    await page.getByTestId('mock-tos').check();
     await page.getByTestId('mock-pay').click();
     await expect(page.getByTestId('order-confirmation')).toBeVisible();
     await snap(page, 'order-confirmation');

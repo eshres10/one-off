@@ -15,6 +15,7 @@ const nextConfig = {
   async redirects() {
     // Canonical domain: send www traffic to the apex.
     return [
+      { source: '/help/terms', destination: '/terms', permanent: true },
       {
         source: '/:path*',
         has: [{ type: 'host', value: 'www.shoponeoff.com.au' }],

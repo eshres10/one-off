@@ -1,16 +1,22 @@
 'use client';
 
+import { useRef, useState } from 'react';
+import Link from 'next/link';
 import { useFormState, useFormStatus } from 'react-dom';
+import { RETURNS } from '@/lib/content/returns';
 import { checkoutAction } from '@/lib/actions/cart';
 import type { FormState } from '@/lib/validation';
 
-function Pay({ disabled, total }: { disabled: boolean; total: string }) {
+// Until the returns box is ticked the buttons are aria-disabled rather than disabled, so a
+// click still reaches the form and can explain what's missing.
+function Pay({ disabled, locked, total }: { disabled: boolean; locked: boolean; total: string }) {
   const { pending } = useFormStatus();
   return (
     <button
       type="submit"
       disabled={disabled || pending}
-      className="glass-dark min-h-[56px] w-full text-[12px] uppercase tracking-[0.2em] disabled:opacity-60"
+      aria-disabled={locked || undefined}
+      className="glass-dark min-h-[56px] w-full text-[12px] uppercase tracking-[0.2em] disabled:opacity-60 aria-disabled:opacity-60"
       data-testid="checkout-button"
     >
       {pending ? 'Opening secure checkout…' : `Checkout · ${total}`}
@@ -18,14 +24,23 @@ function Pay({ disabled, total }: { disabled: boolean; total: string }) {
   );
 }
 
-function Wallet({ label, disabled }: { label: string; disabled: boolean }) {
+function Wallet({
+  label,
+  disabled,
+  locked,
+}: {
+  label: string;
+  disabled: boolean;
+  locked: boolean;
+}) {
   const { pending } = useFormStatus();
   // Wallets are offered on Stripe's hosted Checkout page; these start the same checkout.
   return (
     <button
       type="submit"
       disabled={disabled || pending}
-      className="min-h-[48px] flex-1 border border-ink bg-surface text-[14px] font-normal disabled:opacity-60"
+      aria-disabled={locked || undefined}
+      className="min-h-[48px] flex-1 border border-ink bg-surface text-[14px] font-normal disabled:opacity-60 aria-disabled:opacity-60"
       aria-label={`Checkout with ${label}`}
     >
       {label}
@@ -43,8 +58,22 @@ export function CheckoutForm({
   total: string;
 }) {
   const [state, action] = useFormState<FormState, FormData>(checkoutAction, undefined);
+  const [ack, setAck] = useState(false);
+  const [ackError, setAckError] = useState(false);
+  const ackRef = useRef<HTMLInputElement>(null);
+  const showAckError = ackError || Boolean(state?.errors?.returnsAck);
   return (
-    <form action={action} className="space-y-2">
+    <form
+      action={action}
+      className="space-y-2"
+      onSubmit={(e) => {
+        if (!ack) {
+          e.preventDefault();
+          setAckError(true);
+          ackRef.current?.focus();
+        }
+      }}
+    >
       {!signedInEmail && (
         <div className="pb-2">
           <label htmlFor="email" className="label">
@@ -64,10 +93,39 @@ export function CheckoutForm({
           )}
         </div>
       )}
-      <Pay disabled={disabled} total={total} />
+      <div className="py-2">
+        <div className="flex items-start gap-3">
+          <input
+            ref={ackRef}
+            id="returnsAck"
+            name="returnsAck"
+            type="checkbox"
+            checked={ack}
+            onChange={(e) => {
+              setAck(e.target.checked);
+              if (e.target.checked) setAckError(false);
+            }}
+            aria-invalid={showAckError || undefined}
+            aria-describedby={showAckError ? 'returnsAck-error' : undefined}
+            className="mt-0.5 h-5 w-5 shrink-0 accent-ink"
+          />
+          <label htmlFor="returnsAck" className="text-[13px] leading-snug">
+            {RETURNS.checkoutAck}{' '}
+            <Link href="/returns" className="link">
+              Returns policy
+            </Link>
+          </label>
+        </div>
+        {showAckError && (
+          <p id="returnsAck-error" className="mt-2 text-[12px] text-error" role="alert">
+            Please tick the box to confirm you understand the returns policy.
+          </p>
+        )}
+      </div>
+      <Pay disabled={disabled} locked={!ack} total={total} />
       <div className="flex gap-2">
-        <Wallet label="Apple Pay" disabled={disabled} />
-        <Wallet label="Google Pay" disabled={disabled} />
+        <Wallet label="Apple Pay" disabled={disabled} locked={!ack} />
+        <Wallet label="Google Pay" disabled={disabled} locked={!ack} />
       </div>
       {state?.message && (
         <p className="bg-error-bg px-3 py-2.5 text-[13px] text-error" role="alert">

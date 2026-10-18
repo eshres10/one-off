@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { AgreedSpec } from '@/components/commissions/AgreedSpec';
 import { notFound } from 'next/navigation';
 import { z } from 'zod';
 import { Img as Image } from '@/components/ui/Img';
@@ -26,6 +27,7 @@ export default async function SellerOrderPage({ params }: { params: { id: string
           <h1 className="text-[40px] leading-none md:text-[48px]">Order {o.orderNumber}</h1>
           <StatusPill status={o.status} />
         </div>
+        {o.agreedSpec && <AgreedSpec spec={o.agreedSpec} />}
         <ul
           className="divide-y divide-stone/70 rounded-2xl border border-stone/70 bg-white"
           role="list"

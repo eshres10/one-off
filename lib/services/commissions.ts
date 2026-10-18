@@ -184,6 +184,21 @@ export async function decideQuote(
     await db`update public.commission_quotes set status = ${decision}::quote_status where id = ${q.id}`;
     await db`update public.commission_requests set status = ${decision === 'accepted' ? 'accepted' : 'reviewing'}::commission_status
              where id = ${requestId}`;
+    if (decision === 'accepted') {
+      // Snapshot what was agreed; a database trigger stops it being edited afterwards.
+      await db`
+        update public.commission_requests c set agreed_at = now(), agreed_spec = jsonb_build_object(
+          'garmentType', c.garment_type, 'occasion', c.occasion, 'measurements', c.measurements,
+          'fabricPreferences', c.fabric_preferences, 'colourPreferences', c.colour_preferences,
+          'notes', c.notes, 'deadlineDate', c.deadline_date,
+          'quote', jsonb_build_object(
+            'totalPriceCents', q.total_price_cents, 'depositCents', q.deposit_cents,
+            'productionDays', q.production_days, 'revisionsIncluded', q.revisions_included,
+            'shippingCents', q.shipping_cents, 'estimatedDeliveryDate', q.estimated_delivery_date,
+            'message', q.message))
+        from public.commission_quotes q
+        where c.id = ${requestId} and q.id = ${q.id} and c.agreed_spec is null`;
+    }
   });
   if (decision === 'accepted') {
     await sendEmail({

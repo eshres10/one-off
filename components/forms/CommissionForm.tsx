@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { RETURNS } from '@/lib/content/returns';
 import { useFormState, useFormStatus } from 'react-dom';
 import { createCommissionAction } from '@/lib/actions/account';
 import { commissionRequestSchema, type FormState } from '@/lib/validation';
@@ -306,6 +307,9 @@ export function CommissionForm({
 
       <FormAlert message={state?.message} />
       <div>
+        <p className="mb-3 text-[12px] text-muted-2" data-testid="commission-returns-note">
+          {RETURNS.shortCustom}
+        </p>
         <Submit />
         <p className="mt-2 text-center text-[12px] text-muted">
           Free to send. If you accept the quote, we’ll send a secure payment link for the deposit.

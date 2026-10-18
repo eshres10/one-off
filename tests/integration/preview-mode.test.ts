@@ -35,9 +35,9 @@ describe('preview mode (browse-only launch)', () => {
     await expect(
       addToCart({ sessionId, userId: null, productId: product.id, variantId, quantity: 1 }),
     ).rejects.toThrow(/Checkout opens at launch/);
-    await expect(createCheckout({ sessionId, userId: null, email: 'x@y.test' })).rejects.toThrow(
-      /Checkout opens at launch/,
-    );
+    await expect(
+      createCheckout({ sessionId, userId: null, email: 'x@y.test', returnsAck: true }),
+    ).rejects.toThrow(/Checkout opens at launch/);
   });
 
   it('does not accept mock-signed webhooks', async () => {

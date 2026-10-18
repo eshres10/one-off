@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { AgreedSpec } from '@/components/commissions/AgreedSpec';
 import { notFound } from 'next/navigation';
 import { z } from 'zod';
 import { requireSeller } from '@/lib/auth/session';
@@ -30,6 +31,7 @@ export default async function SellerCommissionPage({ params }: { params: { id: s
           <h1 className="text-[40px] leading-none md:text-[48px]">{r.garmentType}</h1>
           <StatusPill status={r.status} />
         </div>
+        {r.agreedSpec && <AgreedSpec spec={r.agreedSpec} agreedAt={r.agreedAt} />}
         <dl className="card grid gap-3 p-5 text-sm sm:grid-cols-2">
           <div>
             <dt className="text-ink-muted">From</dt>

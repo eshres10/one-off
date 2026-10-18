@@ -5,6 +5,46 @@ import { formatPrice } from '@/lib/domain/money';
 import { formatDateRange } from '@/lib/domain/leadTime';
 import { StatusPill } from '@/components/ui/Badge';
 import { ReviewForm } from './ReviewForm';
+import { CLAIM_STATUS_LABEL, canReportProblem } from '@/lib/domain/claims';
+import type { BuyerOrderItem } from '@/lib/queries/account';
+
+/**
+ * "Report a problem" within the report window after delivery; otherwise a contact link, since
+ * the buyer's consumer-law rights continue after the window closes.
+ */
+function ItemHelp({ item, orderId }: { item: BuyerOrderItem; orderId: string }) {
+  if (item.claimId && item.claimStatus) {
+    return (
+      <Link
+        href={`/account/claims/${item.claimId}`}
+        className="mt-1 inline-block text-[12px] underline underline-offset-[3px]"
+        data-testid="item-claim-link"
+      >
+        Problem reported · {CLAIM_STATUS_LABEL[item.claimStatus]}
+      </Link>
+    );
+  }
+  if (canReportProblem(item.deliveredAt ? new Date(item.deliveredAt) : null)) {
+    return (
+      <Link
+        href={`/account/orders/${orderId}/report/${item.id}`}
+        className="mt-1 inline-block text-[12px] underline underline-offset-[3px]"
+        data-testid="report-problem"
+      >
+        Report a problem
+      </Link>
+    );
+  }
+  return (
+    <Link
+      href="/help/contact"
+      className="mt-1 inline-block text-[12px] text-muted underline underline-offset-[3px]"
+      data-testid="contact-us"
+    >
+      Need help? Contact us
+    </Link>
+  );
+}
 
 export function OrderCard({ order, detailed = false }: { order: BuyerOrder; detailed?: boolean }) {
   return (
@@ -77,6 +117,7 @@ export function OrderCard({ order, detailed = false }: { order: BuyerOrder; deta
                   {i.fulfilmentStatus === 'refunded' && (
                     <p className="text-xs text-alert">Refunded</p>
                   )}
+                  <ItemHelp item={i} orderId={order.id} />
                   {i.fulfilmentStatus === 'delivered' &&
                     (i.reviewed ? (
                       <p className="text-xs text-moss">Reviewed — thank you</p>

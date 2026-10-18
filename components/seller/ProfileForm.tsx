@@ -1,5 +1,6 @@
 'use client';
 
+import { RETURNS } from '@/lib/content/returns';
 import { useFormState } from 'react-dom';
 import { saveProfileAction } from '@/lib/actions/seller';
 import type { FormState } from '@/lib/validation';
@@ -106,9 +107,12 @@ export function ProfileForm({ maker }: { maker: SellerMaker }) {
           />
         </Field>
       </div>
-      <Field label="Return policy" name="returnPolicy" error={e.returnPolicy}>
-        <TextArea name="returnPolicy" defaultValue={maker.returnPolicy} rows={3} required />
-      </Field>
+      <p className="text-[13px] text-muted">
+        Returns follow One Off’s policy for every maker: {RETURNS.short}{' '}
+        <a href="/seller-terms#returns-and-faults" className="link">
+          Seller terms
+        </a>
+      </p>
       <label className="flex items-center gap-3 text-sm">
         <input
           type="checkbox"

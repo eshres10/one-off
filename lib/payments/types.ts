@@ -18,6 +18,12 @@ export interface CreateCheckoutInput {
   customerEmail?: string | null;
   successUrl: string;
   cancelUrl: string;
+  /** The buyer ticked the returns acknowledgement in the bag (ISO timestamp). */
+  returnsAckAt: string;
+  returnsPolicyVersion: string;
+  /** Shown above Checkout's pay button. */
+  submitMessage: string;
+  termsUrl: string;
 }
 
 export interface CheckoutSessionInfo {

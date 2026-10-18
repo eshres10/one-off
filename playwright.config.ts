@@ -41,7 +41,7 @@ export default defineConfig({
   projects: [
     {
       name: 'mobile-chromium',
-      testMatch: 'smoke.spec.ts',
+      testMatch: ['smoke.spec.ts', 'returns.spec.ts'],
       use: { ...devices['Pixel 7'], browserName: 'chromium' },
     },
     {

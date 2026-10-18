@@ -284,7 +284,6 @@ export const makerProfileSchema = z.object({
     .union([z.literal(''), z.coerce.number().positive().max(10_000)])
     .optional()
     .transform((v) => (v === '' || v === undefined ? null : Math.round(v * 100))),
-  returnPolicy: trimmed(2000).min(10, 'Add your return policy'),
   customCommissionsEnabled: z
     .union([z.literal('on'), z.literal('true'), z.literal('')])
     .optional()

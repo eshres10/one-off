@@ -40,6 +40,8 @@ export function createMockDriver(): PaymentsDriver {
         cancelUrl: string;
         shippingLabel: string;
         shippingCents: number;
+        submitMessage: string;
+        termsUrl: string;
       } = {
         id,
         paymentStatus: 'unpaid',
@@ -55,7 +57,11 @@ export function createMockDriver(): PaymentsDriver {
           order_id: input.orderId,
           order_number: input.orderNumber,
           cart_id: input.cartId,
+          returns_ack_at: input.returnsAckAt,
+          returns_policy_version: input.returnsPolicyVersion,
         },
+        submitMessage: input.submitMessage,
+        termsUrl: input.termsUrl,
         lineItems: input.lineItems,
         successUrl: input.successUrl,
         cancelUrl: input.cancelUrl,

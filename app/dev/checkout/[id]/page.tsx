@@ -29,6 +29,8 @@ export default async function MockCheckoutPage({
         shippingCents: number;
         shippingLabel: string;
         cancelUrl: string;
+        submitMessage?: string;
+        termsUrl?: string;
       })
     | null;
   if (!session) notFound();
@@ -137,6 +139,23 @@ export default async function MockCheckoutPage({
             <input defaultValue="12 / 34" aria-label="Expiry" className={input} />
             <input defaultValue="123" aria-label="CVC" className={input} />
           </div>
+          {session.termsUrl && (
+            <label className="flex items-start gap-2 text-sm">
+              <input type="checkbox" name="tos" required className="mt-1" data-testid="mock-tos" />
+              <span>
+                I agree to the{' '}
+                <a href={session.termsUrl} className="underline">
+                  One Off terms
+                </a>
+                , including the returns policy.
+              </span>
+            </label>
+          )}
+          {session.submitMessage && (
+            <p className="text-sm text-ink-muted" data-testid="mock-submit-message">
+              {session.submitMessage}
+            </p>
+          )}
           <button
             type="submit"
             className="h-12 w-full rounded-md bg-[#635BFF] font-medium text-white"

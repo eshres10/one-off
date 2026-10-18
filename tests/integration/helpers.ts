@@ -52,7 +52,7 @@ export async function buyAndPay(
       variantId: l.variantId,
       quantity: l.quantity ?? 1,
     });
-  const { orderId } = await createCheckout({ sessionId, userId, email });
+  const { orderId } = await createCheckout({ sessionId, userId, email, returnsAck: true });
   const [order] = await sql()<
     { stripeCheckoutSessionId: string }[]
   >`select stripe_checkout_session_id from public.orders where id = ${orderId}`;

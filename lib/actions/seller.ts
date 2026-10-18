@@ -127,7 +127,7 @@ export async function saveProfileAction(_prev: FormState, form: FormData): Promi
         process = ${t(p.process)}, materials = ${t(p.materials)}, sizing_notes = ${t(p.sizingNotes)}, city = ${sanitizeText(p.city)},
         state = ${p.state}, location = ${sanitizeText(p.city)}, lead_time_days = ${p.leadTimeDays}, dispatch_days = ${p.dispatchDays},
         shipping_standard_cents = ${p.shippingStandard}, free_shipping_over_cents = ${p.freeShippingOver},
-        return_policy = ${sanitizeText(p.returnPolicy)}, custom_commissions_enabled = ${p.customCommissionsEnabled},
+        custom_commissions_enabled = ${p.customCommissionsEnabled},
         avatar_url = ${avatar && isOwnImageUrl(avatar) ? avatar : db`avatar_url`},
         cover_url = ${cover && isOwnImageUrl(cover) ? cover : db`cover_url`}
       where id = ${seller.makerId}`,

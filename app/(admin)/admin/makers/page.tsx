@@ -34,7 +34,7 @@ export default async function AdminMakersPage() {
         </h2>
         <p className="text-sm text-ink-muted">
           Seller accounts are invite-only. The seller receives a sign-in link to complete their
-          profile, payouts, shipping and returns.
+          profile, payouts and shipping.
         </p>
         <CreateSellerForm />
       </section>

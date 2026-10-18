@@ -1,3 +1,4 @@
+import { RETURNS } from '@/lib/content/returns';
 import { BRAND } from '@/lib/brand';
 
 export interface HelpTopic {
@@ -119,14 +120,14 @@ export const HELP: Record<string, HelpTopic> = {
   },
   'returns-and-fit': {
     kicker: 'Help',
-    title: 'Returns & fit',
+    title: 'Fit & sizing',
     intro: 'Getting the fit right matters more when a piece is made for you.',
     sections: [
       {
         heading: 'Returns',
         body: [
-          'Ready-to-ship pieces: exchange or return unworn within 14 days of delivery [placeholder: return window to be confirmed]. Check each maker’s policy on the product page.',
-          'Made-to-order and one-of-one pieces are final sale unless faulty, in line with Australian Consumer Law.',
+          RETURNS.short,
+          'The full policy, including how to report a faulty piece, is on our Returns & faults page.',
         ],
       },
       {
@@ -206,23 +207,6 @@ export const HELP: Record<string, HelpTopic> = {
         body: [
           'To process orders, connect you with makers, prevent fraud, and send emails you’ve asked for. We don’t sell personal information.',
         ],
-      },
-    ],
-  },
-  terms: {
-    kicker: 'Legal',
-    title: 'Terms',
-    intro: '[placeholder] These terms are a draft and must be reviewed by a lawyer before launch.',
-    sections: [
-      {
-        heading: 'The marketplace',
-        body: [
-          `${BRAND.name} is the merchant of record for purchases made through checkout. Makers are independent businesses responsible for their products.`,
-        ],
-      },
-      {
-        heading: 'Your consumer rights',
-        body: ['Nothing in these terms limits your rights under the Australian Consumer Law.'],
       },
     ],
   },

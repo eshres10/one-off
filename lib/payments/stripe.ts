@@ -50,12 +50,28 @@ export function createStripeDriver(secretKey: string): PaymentsDriver {
           phone_number_collection: { enabled: true },
           payment_intent_data: {
             transfer_group: input.orderId,
-            metadata: { order_id: input.orderId, order_number: input.orderNumber },
+            metadata: {
+              order_id: input.orderId,
+              order_number: input.orderNumber,
+              returns_ack_at: input.returnsAckAt,
+              returns_policy_version: input.returnsPolicyVersion,
+            },
           },
           metadata: {
             order_id: input.orderId,
             order_number: input.orderNumber,
             cart_id: input.cartId,
+            returns_ack_at: input.returnsAckAt,
+            returns_policy_version: input.returnsPolicyVersion,
+          },
+          // Requires a Terms of service URL under Settings → Public details in the Stripe
+          // Dashboard; the message below links buyers to our own terms page.
+          consent_collection: { terms_of_service: 'required' },
+          custom_text: {
+            submit: { message: input.submitMessage },
+            terms_of_service_acceptance: {
+              message: `I agree to the [One Off terms](${input.termsUrl}), including the returns policy.`,
+            },
           },
           client_reference_id: input.orderId,
           success_url: input.successUrl,

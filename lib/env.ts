@@ -55,6 +55,8 @@ const schema = z
       .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
       .default('info'),
     SENTRY_DSN: z.string().optional(),
+    /** Vercel Cron sends `Authorization: Bearer <CRON_SECRET>`; scheduled routes require it. */
+    CRON_SECRET: z.string().min(16).optional(),
   })
   .superRefine((env, ctx) => {
     if (env.AUTH_DRIVER === 'supabase' || env.STORAGE_DRIVER === 'supabase') {

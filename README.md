@@ -177,7 +177,7 @@ The production URL is `https://shoponeoff.com.au` (apex). `www.shoponeoff.com.au
 3. **Environment:** `APP_URL=https://shoponeoff.com.au` (no trailing slash).
 4. **Email (Resend):** add the domain `shoponeoff.com.au` in Resend and create the SPF, DKIM and DMARC DNS records it lists. Use `EMAIL_FROM="One Off <hello@shoponeoff.com.au>"`. Set up a mailbox or forwarding for `hello@shoponeoff.com.au` (support address in `lib/brand.ts`) and choose an `ADMIN_NOTIFICATION_EMAIL`.
 5. **Supabase Auth:** Site URL `https://shoponeoff.com.au`; redirect URLs `https://shoponeoff.com.au/auth/callback` (keep `http://localhost:3000/auth/callback` for development). Optionally set a custom SMTP sender on the same domain.
-6. **Stripe:** webhook endpoints at `https://shoponeoff.com.au/api/webhooks/stripe` (platform + connected accounts, see above); add `shoponeoff.com.au` under Settings → Payment method domains for Apple Pay / Google Pay; set the public business name to “One Off” and the website to `https://shoponeoff.com.au` (it appears on card statements, Checkout and Connect onboarding).
+6. **Stripe:** webhook endpoints at `https://shoponeoff.com.au/api/webhooks/stripe` (platform + connected accounts, see above); add `shoponeoff.com.au` under Settings → Payment method domains for Apple Pay / Google Pay; set the public business name to “One Off” and the website to `https://shoponeoff.com.au` (it appears on card statements, Checkout and Connect onboarding). Also set **Terms of service URL** (Settings → Public details) to `https://shoponeoff.com.au/terms`: Checkout requires buyers to accept it (`consent_collection`), and Stripe rejects the session if the URL isn’t set.
 
 ## Deploying to Vercel
 
@@ -188,6 +188,14 @@ The production URL is `https://shoponeoff.com.au` (apex). `www.shoponeoff.com.au
 5. Create the first admin: sign up, then `update public.users set role = 'admin' where email = '...'` in the Supabase SQL editor. Invite sellers from **Admin → Makers**.
 
 ---
+
+## Returns policy and fault claims
+
+- The policy text lives in `lib/content/returns.ts` and is used everywhere (product page, bag, checkout, emails, `/returns`, `/terms`, `/seller-terms`). `tests/unit/returns-copy.test.ts` fails if wording that suggests consumer guarantees are excluded appears anywhere.
+- Buyers tick an acknowledgement in the bag; it is stored on the order (`returns_ack_at`, `returns_policy_version`) and in the Stripe session metadata.
+- “Report a problem” is offered for 7 days after delivery. Photos go straight from the browser to the private `claims` storage bucket and are only served to the buyer, the maker and admins.
+- Makers have 2 business days (Sydney time, weekends skipped, public holidays not) to reply. A daily Vercel Cron (`vercel.json`, 9am Sydney) escalates overdue claims; set `CRON_SECRET` (16+ characters) in Vercel so the job is authorised. The admin and seller claim pages also escalate on load.
+- Database: run `supabase/updates/0006_returns.sql` in the SQL Editor on an existing project (new projects get it in `supabase/production-setup.sql`).
 
 ## Testing
 
