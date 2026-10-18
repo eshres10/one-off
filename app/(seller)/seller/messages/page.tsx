@@ -17,7 +17,7 @@ export default async function SellerMessagesPage() {
   return (
     <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
       <div>
-        <h1 className="mb-6 text-3xl">Buyer questions</h1>
+        <h1 className="mb-8 text-[40px] leading-none md:text-[48px]">Buyer questions</h1>
         {threads.length ? (
           <ThreadList threads={threads} base="/seller/messages" />
         ) : (
@@ -25,7 +25,9 @@ export default async function SellerMessagesPage() {
         )}
       </div>
       <aside className="space-y-4">
-        <h2 className="font-sans text-base font-semibold">Saved replies</h2>
+        <h2 className="font-sans text-[11px] font-normal uppercase tracking-label">
+          Saved replies
+        </h2>
         <ul className="space-y-2" role="list">
           {templates.map((t) => (
             <li key={t.id} className="card p-3 text-sm">

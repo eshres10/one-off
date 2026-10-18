@@ -11,7 +11,7 @@ export function QuoteForm({ requestId }: { requestId: string }) {
   const e = state?.errors ?? {};
   return (
     <form action={action} className="card space-y-4 p-5">
-      <h2 className="font-sans text-base font-semibold">Send a quote</h2>
+      <h2 className="font-sans text-[11px] font-normal uppercase tracking-label">Send a quote</h2>
       <input type="hidden" name="requestId" value={requestId} />
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Total price (A$)" name="totalPrice" error={e.totalPrice}>

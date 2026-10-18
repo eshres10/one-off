@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { requireSeller } from '@/lib/auth/session';
-import { getSellerStats } from '@/lib/queries/seller';
+import { getDailyViews, getSellerStats } from '@/lib/queries/seller';
+import { ViewsChart } from '@/components/seller/ViewsChart';
 import { formatPrice } from '@/lib/domain/money';
 import { Stat } from '@/components/seller/Stat';
 import { responseTimeLabel } from '@/components/maker/MakerByline';
@@ -9,12 +10,12 @@ export const metadata = { title: 'Analytics' };
 
 export default async function AnalyticsPage() {
   const seller = await requireSeller();
-  const s = await getSellerStats(seller, 30);
+  const [s, daily] = await Promise.all([getSellerStats(seller, 30), getDailyViews(seller, 30)]);
   const max = Math.max(1, ...s.topProducts.map((p) => p.views));
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl">Analytics</h1>
+        <h1 className="text-[40px] leading-none md:text-[48px]">Analytics</h1>
         <p className="text-sm text-ink-muted">Last 30 days</p>
       </div>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
@@ -37,8 +38,11 @@ export default async function AnalyticsPage() {
           hint={responseTimeLabel(s.responseTimeHours)}
         />
       </div>
+      <section className="border-t border-line pt-6">
+        <ViewsChart data={daily} />
+      </section>
       <section>
-        <h2 className="mb-3 text-xl">Top pieces</h2>
+        <h2 className="mb-4 text-[28px] leading-none">Top pieces</h2>
         <ul className="space-y-3" role="list">
           {s.topProducts.map((p) => (
             <li key={p.id} className="card p-4">

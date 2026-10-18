@@ -13,7 +13,7 @@ export default async function SavedPage() {
   const products = await getCardsByIds(ids);
   return (
     <div>
-      <h1 className="mb-6 text-3xl">Saved pieces</h1>
+      <h1 className="mb-8 text-[40px] leading-none md:text-[48px]">Saved pieces</h1>
       {products.length ? (
         <ProductGrid products={products} savedIds={new Set(ids)} />
       ) : (

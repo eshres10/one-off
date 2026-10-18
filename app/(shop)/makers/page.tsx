@@ -1,61 +1,45 @@
-import { BRAND } from '@/lib/brand';
 import Link from 'next/link';
 import { Img as Image } from '@/components/ui/Img';
 import { getMakersDirectory } from '@/lib/queries/catalog';
-import { Stars } from '@/components/ui/Stars';
+import { PageTitle } from '@/components/ui/Panels';
 
 export const metadata = { title: 'Makers' };
 
 export default async function MakersPage() {
   const makers = await getMakersDirectory();
   return (
-    <div className="container-page pt-8">
-      <p className="eyebrow">The studios</p>
-      <h1 className="mt-2 text-4xl sm:text-5xl">Meet the makers</h1>
-      <p className="mt-3 max-w-xl text-ink-soft">
-        Every label on {BRAND.name} is independent, Australian and hand-selected. Most are one or
-        two people making in small batches.
-      </p>
-      <ul className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3" role="list">
+    <div className="pt-10 md:pt-16">
+      <div className="container-page">
+        <PageTitle kicker="The studios" title="Meet the makers">
+          Every label here is independent, Australian and hand-selected. Most are one or two people
+          making in small batches.
+        </PageTitle>
+      </div>
+      <ul className="grid grid-cols-2 gap-[2px] md:grid-cols-4" role="list">
         {makers.map((m) => (
           <li key={m.id}>
-            <Link
-              href={`/makers/${m.slug}`}
-              className="group block overflow-hidden rounded-2xl border border-stone/70 bg-white"
-            >
-              <div className="relative aspect-[16/7] bg-stone-light">
+            <Link href={`/makers/${m.slug}`} className="group block pb-6">
+              <span className="relative block aspect-4/5 overflow-hidden bg-stone-light">
                 {m.coverUrl && (
                   <Image
                     src={m.coverUrl}
                     alt=""
                     fill
-                    sizes="(min-width: 1024px) 33vw, 100vw"
-                    className="object-cover"
+                    sizes="(min-width: 768px) 25vw, 50vw"
+                    className="object-cover transition duration-700 group-hover:scale-[1.02]"
                   />
                 )}
-              </div>
-              <div className="flex items-start gap-3 p-4">
-                <span className="relative -mt-10 h-14 w-14 shrink-0 overflow-hidden rounded-full border-4 border-white bg-stone-light">
-                  {m.avatarUrl && (
-                    <Image src={m.avatarUrl} alt="" fill sizes="56px" className="object-cover" />
-                  )}
-                </span>
-                <div className="min-w-0">
-                  <p className="font-medium group-hover:underline">{m.displayName}</p>
-                  <p className="text-xs text-ink-muted">
-                    {m.city}
-                    {m.reviewCount > 0 && (
-                      <>
-                        {' '}
-                        · <Stars rating={m.rating} count={m.reviewCount} size={11} />
-                      </>
-                    )}
-                  </p>
-                  {m.tagline && (
-                    <p className="mt-1.5 line-clamp-2 text-sm text-ink-soft">{m.tagline}</p>
-                  )}
-                </div>
-              </div>
+              </span>
+              <span className="mt-3 block px-3 font-display text-[24px] leading-tight group-hover:underline md:text-[28px]">
+                {m.displayName}
+              </span>
+              <span className="block px-3 text-[11px] uppercase tracking-label text-muted-2">
+                {m.city}
+                {m.reviewCount > 0 && ` · ★ ${m.rating.toFixed(1)}`}
+              </span>
+              {m.tagline && (
+                <span className="mt-1 block px-3 text-[13px] text-muted">{m.tagline}</span>
+              )}
             </Link>
           </li>
         ))}

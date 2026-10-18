@@ -37,19 +37,19 @@ export default async function SellerHome() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl">Hi, {maker.displayName}</h1>
+        <h1 className="text-[40px] leading-none md:text-[48px]">Hi, {maker.displayName}</h1>
         <p className="text-sm text-ink-muted">Here’s what’s happening in your studio.</p>
       </div>
       {checklist.some((c) => !c.done) && (
         <section className="card p-5" aria-labelledby="setup">
-          <h2 id="setup" className="font-sans text-base font-semibold">
+          <h2 id="setup" className="font-sans text-[11px] font-normal uppercase tracking-label">
             Finish setting up
           </h2>
           <ul className="mt-3 space-y-2">
             {checklist.map((c) => (
               <li key={c.label} className="flex items-center gap-3 text-sm">
                 <span
-                  className={`flex h-6 w-6 items-center justify-center rounded-full ${c.done ? 'bg-moss text-white' : 'border border-stone-dark'}`}
+                  className={`flex h-6 w-6 items-center justify-center rounded-circle ${c.done ? 'bg-ink text-ground' : 'border border-line-strong'}`}
                 >
                   {c.done && <CheckIcon width={14} height={14} />}
                 </span>
@@ -73,7 +73,7 @@ export default async function SellerHome() {
       </div>
       <section aria-labelledby="recent">
         <div className="mb-3 flex items-end justify-between">
-          <h2 id="recent" className="text-xl">
+          <h2 id="recent" className="text-[28px] leading-none">
             Orders to prepare
           </h2>
           <Link href="/seller/orders" className="text-sm underline underline-offset-4">

@@ -3,15 +3,18 @@
 import { useRouter } from 'next/navigation';
 import { useOptimistic, useTransition } from 'react';
 import { toggleFollowAction } from '@/lib/actions/social';
+import { boxButtonClass, buttonClass } from '@/components/ui/Button';
 
 export function FollowButton({
   makerId,
   following,
   makerName,
+  look = 'outline',
 }: {
   makerId: string;
   following: boolean;
   makerName: string;
+  look?: 'outline' | 'box';
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -31,11 +34,11 @@ export function FollowButton({
           else router.refresh();
         })
       }
-      className={`h-11 rounded-full px-6 text-[15px] font-medium transition ${
-        optimistic
-          ? 'border border-ink bg-transparent text-ink hover:bg-stone-light'
-          : 'bg-ink text-paper hover:bg-ink-soft'
-      }`}
+      className={
+        look === 'box'
+          ? boxButtonClass('w-full')
+          : buttonClass(optimistic ? 'secondary' : 'primary', 'sm')
+      }
     >
       {optimistic ? 'Following' : 'Follow'}
     </button>

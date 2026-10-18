@@ -5,13 +5,11 @@ import { Img as Image } from '@/components/ui/Img';
 import { getSessionUser } from '@/lib/auth/session';
 import { getMaker, getReviews, getSavedProductIds, isFollowing } from '@/lib/queries/catalog';
 import { FollowButton } from '@/components/maker/FollowButton';
-import { responseTimeLabel } from '@/components/maker/MakerByline';
 import { ProductGrid } from '@/components/product/ProductCard';
 import { Reviews } from '@/components/product/Reviews';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { Stars } from '@/components/ui/Stars';
-import { buttonClass } from '@/components/ui/Button';
-import { ChatIcon, NeedleIcon } from '@/components/ui/icons';
+import { BoxButtonGroup, boxButtonClass } from '@/components/ui/Button';
+import { CheckIcon } from '@/components/ui/icons';
 
 export async function generateMetadata({
   params,
@@ -25,7 +23,19 @@ export async function generateMetadata({
   };
 }
 
-export default async function MakerPage({ params }: { params: { slug: string } }) {
+const TABS = [
+  { id: 'made_to_order', label: 'Made to order' },
+  { id: 'ready_to_ship', label: 'Ready to ship' },
+  { id: 'one_of_one', label: 'One of one' },
+] as const;
+
+export default async function MakerPage({
+  params,
+  searchParams,
+}: {
+  params: { slug: string };
+  searchParams: { type?: string };
+}) {
   const data = await getMaker(params.slug);
   if (!data) notFound();
   const { maker, products } = data;
@@ -35,18 +45,42 @@ export default async function MakerPage({ params }: { params: { slug: string } }
     getSavedProductIds(user?.id ?? null),
     getReviews({ makerId: maker.id }, 6),
   ]);
-  const askHref = `/makers/${maker.slug}/ask`;
+  const type = TABS.find((t) => t.id === searchParams.type)?.id;
+  const shown = type ? products.filter((p) => p.productType === type) : products;
+  const counts = Object.fromEntries(
+    TABS.map((t) => [t.id, products.filter((p) => p.productType === t.id).length]),
+  );
+  const verified = maker.approvedAt
+    ? new Date(maker.approvedAt).toLocaleDateString('en-AU', { month: 'short', year: 'numeric' })
+    : null;
 
-  const facts = [
-    { label: 'Based in', value: maker.location },
-    { label: 'Production lead time', value: `${maker.leadTimeDays} days for made-to-order` },
-    { label: 'Response time', value: responseTimeLabel(maker.responseTimeHours) },
+  const stats = [
+    {
+      label: 'Rating',
+      value: maker.reviewCount ? `★ ${maker.rating.toFixed(1)}` : '—',
+      small: maker.reviewCount ? `(${maker.reviewCount})` : 'No reviews yet',
+    },
     { label: 'Completed orders', value: String(maker.completedOrders) },
+    {
+      label: 'Usually replies',
+      value:
+        maker.responseTimeHours < 24
+          ? `Within ${maker.responseTimeHours} hrs`
+          : `Within ${Math.round(maker.responseTimeHours / 24)} days`,
+    },
+    { label: 'Made to order in', value: `${maker.leadTimeDays} days` },
   ];
+  const facts = [
+    { label: 'Process', value: maker.process },
+    { label: 'Materials', value: maker.materials },
+    { label: 'Sizing', value: maker.sizingNotes },
+    { label: 'Lead time', value: `Made to order in ${maker.leadTimeDays} days` },
+    { label: 'Based in', value: maker.location },
+  ].filter((f) => f.value);
 
   return (
     <div>
-      <div className="relative h-44 bg-stone-light sm:h-64 lg:h-80">
+      <section className="relative -mt-[60px] flex min-h-[520px] items-center justify-center overflow-hidden text-ground md:-mt-[76px] md:min-h-[620px]">
         {maker.coverUrl && (
           <Image
             src={maker.coverUrl}
@@ -57,116 +91,142 @@ export default async function MakerPage({ params }: { params: { slug: string } }
             className="object-cover"
           />
         )}
-      </div>
-      <div className="container-page">
-        <div className="relative -mt-12 flex flex-col gap-5 sm:-mt-14 sm:flex-row sm:items-end sm:justify-between">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-4">
-            <span className="relative h-24 w-24 shrink-0 overflow-hidden rounded-full border-4 border-paper bg-stone-light sm:h-28 sm:w-28">
-              {maker.avatarUrl && (
-                <Image src={maker.avatarUrl} alt="" fill sizes="112px" className="object-cover" />
-              )}
-            </span>
-            <div className="pb-1">
-              <h1 className="text-3xl leading-tight sm:text-4xl">{maker.displayName}</h1>
-              <p className="mt-1 text-sm text-ink-muted">
-                {maker.location} · {maker.followerCount} follower
-                {maker.followerCount === 1 ? '' : 's'}
-                {maker.reviewCount > 0 && (
-                  <>
-                    {' · '}
-                    <Stars rating={maker.rating} count={maker.reviewCount} size={12} />
-                  </>
-                )}
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <FollowButton makerId={maker.id} following={following} makerName={maker.displayName} />
-            <Link href={askHref} className={buttonClass('secondary', 'md')}>
-              <ChatIcon width={18} height={18} /> Ask a question
-            </Link>
-            {maker.customCommissionsEnabled && (
-              <Link
-                href={`/makers/${maker.slug}/commission`}
-                className={buttonClass('secondary', 'md')}
-              >
-                <NeedleIcon width={18} height={18} /> Request a custom piece
-              </Link>
-            )}
-          </div>
-        </div>
-
-        {maker.tagline && (
-          <p className="mt-6 max-w-2xl font-display text-xl text-ink-soft sm:text-2xl">
-            {maker.tagline}
+        <span aria-hidden className="absolute inset-0 bg-[rgba(0,0,0,0.28)]" />
+        <div className="relative px-4 pt-16 text-center">
+          <p className="text-[11px] uppercase tracking-wide2">{maker.location}</p>
+          <h1 className="mt-3 text-[64px] leading-[0.92] md:text-[120px]">{maker.displayName}</h1>
+          <p className="mt-4 inline-flex items-center gap-2 text-[11px] uppercase tracking-wide2">
+            <CheckIcon width={14} height={14} /> Verified maker
+            {verified ? ` · approved ${verified}` : ''}
           </p>
-        )}
-
-        <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_320px]">
-          <div className="space-y-6 text-[15px] leading-relaxed text-ink-soft">
-            {maker.story && (
-              <section>
-                <h2 className="mb-1 font-sans text-sm font-semibold uppercase tracking-wider text-ink">
-                  Our story
-                </h2>
-                <p className="whitespace-pre-line">{maker.story}</p>
-              </section>
-            )}
-            {maker.process && (
-              <section>
-                <h2 className="mb-1 font-sans text-sm font-semibold uppercase tracking-wider text-ink">
-                  Process
-                </h2>
-                <p>{maker.process}</p>
-              </section>
-            )}
-            {maker.materials && (
-              <section>
-                <h2 className="mb-1 font-sans text-sm font-semibold uppercase tracking-wider text-ink">
-                  Materials
-                </h2>
-                <p>{maker.materials}</p>
-              </section>
-            )}
-            {maker.sizingNotes && (
-              <section>
-                <h2 className="mb-1 font-sans text-sm font-semibold uppercase tracking-wider text-ink">
-                  Sizing approach
-                </h2>
-                <p>{maker.sizingNotes}</p>
-              </section>
-            )}
+          <div className="mt-8 flex justify-center">
+            <BoxButtonGroup className="w-full max-w-[600px] grid-flow-row sm:grid-flow-col">
+              <FollowButton
+                makerId={maker.id}
+                following={following}
+                makerName={maker.displayName}
+                look="box"
+              />
+              <Link href={`/makers/${maker.slug}/ask`} className={boxButtonClass()}>
+                Ask a question
+              </Link>
+              {maker.customCommissionsEnabled && (
+                <Link href={`/makers/${maker.slug}/commission`} className={boxButtonClass()}>
+                  Request a custom piece
+                </Link>
+              )}
+            </BoxButtonGroup>
           </div>
-          <dl className="card h-fit divide-y divide-stone/70">
-            {facts.map((f) => (
-              <div key={f.label} className="px-4 py-3">
-                <dt className="text-xs text-ink-muted">{f.label}</dt>
-                <dd className="text-sm font-medium">{f.value}</dd>
-              </div>
-            ))}
-          </dl>
         </div>
+      </section>
 
-        <section aria-labelledby="pieces" className="mt-14">
-          <h2 id="pieces" className="mb-5 text-2xl">
-            Available pieces
-          </h2>
-          {products.length ? (
-            <ProductGrid products={products} savedIds={saved} />
-          ) : (
+      <dl className="grid grid-cols-2 border-b border-line md:grid-cols-4">
+        {stats.map((s, i) => (
+          <div
+            key={s.label}
+            className={`px-4 py-5 text-center ${i % 2 === 0 ? 'border-r border-line' : 'md:border-r'} ${i < 2 ? 'border-b border-line md:border-b-0' : ''} md:last:border-r-0`}
+          >
+            <dt className="text-[10px] uppercase tracking-label text-muted-2">{s.label}</dt>
+            <dd className="mt-1 font-display text-[28px] leading-none md:text-[32px]">
+              {s.value}{' '}
+              {s.small && <span className="font-sans text-[12px] text-muted-2">{s.small}</span>}
+            </dd>
+          </div>
+        ))}
+      </dl>
+
+      <section className="container-page grid gap-12 py-16 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] md:gap-20 md:py-20">
+        <div>
+          <p className="eyebrow">About the studio</p>
+          {maker.tagline && <p className="mt-4 text-[17px] text-muted">{maker.tagline}</p>}
+          {maker.story && (
+            <p className="mt-4 font-display text-[28px] leading-[1.18] md:text-[36px]">
+              {maker.story}
+            </p>
+          )}
+        </div>
+        <dl className="self-start border-t border-ink">
+          {facts.map((f) => (
+            <div
+              key={f.label}
+              className="grid grid-cols-[110px_1fr] gap-4 border-b border-line py-3.5 text-[13px]"
+            >
+              <dt className="text-[10px] uppercase tracking-label text-muted-2">{f.label}</dt>
+              <dd className="text-right">{f.value}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+
+      <section aria-labelledby="pieces">
+        <h2 id="pieces" className="sr-only">
+          Pieces
+        </h2>
+        <nav
+          aria-label="Filter pieces"
+          className="bleed flex items-center gap-6 border-y border-line"
+        >
+          <Link
+            href={`/makers/${maker.slug}`}
+            scroll={false}
+            className={`flex min-h-[52px] items-center text-[11px] uppercase tracking-label ${!type ? 'underline underline-offset-[6px]' : ''}`}
+          >
+            All ({products.length})
+          </Link>
+          {TABS.filter((t) => counts[t.id]).map((t) => (
+            <Link
+              key={t.id}
+              href={`/makers/${maker.slug}?type=${t.id}`}
+              scroll={false}
+              className={`flex min-h-[52px] items-center text-[11px] uppercase tracking-label ${type === t.id ? 'underline underline-offset-[6px]' : ''}`}
+            >
+              {t.label} ({counts[t.id]})
+            </Link>
+          ))}
+          <span className="ml-auto hidden text-[11px] uppercase tracking-label text-muted-2 sm:inline">
+            {shown.length} pieces
+          </span>
+        </nav>
+        {shown.length ? (
+          <ProductGrid
+            products={shown}
+            savedIds={saved}
+            every={7}
+            editorial={
+              maker.process
+                ? [
+                    {
+                      kicker: 'From the studio',
+                      title: maker.process,
+                      cta: 'Ask the maker',
+                      href: `/makers/${maker.slug}/ask`,
+                      imageUrl: '/seed/editorial/studio.svg',
+                    },
+                  ]
+                : []
+            }
+          />
+        ) : (
+          <div className="container-page py-10">
             <EmptyState title="New pieces coming soon">
               Follow {maker.displayName} to see new pieces first.
             </EmptyState>
-          )}
-        </section>
+          </div>
+        )}
+      </section>
 
-        <section aria-labelledby="maker-reviews" className="mt-14 max-w-3xl">
-          <h2 id="maker-reviews" className="text-2xl">
-            Reviews
-          </h2>
-          <Reviews reviews={reviews} emptyText={`${maker.displayName} hasn’t been reviewed yet.`} />
-        </section>
-      </div>
+      <section id="reviews" aria-labelledby="maker-reviews" className="container-page mt-20">
+        <h2 id="maker-reviews" className="text-[44px] leading-none md:text-[56px]">
+          Reviews
+        </h2>
+        <p className="mb-6 mt-2 text-[13px] text-muted">
+          {maker.reviewCount
+            ? `★ ${maker.rating.toFixed(1)} from ${maker.reviewCount} buyers. `
+            : ''}
+          Only buyers with delivered orders can review.
+        </p>
+        <Reviews reviews={reviews} emptyText={`${maker.displayName} hasn’t been reviewed yet.`} />
+      </section>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { sql } from '@/lib/db';
 import { collectionProductAction, placementAction } from '@/lib/actions/admin';
 import { CollectionForm } from '@/components/admin/CollectionForm';
+import { CollectionOrder } from '@/components/admin/CollectionOrder';
 
 export const metadata = { title: 'Collections & homepage' };
 
@@ -15,9 +16,10 @@ export default async function AdminCollectionsPage() {
       description: string | null;
       sortOrder: number;
       isActive: boolean;
+      heroImageUrl: string | null;
     }[]
   >`
-    select id, slug, title, subtitle, description, sort_order, is_active from public.collections order by sort_order, title`;
+    select id, slug, title, subtitle, description, sort_order, is_active, hero_image_url from public.collections order by sort_order, title`;
   const members = await sql()<{ collectionId: string; slug: string; title: string }[]>`
     select cp.collection_id, p.slug, p.title from public.collection_products cp join public.products p on p.id = cp.product_id order by cp.sort_order`;
   const placements = await sql()<
@@ -34,7 +36,7 @@ export default async function AdminCollectionsPage() {
   return (
     <div className="space-y-10">
       <section className="space-y-3">
-        <h1 className="text-3xl">Homepage placements</h1>
+        <h1 className="text-[40px] leading-none md:text-[48px]">Homepage placements</h1>
         {placements.map((p) => (
           <form key={p.id} action={placementAction} className="card grid gap-2 p-3 sm:grid-cols-6">
             <input type="hidden" name="id" value={p.id} />
@@ -61,13 +63,22 @@ export default async function AdminCollectionsPage() {
               <label className="flex items-center gap-1 text-xs">
                 <input type="checkbox" name="isActive" defaultChecked={p.isActive} /> Live
               </label>
-              <button className="rounded-full bg-ink px-3 py-1 text-xs text-paper">Save</button>
+              <button className="glass-dark min-h-[44px] px-4 text-[10px] uppercase tracking-label">
+                Save
+              </button>
             </div>
           </form>
         ))}
       </section>
       <section className="space-y-4">
-        <h2 className="text-2xl">Collections</h2>
+        <h2 className="text-[32px] leading-none">Collections</h2>
+        <CollectionOrder
+          initial={collections.map((c) => ({
+            id: c.id,
+            title: c.title,
+            heroImageUrl: c.heroImageUrl,
+          }))}
+        />
         <div className="card p-4">
           <p className="mb-2 text-sm font-medium">New collection</p>
           <CollectionForm />
@@ -92,7 +103,7 @@ export default async function AdminCollectionsPage() {
                     <input type="hidden" name="productSlug" value={m.slug} />
                     <input type="hidden" name="op" value="remove" />
                     <button
-                      className="rounded-full bg-stone-light px-2.5 py-1 text-xs hover:bg-alert-light"
+                      className="min-h-[36px] bg-stone-light px-3 text-[12px] hover:bg-error-bg"
                       aria-label={`Remove ${m.title}`}
                     >
                       {m.title} ×
@@ -109,7 +120,9 @@ export default async function AdminCollectionsPage() {
                 aria-label="Product slug"
                 className="input w-64 py-1.5 text-sm"
               />
-              <button className="rounded-full border border-ink px-3 text-xs">Add</button>
+              <button className="min-h-[44px] border border-ink px-4 text-[10px] uppercase tracking-label">
+                Add
+              </button>
             </form>
           </div>
         ))}

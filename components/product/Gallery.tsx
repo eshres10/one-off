@@ -1,14 +1,17 @@
 'use client';
 
-import { Img as Image } from '@/components/ui/Img';
 import { useRef, useState } from 'react';
+import { Img as Image } from '@/components/ui/Img';
 
+/** Desktop: thumbnail rail + main image. Mobile: swipe carousel with 5 slots and dash indicators. */
 export function Gallery({
   images,
   title,
+  overlay,
 }: {
   images: Array<{ id: string; url: string; alt: string }>;
   title: string;
+  overlay?: React.ReactNode;
 }) {
   const [active, setActive] = useState(0);
   const track = useRef<HTMLDivElement>(null);
@@ -18,15 +21,14 @@ export function Gallery({
 
   const goTo = (i: number) => {
     setActive(i);
-    const el = track.current?.children[i] as HTMLElement | undefined;
-    el?.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
+    const el = track.current;
+    if (el) el.scrollTo({ left: i * el.clientWidth, behavior: 'smooth' });
   };
 
   return (
-    <div className="lg:grid lg:grid-cols-[72px_1fr] lg:gap-4">
-      {/* Desktop thumbnails */}
+    <div className="md:grid md:grid-cols-[84px_1fr] md:gap-[2px]">
       <div
-        className="hidden lg:flex lg:flex-col lg:gap-3"
+        className="hidden md:flex md:flex-col md:gap-[2px]"
         role="tablist"
         aria-label="Product photos"
       >
@@ -38,17 +40,18 @@ export function Gallery({
             aria-selected={i === active}
             aria-label={`Show photo ${i + 1} of ${slots.length}`}
             onClick={() => goTo(i)}
-            className={`relative aspect-4/5 overflow-hidden rounded-lg border-2 ${i === active ? 'border-ink' : 'border-transparent opacity-80 hover:opacity-100'}`}
+            className={`relative aspect-4/5 overflow-hidden bg-stone-light ${i === active ? 'outline outline-1 -outline-offset-1 outline-ink' : 'opacity-80 hover:opacity-100'}`}
           >
-            {img.url && <Image src={img.url} alt="" fill sizes="72px" className="object-cover" />}
+            {img.url && (
+              <Image src={img.url} alt="" fill sizes="84px" className="object-cover object-top" />
+            )}
           </button>
         ))}
       </div>
-
-      <div className="relative -mx-4 sm:mx-0">
+      <div className="relative">
         <div
           ref={track}
-          className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto sm:rounded-2xl"
+          className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto"
           onScroll={(e) => {
             const el = e.currentTarget;
             const i = Math.round(el.scrollLeft / el.clientWidth);
@@ -70,8 +73,8 @@ export function Gallery({
                   alt={img.alt}
                   fill
                   priority={i === 0}
-                  sizes="(min-width: 1024px) 50vw, 100vw"
-                  className="object-cover"
+                  sizes="(min-width: 768px) 55vw, 100vw"
+                  className="object-cover object-top"
                 />
               ) : (
                 <div className="skeleton h-full w-full" />
@@ -79,15 +82,16 @@ export function Gallery({
             </div>
           ))}
         </div>
+        {overlay}
         {slots.length > 1 && (
           <div
-            className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center gap-1.5 lg:hidden"
+            className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center gap-1.5 md:hidden"
             aria-hidden
           >
             {slots.map((s, i) => (
               <span
                 key={s.id}
-                className={`h-1.5 rounded-full transition-all ${i === active ? 'w-5 bg-ink' : 'w-1.5 bg-ink/30'}`}
+                className={`h-[2px] w-4 ${i === active ? 'bg-ground' : 'bg-ground/45'}`}
               />
             ))}
           </div>

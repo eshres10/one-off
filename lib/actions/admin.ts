@@ -3,8 +3,11 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { requireAdmin } from '@/lib/auth/session';
+import { isOwnImageUrl } from '@/lib/storage';
 import {
   assignCommission,
+  reorderCollections,
+  setCollectionHero,
   createSeller,
   saveCollection,
   savePlacement,
@@ -201,4 +204,20 @@ export async function manualEmailAction(_prev: FormState, form: FormData): Promi
   await sendManualEmail(admin.id, input.data);
   revalidatePath('/admin/emails');
   return { ok: true, message: 'Email sent.' };
+}
+
+export async function reorderCollectionsAction(ids: string[]) {
+  const admin = await requireAdmin();
+  const parsed = z.array(uuid).max(200).parse(ids);
+  await reorderCollections(admin.id, parsed);
+  revalidatePath('/admin/collections');
+  revalidatePath('/collections');
+}
+
+export async function collectionHeroAction(collectionId: string, url: string) {
+  const admin = await requireAdmin();
+  if (!isOwnImageUrl(url)) throw new Error('Upload the image first.');
+  await setCollectionHero(admin.id, uuid.parse(collectionId), url);
+  revalidatePath('/admin/collections');
+  revalidatePath('/collections');
 }

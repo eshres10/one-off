@@ -1,26 +1,28 @@
 import type { ReviewView } from '@/lib/queries/catalog';
 import { Stars } from '@/components/ui/Stars';
 
-export function Reviews({ reviews, emptyText }: { reviews: ReviewView[]; emptyText: string }) {
-  if (!reviews.length) return <p className="text-sm text-ink-muted">{emptyText}</p>;
+export function ReviewCard({ review }: { review: ReviewView }) {
   return (
-    <ul className="divide-y divide-stone/70" role="list">
+    <article className="border-t border-ink pt-4">
+      <Stars rating={review.rating} />
+      {review.title && <h3 className="mt-2 text-[24px] leading-tight">{review.title}</h3>}
+      <p className="mt-2 whitespace-pre-line text-[13px] leading-relaxed text-text2">
+        {review.body}
+      </p>
+      <p className="mt-2 text-[10px] uppercase tracking-label text-muted-2">
+        Verified buyer · {review.variantLabel.replace(/^AU /, 'Size ')} · {review.productTitle}
+      </p>
+    </article>
+  );
+}
+
+export function Reviews({ reviews, emptyText }: { reviews: ReviewView[]; emptyText: string }) {
+  if (!reviews.length) return <p className="text-[13px] text-muted-2">{emptyText}</p>;
+  return (
+    <ul className="grid gap-8 md:grid-cols-3" role="list">
       {reviews.map((r) => (
-        <li key={r.id} className="py-5">
-          <div className="flex items-center justify-between gap-3">
-            <Stars rating={r.rating} />
-            <time className="text-xs text-ink-muted" dateTime={new Date(r.createdAt).toISOString()}>
-              {new Date(r.createdAt).toLocaleDateString('en-AU', {
-                month: 'short',
-                year: 'numeric',
-              })}
-            </time>
-          </div>
-          {r.title && <p className="mt-2 font-medium">{r.title}</p>}
-          <p className="mt-1 whitespace-pre-line text-sm text-ink-soft">{r.body}</p>
-          <p className="mt-2 text-xs text-ink-muted">
-            {r.buyerName} · Verified purchase · {r.productTitle} ({r.variantLabel})
-          </p>
+        <li key={r.id}>
+          <ReviewCard review={r} />
         </li>
       ))}
     </ul>

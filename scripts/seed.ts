@@ -214,7 +214,7 @@ async function seedOrders(db: Sql) {
       values (${orderId}, ${'OO-S' + String(n + 1).padStart(4, '0')}, ${buyer.id}, ${buyer.email}, ${buyer.name}, 'paid',
         ${plan.subtotalCents}, ${plan.shippingTotalCents}, ${plan.totalCents}, ${plan.platformFeeTotalCents},
         ${'cs_seed_' + n}, ${'pi_seed_' + n}, ${'ch_seed_' + n}, ${db.json(address)}, ${created}, ${created})
-      on conflict (id) do nothing`;
+      on conflict (id) do update set order_number = excluded.order_number`;
 
     for (const f of plan.fulfilments) {
       const fulfilmentId = seedId(`fulfilment:${n}:${f.makerId}`);
@@ -530,14 +530,13 @@ export async function seed(databaseUrl: string) {
         }
       }
 
-      const hero = PRODUCTS.find((p) => p.isFeatured && p.shape === 'maxi') ?? PRODUCTS[0]!;
       await tx`
         insert into public.editorial_placements (id, slot, title, subtitle, image_url, href, sort_order) values
-          (${seedId('placement:hero')}, 'home_hero', 'Original fashion, made in Australia',
-            'Statement dresses, occasionwear and one-of-one pieces from independent makers.',
-            ${hero.images[3]!.url}, '/collections/statement-dresses', 0),
+          (${seedId('placement:hero')}, 'home_hero', 'Pieces nobody else will be wearing',
+            'Made in Australia · straight from the maker',
+            '/seed/editorial/hero.svg', '/collections/statement-dresses', 0),
           (${seedId('placement:wedding')}, 'home_feature', 'Wedding guest, but not boring',
-            'Season picks from 12 independent studios.', ${'/seed/collections/wedding-guest-but-not-boring.svg'},
+            'Season picks from 12 independent studios.', ${'/seed/editorial/race-day.svg'},
             '/collections/wedding-guest-but-not-boring', 1)
         on conflict (id) do update set title = excluded.title, subtitle = excluded.subtitle, image_url = excluded.image_url, href = excluded.href`;
 

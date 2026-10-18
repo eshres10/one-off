@@ -12,7 +12,7 @@ function Send({ disabled }: { disabled: boolean }) {
     <button
       type="submit"
       disabled={disabled || pending}
-      className="h-11 rounded-full bg-ink px-6 text-sm font-medium text-paper disabled:bg-ink-muted"
+      className="min-h-[52px] bg-ink px-6 text-[11px] uppercase tracking-label text-ground disabled:bg-stone-light disabled:text-muted-2"
     >
       {pending ? 'Sending…' : 'Send'}
     </button>
@@ -62,7 +62,10 @@ export function Composer({
         <input key={k} type="hidden" name={k} value={v} />
       ))}
       {presets && (
-        <div className="flex flex-wrap gap-2" aria-label="Suggested questions">
+        <div
+          className="no-scrollbar -mx-3 flex gap-2 overflow-x-auto px-3"
+          aria-label="Suggested questions"
+        >
           {PRESET_QUESTIONS.map((q) => (
             <button
               key={q}
@@ -77,7 +80,7 @@ export function Composer({
                 }
                 area.current?.focus();
               }}
-              className="rounded-full border border-stone bg-white px-3 py-1.5 text-[13px] hover:border-ink"
+              className="min-h-[44px] shrink-0 border border-line-strong bg-surface px-3 text-[12px] hover:border-ink"
             >
               {q}
             </button>
@@ -85,7 +88,7 @@ export function Composer({
         </div>
       )}
       {needsDate && (
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-[12px] uppercase tracking-label">
           Needed by
           <input
             type="date"
@@ -102,13 +105,16 @@ export function Composer({
         </label>
       )}
       {templates.length > 0 && (
-        <div className="flex flex-wrap gap-2" aria-label="Saved replies">
+        <div
+          className="no-scrollbar -mx-3 flex gap-2 overflow-x-auto px-3"
+          aria-label="Saved replies"
+        >
           {templates.map((t) => (
             <button
               key={t.title}
               type="button"
               onClick={() => setBody(t.body)}
-              className="rounded-full bg-stone-light px-3 py-1.5 text-[13px] hover:bg-stone"
+              className="min-h-[44px] shrink-0 bg-stone-light px-3 text-[12px] hover:bg-line"
             >
               {t.title}
             </button>
@@ -124,7 +130,7 @@ export function Composer({
         name="body"
         value={body}
         onChange={(e) => setBody(e.target.value)}
-        rows={3}
+        rows={2}
         maxLength={2000}
         placeholder={placeholder}
         className="input"
@@ -137,12 +143,12 @@ export function Composer({
       </div>
       <div id="composer-feedback" aria-live="polite">
         {warning && (
-          <p className="rounded-lg bg-alert-light px-3 py-2 text-sm text-alert">
+          <p className="bg-error-bg px-3 py-2.5 text-[12px] text-error">
             {warning} For buyer protection, complete purchases through the platform.
           </p>
         )}
         {state?.ok === false && (state.message || state.errors?.body) && (
-          <p className="rounded-lg bg-alert-light px-3 py-2 text-sm text-alert" role="alert">
+          <p className="bg-error-bg px-3 py-2.5 text-[12px] text-error" role="alert">
             {state.message ?? state.errors?.body}
           </p>
         )}

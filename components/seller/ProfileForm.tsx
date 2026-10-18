@@ -53,7 +53,9 @@ export function ProfileForm({ maker }: { maker: SellerMaker }) {
       <Field label="Sizing approach" name="sizingNotes" error={e.sizingNotes}>
         <TextArea name="sizingNotes" defaultValue={maker.sizingNotes ?? ''} rows={3} />
       </Field>
-      <h2 className="font-sans text-base font-semibold">Production & shipping</h2>
+      <h2 className="font-sans text-[11px] font-normal uppercase tracking-label">
+        Production & shipping
+      </h2>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Made-to-order lead time (days)" name="leadTimeDays" error={e.leadTimeDays}>
           <Input

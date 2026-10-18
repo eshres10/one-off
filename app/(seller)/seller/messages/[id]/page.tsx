@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { z } from 'zod';
 import { requireSeller } from '@/lib/auth/session';
@@ -6,6 +5,7 @@ import { getThread } from '@/lib/services/messaging';
 import { getReplyTemplates } from '@/lib/queries/seller';
 import { ContextCard } from '@/components/messaging/ContextCard';
 import { ThreadView } from '@/components/messaging/ThreadView';
+import { ThreadHeader } from '@/components/messaging/ThreadHeader';
 
 export const metadata = { title: 'Conversation' };
 
@@ -18,12 +18,11 @@ export default async function SellerThreadPage({ params }: { params: { id: strin
   ]);
   if (!thread || thread.makerId !== seller.makerId) notFound();
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
-      <div className="max-w-2xl">
-        <Link href="/seller/messages" className="text-sm text-ink-muted hover:underline">
-          ← All messages
-        </Link>
-        <h1 className="mb-6 mt-2 text-2xl">{thread.buyerName}</h1>
+    <div className="mx-auto max-w-2xl">
+      <ThreadHeader backHref="/seller/messages" name={thread.buyerName} />
+      <p className="eyebrow mb-2 mt-4">Asking about</p>
+      <ContextCard context={thread.context} makerName={thread.makerName} />
+      <div className="mt-4">
         <ThreadView
           threadId={thread.id}
           currentUserId={seller.id}
@@ -32,10 +31,6 @@ export default async function SellerThreadPage({ params }: { params: { id: strin
           templates={templates}
         />
       </div>
-      <aside className="order-first space-y-2 lg:order-none">
-        <p className="eyebrow">Asking about</p>
-        <ContextCard context={thread.context} makerName={thread.makerName} />
-      </aside>
     </div>
   );
 }

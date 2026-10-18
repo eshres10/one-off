@@ -34,7 +34,7 @@ export function ThreadList({
                   {t.counterpartName}
                   {t.unread && (
                     <span
-                      className="ml-2 inline-block h-2 w-2 rounded-full bg-clay align-middle"
+                      className="ml-2 inline-block h-2 w-2 rounded-circle bg-ink align-middle"
                       aria-label="Unread"
                     />
                   )}

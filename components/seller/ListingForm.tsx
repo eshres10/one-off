@@ -88,7 +88,7 @@ export function ListingForm({
       <input type="hidden" name="sizes" value={sizes.join(',')} />
 
       <section className="space-y-4">
-        <h2 className="font-sans text-base font-semibold">Type</h2>
+        <h2 className="font-sans text-[11px] font-normal uppercase tracking-label">Type</h2>
         <div className="grid gap-3 sm:grid-cols-3" role="radiogroup" aria-label="Listing type">
           {TYPES.map((t) => (
             <label
@@ -111,7 +111,7 @@ export function ListingForm({
       </section>
 
       <section className="space-y-4">
-        <h2 className="font-sans text-base font-semibold">Photos</h2>
+        <h2 className="font-sans text-[11px] font-normal uppercase tracking-label">Photos</h2>
         <p className="text-sm text-ink-muted">
           Up to 8 photos (JPEG, PNG or WebP, max 8 MB). Describe each one for shoppers using screen
           readers.
@@ -176,7 +176,9 @@ export function ListingForm({
       </section>
 
       <section className="grid gap-4 sm:grid-cols-2">
-        <h2 className="font-sans text-base font-semibold sm:col-span-2">Details</h2>
+        <h2 className="font-sans text-[11px] font-normal uppercase tracking-label sm:col-span-2">
+          Details
+        </h2>
         <div className="sm:col-span-2">
           <Field label="Title" name="title" error={e.title}>
             <Input name="title" defaultValue={defaults.title} required maxLength={120} />
@@ -232,7 +234,9 @@ export function ListingForm({
       </section>
 
       <section className="space-y-4">
-        <h2 className="font-sans text-base font-semibold">Sizes & stock</h2>
+        <h2 className="font-sans text-[11px] font-normal uppercase tracking-label">
+          Sizes & stock
+        </h2>
         <div className="flex flex-wrap gap-2" role="group" aria-label="Sizes">
           {ALL_SIZES.map((s) => {
             const on = sizes.includes(s);
@@ -252,7 +256,7 @@ export function ListingForm({
                         : [...sizes, s],
                   )
                 }
-                className={`rounded-full border px-4 py-2 text-sm ${on ? 'border-ink bg-ink text-paper' : 'border-stone bg-white'}`}
+                className={`min-h-[44px] min-w-[44px] px-4 text-[13px] ${on ? 'glass-dark' : 'border border-line-strong'}`}
               >
                 {s}
               </button>
@@ -314,7 +318,9 @@ export function ListingForm({
       </section>
 
       <section className="grid gap-4 sm:grid-cols-2">
-        <h2 className="font-sans text-base font-semibold sm:col-span-2">Fabric, care & fit</h2>
+        <h2 className="font-sans text-[11px] font-normal uppercase tracking-label sm:col-span-2">
+          Fabric, care & fit
+        </h2>
         <Field label="Fabric composition" name="fabricComposition" error={e.fabricComposition}>
           <Input
             name="fabricComposition"

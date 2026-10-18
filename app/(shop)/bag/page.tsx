@@ -10,18 +10,55 @@ import { CheckoutForm } from '@/components/cart/CheckoutForm';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ButtonLink } from '@/components/ui/Button';
 import { ProductBadgePill } from '@/components/ui/Badge';
-import { TrustBlock } from '@/components/product/TrustBlock';
+import { InfoPanel } from '@/components/ui/Panels';
+import { MinusIcon, PlusIcon, ShieldIcon } from '@/components/ui/icons';
 
 export const metadata = { title: 'Your bag' };
+
+function Stepper({ itemId, quantity, max }: { itemId: string; quantity: number; max: number }) {
+  const btn = 'flex h-11 w-11 items-center justify-center disabled:text-disabled';
+  return (
+    <div
+      className="inline-flex items-center border border-line-strong"
+      role="group"
+      aria-label="Quantity"
+    >
+      <form action={updateCartAction}>
+        <input type="hidden" name="itemId" value={itemId} />
+        <input type="hidden" name="quantity" value={quantity - 1} />
+        <button
+          className={btn}
+          aria-label={quantity <= 1 ? 'Remove from bag' : 'Decrease quantity'}
+        >
+          <MinusIcon width={14} height={14} />
+        </button>
+      </form>
+      <span className="w-6 text-center text-[13px]" aria-live="polite">
+        {quantity}
+      </span>
+      <form action={updateCartAction}>
+        <input type="hidden" name="itemId" value={itemId} />
+        <input type="hidden" name="quantity" value={quantity + 1} />
+        <button className={btn} disabled={quantity >= max} aria-label="Increase quantity">
+          <PlusIcon width={14} height={14} />
+        </button>
+      </form>
+    </div>
+  );
+}
 
 export default async function BagPage({ searchParams }: { searchParams: { cancelled?: string } }) {
   if (!checkoutEnabled()) {
     return (
-      <div className="container-page pt-12">
+      <div className="container-page pt-16">
         <h1 className="sr-only">Your bag</h1>
         <EmptyState
           title="Checkout opens at launch"
-          action={<ButtonLink href="/account/saved">View saved pieces</ButtonLink>}
+          action={
+            <ButtonLink href="/account/saved" variant="secondary">
+              View saved pieces
+            </ButtonLink>
+          }
         >
           Save the pieces you love and we’ll let you know as soon as you can buy them.
         </EmptyState>
@@ -31,11 +68,15 @@ export default async function BagPage({ searchParams }: { searchParams: { cancel
   const [cart, user] = await Promise.all([getCart(getCartSessionId()), getSessionUser()]);
   if (!cart.lines.length) {
     return (
-      <div className="container-page pt-12">
+      <div className="container-page pt-16">
         <h1 className="sr-only">Your bag</h1>
         <EmptyState
           title="Your bag is empty"
-          action={<ButtonLink href="/">Discover pieces</ButtonLink>}
+          action={
+            <ButtonLink href="/" variant="secondary">
+              Discover pieces
+            </ButtonLink>
+          }
         >
           Find something original from an independent Australian maker.
         </EmptyState>
@@ -44,164 +85,133 @@ export default async function BagPage({ searchParams }: { searchParams: { cancel
   }
   const { totals } = cart;
   return (
-    <div className="container-page pt-8">
-      <h1 className="text-3xl sm:text-4xl">Your bag</h1>
+    <div className="container-page pt-8 md:pt-12">
+      <h1 className="text-center text-[40px] leading-none md:text-left md:text-[56px]">
+        Your bag <span className="font-sans text-[14px] text-muted-2">({totals.itemCount})</span>
+      </h1>
       {searchParams.cancelled && (
-        <p className="mt-4 rounded-lg bg-stone-light px-3 py-2 text-sm" role="status">
+        <p className="mt-4 bg-stone-light px-3 py-2.5 text-[13px]" role="status">
           Checkout was cancelled — your bag is saved.
         </p>
       )}
-      <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_380px]">
-        <div className="min-w-0 space-y-8">
-          {totals.groups.map((group) => (
-            <section
-              key={group.makerId}
-              aria-label={`Ships from ${group.makerName}`}
-              className="card p-4 sm:p-5"
+      <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-16">
+        <ul className="min-w-0 border-t border-line" role="list">
+          {cart.lines.map((line) => (
+            <li
+              key={line.id}
+              className="flex gap-4 border-b border-line py-5"
+              data-testid="bag-line"
             >
-              <div className="flex items-baseline justify-between gap-3 border-b border-stone/70 pb-3">
-                <p className="text-sm">
-                  Ships from <span className="font-medium">{group.makerName}</span>
+              <Link
+                href={`/products/${line.productSlug}`}
+                className="relative aspect-4/5 w-[104px] shrink-0 overflow-hidden bg-stone-light md:w-[128px]"
+              >
+                {line.imageUrl && (
+                  <Image
+                    src={line.imageUrl}
+                    alt={line.productTitle}
+                    fill
+                    sizes="128px"
+                    className="object-cover object-top"
+                  />
+                )}
+              </Link>
+              <div className="min-w-0 flex-1 text-[13px]">
+                <div className="flex items-start justify-between gap-3">
+                  <Link
+                    href={`/products/${line.productSlug}`}
+                    className="text-[14px] font-normal hover:underline"
+                  >
+                    {line.productTitle}
+                  </Link>
+                  <p className="shrink-0 text-[14px]">
+                    {formatPrice(line.unitPriceCents * line.quantity)}
+                  </p>
+                </div>
+                <p className="mt-0.5 text-muted">
+                  {line.variantLabel.replace(/^AU /, 'Size ').split(' · ').reverse().join(' · ')}
                 </p>
-                <p className="text-sm text-ink-muted">
-                  Shipping {group.shippingCents ? formatPrice(group.shippingCents) : 'free'}
+                <div className="mt-2">
+                  <ProductBadgePill badge={line.productType} outlined />
+                </div>
+                <p className="mt-2">
+                  Ships from{' '}
+                  <Link
+                    href={`/makers/${line.makerSlug}`}
+                    className="underline underline-offset-[3px]"
+                  >
+                    {line.makerName}
+                  </Link>
                 </p>
+                <p className="mt-0.5 text-muted" data-dynamic>
+                  Estimated delivery {line.deliveryEstimate}
+                </p>
+                {line.problem && (
+                  <p className="mt-2 bg-error-bg px-2 py-1 text-error" role="alert">
+                    {line.problem}
+                  </p>
+                )}
+                <div className="mt-3 flex items-center justify-between gap-3">
+                  <Stepper
+                    itemId={line.id}
+                    quantity={line.quantity}
+                    max={
+                      line.productType === 'one_of_one'
+                        ? 1
+                        : Math.max(1, Math.min(10, line.stockQuantity))
+                    }
+                  />
+                  <form action={updateCartAction}>
+                    <input type="hidden" name="itemId" value={line.id} />
+                    <input type="hidden" name="quantity" value="0" />
+                    <button className="min-h-[44px] text-[11px] uppercase tracking-label underline underline-offset-[5px]">
+                      Remove
+                    </button>
+                  </form>
+                </div>
               </div>
-              <ul className="divide-y divide-stone/60" role="list">
-                {cart.lines
-                  .filter((l) => l.makerId === group.makerId)
-                  .map((line) => (
-                    <li key={line.id} className="flex gap-4 py-4" data-testid="bag-line">
-                      <Link
-                        href={`/products/${line.productSlug}`}
-                        className="relative aspect-4/5 w-24 shrink-0 overflow-hidden rounded-lg bg-stone-light sm:w-28"
-                      >
-                        {line.imageUrl && (
-                          <Image
-                            src={line.imageUrl}
-                            alt={line.productTitle}
-                            fill
-                            sizes="112px"
-                            className="object-cover"
-                          />
-                        )}
-                      </Link>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <Link
-                              href={`/products/${line.productSlug}`}
-                              className="font-medium hover:underline"
-                            >
-                              {line.productTitle}
-                            </Link>
-                            <p className="text-sm text-ink-muted">{line.variantLabel}</p>
-                          </div>
-                          <p className="font-medium">
-                            {formatPrice(line.unitPriceCents * line.quantity)}
-                          </p>
-                        </div>
-                        <div className="mt-1.5">
-                          <ProductBadgePill
-                            badge={line.productType}
-                            className="border border-stone/70"
-                          />
-                        </div>
-                        <p className="mt-1.5 text-xs text-ink-muted">
-                          Estimated delivery {line.deliveryEstimate}
-                        </p>
-                        {line.problem && (
-                          <p className="mt-1.5 text-sm text-alert" role="alert">
-                            {line.problem}
-                          </p>
-                        )}
-                        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-                          {line.productType !== 'one_of_one' && (
-                            <form action={updateCartAction} className="flex items-center gap-2">
-                              <input type="hidden" name="itemId" value={line.id} />
-                              <label htmlFor={`qty-${line.id}`} className="text-sm text-ink-muted">
-                                Qty
-                              </label>
-                              <select
-                                id={`qty-${line.id}`}
-                                name="quantity"
-                                defaultValue={line.quantity}
-                                className="input w-auto py-1.5 pr-8 text-sm"
-                              >
-                                {Array.from(
-                                  {
-                                    length: Math.max(
-                                      1,
-                                      Math.min(10, line.stockQuantity || line.quantity),
-                                    ),
-                                  },
-                                  (_, i) => i + 1,
-                                ).map((n) => (
-                                  <option key={n} value={n}>
-                                    {n}
-                                  </option>
-                                ))}
-                              </select>
-                              <button
-                                type="submit"
-                                className="text-sm underline underline-offset-4"
-                              >
-                                Update
-                              </button>
-                            </form>
-                          )}
-                          <form action={updateCartAction}>
-                            <input type="hidden" name="itemId" value={line.id} />
-                            <input type="hidden" name="quantity" value="0" />
-                            <button
-                              type="submit"
-                              className="text-sm text-ink-muted underline underline-offset-4 hover:text-ink"
-                            >
-                              Remove
-                            </button>
-                          </form>
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-              </ul>
-            </section>
+            </li>
           ))}
-        </div>
+        </ul>
 
         <aside className="min-w-0 lg:sticky lg:top-24 lg:self-start">
-          <div className="card space-y-4 p-5">
-            <h2 className="font-sans text-base font-semibold">Order summary</h2>
-            <dl className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <dt>
-                  Subtotal ({totals.itemCount} {totals.itemCount === 1 ? 'piece' : 'pieces'})
-                </dt>
-                <dd>{formatPrice(totals.subtotalCents)}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt>
-                  Shipping{totals.groups.length > 1 ? ` (${totals.groups.length} makers)` : ''}
-                </dt>
-                <dd>{totals.shippingCents ? formatPrice(totals.shippingCents) : 'Free'}</dd>
-              </div>
-              <div className="flex justify-between border-t border-stone/70 pt-2 text-base font-semibold">
-                <dt>Total (AUD)</dt>
-                <dd data-testid="bag-total">{formatPrice(totals.totalCents)}</dd>
-              </div>
-            </dl>
+          <dl className="space-y-2 text-[14px]">
+            <div className="flex justify-between">
+              <dt>Subtotal</dt>
+              <dd>{formatPrice(totals.subtotalCents)}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt>
+                Shipping{' '}
+                <span className="text-muted-2">
+                  (from {totals.groups.length} maker{totals.groups.length === 1 ? '' : 's'})
+                </span>
+              </dt>
+              <dd>{totals.shippingCents ? formatPrice(totals.shippingCents) : 'Free'}</dd>
+            </div>
+            <div className="flex justify-between border-t border-ink pt-3 text-[17px] font-normal">
+              <dt>Total (AUD, incl. GST)</dt>
+              <dd data-testid="bag-total">{formatPrice(totals.totalCents)}</dd>
+            </div>
+          </dl>
+          <p className="mt-3 text-[13px] text-muted">
+            One payment, one order. Each maker ships their piece separately and you’ll get tracking
+            for each.
+          </p>
+          <div className="mt-5">
             <CheckoutForm
               signedInEmail={user?.email ?? null}
               disabled={cart.hasProblems}
               total={formatPrice(totals.totalCents)}
             />
           </div>
-          <div className="mt-4">
-            <TrustBlock
-              shipping="Each maker ships their piece directly with tracking. Shipping shown is the total you pay."
-              returns="Ready-to-ship pieces can be returned within 14 days. Made-to-order and one-of-one pieces are final sale unless faulty."
-            />
-          </div>
+          <InfoPanel className="mt-5 flex gap-3">
+            <ShieldIcon width={16} height={16} className="mt-0.5 shrink-0" />
+            <span>
+              Buyer protection: if a piece doesn’t arrive or isn’t as described, we’ll make it
+              right.
+            </span>
+          </InfoPanel>
         </aside>
       </div>
     </div>

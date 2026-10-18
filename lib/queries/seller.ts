@@ -222,3 +222,19 @@ export async function getSellerCommissions(s: Seller, id?: string) {
     return { requests, quotes };
   });
 }
+
+/** Daily product views for the maker over the last `days` days (zero-filled). */
+export async function getDailyViews(
+  s: Seller,
+  days = 30,
+): Promise<Array<{ day: string; views: number }>> {
+  return withUser(
+    s,
+    (db) => db<{ day: string; views: number }[]>`
+    select to_char(d, 'YYYY-MM-DD') as day,
+           (select count(*) from public.product_views v
+             where v.maker_id = ${s.makerId} and v.created_at >= d and v.created_at < d + interval '1 day')::int as views
+    from generate_series(date_trunc('day', now()) - make_interval(days => ${days - 1}), date_trunc('day', now()), interval '1 day') d
+    order by d`,
+  );
+}

@@ -28,16 +28,16 @@ export default async function EditListingPage({
         ← All listings
       </Link>
       <div className="mb-6 mt-2 flex items-center justify-between gap-3">
-        <h1 className="text-3xl">{String(p.title)}</h1>
+        <h1 className="text-[40px] leading-none md:text-[48px]">{String(p.title)}</h1>
         <StatusPill status={p.status === 'approved' ? 'live' : String(p.status)} />
       </div>
       {searchParams.saved && (
-        <p className="mb-4 rounded-lg bg-moss-light px-3 py-2 text-sm text-moss" role="status">
+        <p className="mb-4 bg-stone-light px-3 py-2.5 text-[13px]" role="status">
           Listing saved.
         </p>
       )}
       {p.status === 'rejected' && p.rejectionReason && (
-        <p className="mb-4 rounded-lg bg-alert-light px-3 py-2 text-sm text-alert">
+        <p className="mb-4 bg-error-bg px-3 py-2.5 text-[13px] text-error">
           Our team asked for changes: {String(p.rejectionReason)}
         </p>
       )}

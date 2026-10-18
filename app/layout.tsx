@@ -1,15 +1,28 @@
 import type { Metadata, Viewport } from 'next';
-import { Fraunces, Inter } from 'next/font/google';
+import { Bodoni_Moda, Instrument_Serif, Jost } from 'next/font/google';
 import { BRAND } from '@/lib/brand';
 import './globals.css';
 
-const display = Fraunces({
+// Variable font so optical sizing (opsz) is available; the wordmark uses weight 500.
+const wordmark = Bodoni_Moda({
   subsets: ['latin'],
-  variable: '--font-display',
+  variable: '--font-wordmark',
   display: 'swap',
   axes: ['opsz'],
 });
-const sans = Inter({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
+const display = Instrument_Serif({
+  subsets: ['latin'],
+  weight: ['400'],
+  style: ['normal', 'italic'],
+  variable: '--font-display',
+  display: 'swap',
+});
+const sans = Jost({
+  subsets: ['latin'],
+  weight: ['300', '400', '500'],
+  variable: '--font-sans',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: {
@@ -20,11 +33,11 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.APP_URL ?? 'http://localhost:3000'),
 };
 
-export const viewport: Viewport = { themeColor: '#FAF8F5', width: 'device-width', initialScale: 1 };
+export const viewport: Viewport = { themeColor: '#F6F4F0', width: 'device-width', initialScale: 1 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-AU" className={`${display.variable} ${sans.variable}`}>
+    <html lang="en-AU" className={`${wordmark.variable} ${display.variable} ${sans.variable}`}>
       <body className="min-h-screen">{children}</body>
     </html>
   );

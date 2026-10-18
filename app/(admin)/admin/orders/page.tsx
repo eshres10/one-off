@@ -52,9 +52,10 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
       status: string;
       orderNumber: string | null;
       createdAt: Date;
+      evidenceDueBy: Date | null;
     }[]
   >`
-    select d.id, d.stripe_dispute_id, d.amount_cents, d.reason, d.status, o.order_number, d.created_at
+    select d.id, d.stripe_dispute_id, d.amount_cents, d.reason, d.status, o.order_number, d.created_at, d.evidence_due_by
     from public.disputes d left join public.orders o on o.id = d.order_id order by d.created_at desc limit 20`;
   const transfers = await sql()<{ status: string; n: number; cents: number }[]>`
     select transfer_status as status, count(*)::int as n, coalesce(sum(seller_net_cents), 0)::int as cents
@@ -63,7 +64,7 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <h1 className="text-3xl">Orders, refunds & payouts</h1>
+        <h1 className="text-[40px] leading-none md:text-[48px]">Orders, refunds & payouts</h1>
         <form className="flex gap-2">
           <input
             name="q"
@@ -72,7 +73,9 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
             aria-label="Search orders"
             className="input w-64 py-2 text-sm"
           />
-          <button className="rounded-full border border-ink px-4 text-sm">Search</button>
+          <button className="min-h-[44px] border border-ink px-4 text-[10px] uppercase tracking-label">
+            Search
+          </button>
         </form>
       </div>
       <section className="grid gap-3 sm:grid-cols-4">
@@ -86,7 +89,7 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
       </section>
       {disputes.length > 0 && (
         <section>
-          <h2 className="mb-2 text-xl">Disputes</h2>
+          <h2 className="mb-3 text-[28px] leading-none">Disputes</h2>
           <ul
             className="divide-y divide-stone/70 rounded-2xl border border-alert/40 bg-white text-sm"
             role="list"
@@ -95,6 +98,16 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
               <li key={d.id} className="flex justify-between px-4 py-2.5">
                 <span>
                   {d.orderNumber ?? 'Unknown order'} · {formatPrice(d.amountCents)} · {d.reason}
+                  {d.evidenceDueBy && (
+                    <span
+                      className={`ml-2 text-[11px] uppercase tracking-label ${new Date(d.evidenceDueBy).getTime() - Date.now() < 3 * 86_400_000 ? 'text-error' : 'text-muted-2'}`}
+                    >
+                      Evidence due{' '}
+                      {new Date(d.evidenceDueBy).toLocaleDateString('en-AU', {
+                        dateStyle: 'medium',
+                      })}
+                    </span>
+                  )}
                 </span>
                 <StatusPill status={d.status} />
               </li>

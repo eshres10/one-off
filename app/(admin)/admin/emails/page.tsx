@@ -21,7 +21,7 @@ export default async function AdminEmailsPage() {
   return (
     <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
       <div>
-        <h1 className="mb-2 text-3xl">Email log</h1>
+        <h1 className="mb-3 text-[40px] leading-none md:text-[48px]">Email log</h1>
         <p className="mb-4 text-sm text-ink-muted">
           Every transactional email is recorded here. With the local outbox driver this is the only
           delivery — open a message to copy links (e.g. sign-in links) during development.

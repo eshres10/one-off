@@ -16,14 +16,15 @@ export default async function LoginPage({
       : '/account';
   if (await getSessionUser()) redirect(next);
   return (
-    <div className="container-page max-w-md pt-12">
-      <h1 className="text-3xl sm:text-4xl">Welcome</h1>
-      <p className="mt-2 text-ink-soft">
+    <div className="mx-auto max-w-md px-4 pt-12 md:pt-20">
+      <p className="eyebrow">Your account</p>
+      <h1 className="mt-2 text-[48px] leading-none">Welcome</h1>
+      <p className="mt-3 text-[14px] text-muted">
         Sign in to save pieces, follow makers, message makers and track orders. Checkout never
         requires an account.
       </p>
       {searchParams.error && (
-        <p className="mt-4 rounded-lg bg-alert-light px-3 py-2 text-sm text-alert" role="alert">
+        <p className="mt-4 bg-error-bg px-3 py-2.5 text-[13px] text-error" role="alert">
           That sign-in link has expired or is invalid. Request a new one below.
         </p>
       )}

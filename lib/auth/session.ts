@@ -48,12 +48,12 @@ export async function requireUser(next = '/account'): Promise<SessionUser> {
 
 export async function requireSeller(): Promise<SessionUser & { makerId: string }> {
   const user = await requireUser('/seller');
-  if (user.role !== 'seller' || !user.makerId) redirect('/');
+  if (user.role !== 'seller' || !user.makerId) redirect('/denied');
   return user as SessionUser & { makerId: string };
 }
 
 export async function requireAdmin(): Promise<SessionUser> {
   const user = await requireUser('/admin');
-  if (user.role !== 'admin') redirect('/');
+  if (user.role !== 'admin') redirect('/denied');
   return user;
 }

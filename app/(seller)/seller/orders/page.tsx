@@ -19,11 +19,11 @@ export default async function SellerOrdersPage({
   const tabs = ['paid', 'preparing', 'shipped', 'delivered', 'refunded'];
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl">Orders</h1>
+      <h1 className="text-[40px] leading-none md:text-[48px]">Orders</h1>
       <nav className="flex flex-wrap gap-2" aria-label="Filter orders">
         <Link
           href="/seller/orders"
-          className={`rounded-full px-3 py-1.5 text-sm ${!filter ? 'bg-ink text-paper' : 'border border-stone'}`}
+          className={`inline-flex min-h-[44px] items-center px-4 text-[11px] uppercase tracking-label ${!filter ? 'glass-dark' : 'border border-line-strong'}`}
         >
           All ({all.length})
         </Link>
@@ -31,7 +31,7 @@ export default async function SellerOrdersPage({
           <Link
             key={t}
             href={`/seller/orders?status=${t}`}
-            className={`rounded-full px-3 py-1.5 text-sm capitalize ${filter === t ? 'bg-ink text-paper' : 'border border-stone'}`}
+            className={`inline-flex min-h-[44px] items-center px-4 text-[11px] uppercase capitalize tracking-label ${filter === t ? 'glass-dark' : 'border border-line-strong'}`}
           >
             {t === 'paid' ? 'New' : t} ({all.filter((o) => o.status === t).length})
           </Link>

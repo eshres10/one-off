@@ -14,7 +14,7 @@ export default async function OnboardingPage() {
   return (
     <div className="max-w-3xl space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-3xl">Profile & settings</h1>
+        <h1 className="text-[40px] leading-none md:text-[48px]">Profile & settings</h1>
         <div className="flex items-center gap-3">
           <StatusPill status={maker.status} />
           {maker.status === 'approved' && (
@@ -47,12 +47,12 @@ export default async function OnboardingPage() {
         </div>
       )}
       {maker.status === 'pending' && (
-        <p className="rounded-lg bg-stone-light px-3 py-2 text-sm">
+        <p className="bg-stone-light px-3 py-2.5 text-[13px]">
           Your profile is with our team for review. We’ll email you when it’s approved.
         </p>
       )}
       {maker.status === 'paused' && maker.rejectionReason && (
-        <p className="rounded-lg bg-alert-light px-3 py-2 text-sm text-alert">
+        <p className="bg-error-bg px-3 py-2.5 text-[13px] text-error">
           Paused by our team: {maker.rejectionReason}
         </p>
       )}

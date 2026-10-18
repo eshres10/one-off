@@ -27,9 +27,11 @@ export default async function AdminMakersPage() {
     order by case m.status when 'pending' then 0 when 'draft' then 1 when 'paused' then 2 else 3 end, m.display_name`;
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl">Makers</h1>
+      <h1 className="text-[40px] leading-none md:text-[48px]">Makers</h1>
       <section className="space-y-2">
-        <h2 className="font-sans text-base font-semibold">Onboard a new seller</h2>
+        <h2 className="font-sans text-[11px] font-normal uppercase tracking-label">
+          Onboard a new seller
+        </h2>
         <p className="text-sm text-ink-muted">
           Seller accounts are invite-only. The seller receives a sign-in link to complete their
           profile, payouts, shipping and returns.
@@ -82,7 +84,7 @@ export default async function AdminMakersPage() {
                       <form action={makerStatusAction}>
                         <input type="hidden" name="makerId" value={m.id} />
                         <input type="hidden" name="status" value="approved" />
-                        <button className="rounded-full bg-ink px-3 py-1 text-xs text-paper">
+                        <button className="glass-dark min-h-[44px] px-4 text-[10px] uppercase tracking-label">
                           Approve
                         </button>
                       </form>
@@ -97,7 +99,7 @@ export default async function AdminMakersPage() {
                           aria-label="Reason for pausing"
                           className="input w-28 py-1 text-xs"
                         />
-                        <button className="rounded-full border border-alert px-3 py-1 text-xs text-alert">
+                        <button className="min-h-[44px] border border-error px-4 text-[10px] uppercase tracking-label text-error">
                           {m.status === 'pending' ? 'Reject' : 'Pause'}
                         </button>
                       </form>

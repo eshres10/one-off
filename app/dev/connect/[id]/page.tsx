@@ -20,7 +20,7 @@ export default function MockConnectPage({
       </div>
       {searchParams.dashboard ? (
         <>
-          <h1 className="text-2xl">Express dashboard</h1>
+          <h1 className="text-[32px] leading-none">Express dashboard</h1>
           <p className="mt-2 text-sm text-ink-muted">
             Account {params.id}. In production this opens Stripe’s Express dashboard with balances
             and payouts.
@@ -31,7 +31,7 @@ export default function MockConnectPage({
         </>
       ) : (
         <form action={mockCompleteOnboardingAction} className="space-y-4">
-          <h1 className="text-2xl">Set up payouts</h1>
+          <h1 className="text-[32px] leading-none">Set up payouts</h1>
           <p className="text-sm text-ink-muted">
             Stripe would collect your ABN, identity and bank details here.
           </p>

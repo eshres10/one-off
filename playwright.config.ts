@@ -37,7 +37,36 @@ export default defineConfig({
       ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH }
       : {},
   },
-  projects: [{ name: 'mobile-chromium', use: { ...devices['Pixel 7'], browserName: 'chromium' } }],
+  snapshotPathTemplate: '{testDir}/__screenshots__/{projectName}/{arg}{ext}',
+  projects: [
+    {
+      name: 'mobile-chromium',
+      testMatch: 'smoke.spec.ts',
+      use: { ...devices['Pixel 7'], browserName: 'chromium' },
+    },
+    {
+      name: 'visual-390',
+      testMatch: 'visual.spec.ts',
+      dependencies: ['mobile-chromium'],
+      use: {
+        browserName: 'chromium',
+        viewport: { width: 390, height: 844 },
+        deviceScaleFactor: 1,
+        isMobile: true,
+        hasTouch: true,
+      },
+    },
+    {
+      name: 'visual-1280',
+      testMatch: 'visual.spec.ts',
+      dependencies: ['visual-390'],
+      use: {
+        browserName: 'chromium',
+        viewport: { width: 1280, height: 800 },
+        deviceScaleFactor: 1,
+      },
+    },
+  ],
   webServer: {
     command:
       'bash scripts/pg-local.sh && tsx scripts/db-setup.ts --reset && tsx scripts/gen-seed-images.ts && tsx scripts/seed.ts && next build && next start -p ' +

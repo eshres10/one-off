@@ -26,9 +26,9 @@ export default async function PayoutsPage({
   ]);
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl">Payouts</h1>
+      <h1 className="text-[40px] leading-none md:text-[48px]">Payouts</h1>
       {searchParams.unavailable && (
-        <p className="rounded-lg bg-stone-light px-3 py-2 text-sm" role="status">
+        <p className="bg-stone-light px-3 py-2.5 text-[13px]" role="status">
           Payout setup opens shortly before launch. We’ll email you when it’s ready.
         </p>
       )}
@@ -69,7 +69,7 @@ export default async function PayoutsPage({
         />
       </div>
       <section>
-        <h2 className="mb-3 text-xl">Transfers by order</h2>
+        <h2 className="mb-4 text-[28px] leading-none">Transfers by order</h2>
         <div className="overflow-x-auto rounded-2xl border border-stone/70 bg-white">
           <table className="w-full min-w-[560px] text-left text-sm">
             <thead className="border-b border-stone/70 text-xs text-ink-muted">

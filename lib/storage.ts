@@ -30,7 +30,7 @@ export function validateImage(bytes: Uint8Array, declaredType: string): UploadCo
 export async function storeImage(
   bytes: Uint8Array,
   declaredType: string,
-  prefix: 'products' | 'messages' | 'commissions' | 'makers' | 'reviews',
+  prefix: 'products' | 'messages' | 'commissions' | 'makers' | 'reviews' | 'collections',
 ) {
   const type = validateImage(bytes, declaredType);
   const name = `${prefix}/${new Date().toISOString().slice(0, 7)}/${randomUUID()}.${TYPES[type].ext}`;

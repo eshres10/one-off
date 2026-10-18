@@ -2,57 +2,157 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  color-scheme: light;
+  --ground: #f6f4f0;
+  --surface: #ffffff;
+  --stone: #eeeae3;
+  --line: #e2ded7;
+  --line-strong: #cfcac2;
+  --ink: #111111;
+  --text-2: #2f2c29;
+  --muted: #4a4743;
+  --muted-2: #6b6762;
+  --disabled: #9c978f;
+  --error-bg: #f5e3de;
+  --error: #6e2a1c;
+  --gutter: clamp(16px, 3vw, 40px);
+  /* RGB channels so Tailwind opacity modifiers (e.g. border-line/60) work */
+  --ground-rgb: 246 244 240;
+  --surface-rgb: 255 255 255;
+  --stone-rgb: 238 234 227;
+  --line-rgb: 226 222 215;
+  --line-strong-rgb: 207 202 194;
+  --ink-rgb: 17 17 17;
+  --text-2-rgb: 47 44 41;
+  --muted-rgb: 74 71 67;
+  --muted-2-rgb: 107 103 98;
+  --disabled-rgb: 156 151 143;
+  --error-bg-rgb: 245 227 222;
+  --error-rgb: 110 42 28;
+}
+
 @layer base {
-  :root {
-    color-scheme: light;
-  }
   html {
     -webkit-text-size-adjust: 100%;
     text-rendering: optimizeLegibility;
   }
   body {
-    @apply bg-paper font-sans text-ink antialiased;
+    @apply bg-ground font-sans text-[14px] font-light leading-normal text-ink antialiased;
   }
   h1,
   h2,
   h3 {
-    @apply font-display tracking-tight;
+    @apply font-display font-normal tracking-[-0.01em];
+  }
+  strong,
+  b {
+    @apply font-medium;
   }
   :focus-visible {
-    @apply outline-none ring-2 ring-ink ring-offset-2 ring-offset-paper;
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
   }
   ::selection {
-    @apply bg-clay-light;
+    background: var(--stone);
   }
 }
 
 @layer components {
   .container-page {
-    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+    @apply mx-auto w-full max-w-page;
+    padding-left: var(--gutter);
+    padding-right: var(--gutter);
   }
+  .bleed {
+    padding-left: var(--gutter);
+    padding-right: var(--gutter);
+  }
+  /* 11px uppercase tracked label */
   .eyebrow {
-    @apply text-[11px] font-medium uppercase tracking-[0.18em] text-ink-muted;
+    @apply text-[11px] font-normal uppercase tracking-label text-muted-2;
   }
+  .label-caps {
+    @apply text-[11px] font-normal uppercase tracking-label;
+  }
+  /* Utility (boxed) input */
   .input {
-    @apply block w-full rounded-lg border border-stone bg-white px-3 py-2.5 text-[15px] text-ink placeholder:text-ink-muted/70 focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink disabled:bg-stone-light;
+    @apply block min-h-[44px] w-full border border-line-strong bg-surface px-3 py-2.5 text-[14px] font-light text-ink placeholder:text-muted-2 focus:border-ink focus:outline-none disabled:bg-stone-light;
+  }
+  /* Editorial input: bottom border only */
+  .input-line {
+    @apply block min-h-[44px] w-full border-0 border-b border-ink bg-transparent px-0 py-2 text-[15px] font-light text-ink placeholder:text-muted-2 focus:outline-none;
   }
   .label {
-    @apply mb-1.5 block text-sm font-medium text-ink;
+    @apply mb-1.5 block text-[11px] font-normal uppercase tracking-label text-muted-2;
   }
   .card {
-    @apply rounded-2xl border border-stone/70 bg-white;
+    @apply border border-line bg-surface;
+  }
+  .panel {
+    @apply bg-stone-light p-4;
   }
   .link {
-    @apply underline decoration-stone-dark underline-offset-4 hover:decoration-ink;
+    @apply underline decoration-1 underline-offset-[5px] hover:decoration-2;
+  }
+  .text-link {
+    @apply text-[11px] uppercase tracking-label underline decoration-1 underline-offset-[6px];
   }
   .skeleton {
-    @apply animate-pulse bg-stone-light;
+    @apply bg-stone-light;
   }
   .no-scrollbar {
     scrollbar-width: none;
   }
   .no-scrollbar::-webkit-scrollbar {
     display: none;
+  }
+
+  /* Signature glass effects. Grain lives in ::before so it never affects text. */
+  .glass-light,
+  .glass-dark {
+    position: relative;
+    isolation: isolate;
+    -webkit-backdrop-filter: blur(30px) saturate(120%);
+    backdrop-filter: blur(30px) saturate(120%);
+  }
+  .glass-light::before,
+  .glass-dark::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image: url('/textures/grain.png');
+    background-size: 128px 128px;
+  }
+  .glass-light {
+    background-color: rgba(246, 244, 240, 0.5);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.45);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.5),
+      0 8px 24px rgba(17, 17, 17, 0.06);
+  }
+  .glass-dark {
+    background-color: rgba(17, 17, 17, 0.82);
+    color: var(--ground);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.16),
+      0 6px 18px rgba(17, 17, 17, 0.18);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass-light {
+    background-color: var(--ground);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .glass-dark {
+    background-color: var(--ink);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 }
 
@@ -63,5 +163,13 @@
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+@media print {
+  .glass-light,
+  .glass-dark {
+    background: none;
+    box-shadow: none;
   }
 }

@@ -14,7 +14,7 @@ export default async function FollowingPage() {
   return (
     <div className="max-w-3xl">
       <div className="mb-6 flex items-end justify-between">
-        <h1 className="text-3xl">Makers you follow</h1>
+        <h1 className="text-[40px] leading-none md:text-[48px]">Makers you follow</h1>
         {makers.length > 0 && (
           <Link href="/?tab=following" className="text-sm underline underline-offset-4">
             See their newest pieces
@@ -35,7 +35,7 @@ export default async function FollowingPage() {
         >
           {makers.map((m) => (
             <li key={m.id} className="flex items-center gap-4 p-4">
-              <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full bg-stone-light">
+              <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-circle bg-stone-light">
                 {m.avatarUrl && (
                   <Image src={m.avatarUrl} alt="" fill sizes="48px" className="object-cover" />
                 )}

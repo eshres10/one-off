@@ -10,11 +10,13 @@ export function SaveButton({
   saved,
   title,
   className = '',
+  boxed = false,
 }: {
   productId: string;
   saved: boolean;
   title: string;
   className?: string;
+  boxed?: boolean;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -36,14 +38,9 @@ export function SaveButton({
           else router.refresh();
         });
       }}
-      className={`inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-ink shadow-sm backdrop-blur transition hover:scale-105 ${className}`}
+      className={`relative z-10 flex h-11 w-11 items-center justify-center text-ink ${boxed ? 'bg-[rgba(246,244,240,0.92)]' : ''} ${className}`}
     >
-      <HeartIcon
-        filled={optimistic}
-        width={18}
-        height={18}
-        className={optimistic ? 'text-alert' : ''}
-      />
+      <HeartIcon filled={optimistic} width={16} height={16} />
     </button>
   );
 }

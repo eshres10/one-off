@@ -22,6 +22,7 @@ export interface ProductCard {
   imageUrl: string | null;
   imageAlt: string | null;
   leadTimeDays: number | null;
+  colours: string[];
   badges: ProductBadge[];
 }
 
@@ -32,7 +33,7 @@ interface CardRow extends Omit<ProductCard, 'badges'> {
 
 const cardColumns = () =>
   sql().unsafe(`
-  p.id, p.slug, p.title, p.price_cents, p.product_type, p.lead_time_days,
+  p.id, p.slug, p.title, p.price_cents, p.product_type, p.lead_time_days, p.colours,
   m.display_name as maker_name, m.slug as maker_slug, m.city as maker_city,
   img.public_url as image_url, img.alt_text as image_alt,
   coalesce(st.total_stock, 0)::int as total_stock, coalesce(st.has_low, false) as has_low`);
@@ -68,6 +69,12 @@ const optionalNumber = z
 
 export const filtersSchema = z.object({
   tab: z.enum(FEED_TABS).catch('for-you').default('for-you'),
+  q: z
+    .string()
+    .max(80)
+    .optional()
+    .catch(undefined)
+    .transform((v) => (v?.trim() ? v.trim() : undefined)),
   category: z.string().max(40).optional().catch(undefined),
   size: z.string().max(10).optional().catch(undefined),
   colour: z.string().max(30).optional().catch(undefined),
@@ -100,12 +107,20 @@ export const PAGE_SIZE = 24;
 export async function getFeed(
   f: FeedFilters,
   userId: string | null,
+  scope: { collectionId?: string; limit?: number } = {},
 ): Promise<{ items: ProductCard[]; hasMore: boolean }> {
   const db = sql();
   const page = Math.max(1, Math.min(f.page ?? 1, 20));
-  const limit = PAGE_SIZE * page;
+  const limit = scope.limit ?? PAGE_SIZE * page;
   const conditions = [
     VISIBLE(),
+    f.q
+      ? db`(p.title ilike ${'%' + f.q + '%'} or m.display_name ilike ${'%' + f.q + '%'} or p.category ilike ${'%' + f.q + '%'}
+            or ${f.q.toLowerCase()} = any(p.tags) or exists (select 1 from unnest(p.colours) c where c ilike ${f.q}))`
+      : null,
+    scope.collectionId
+      ? db`exists (select 1 from public.collection_products cp where cp.product_id = p.id and cp.collection_id = ${scope.collectionId})`
+      : null,
     f.category ? db`p.category = ${f.category}` : null,
     f.type ? db`p.product_type = ${f.type}` : null,
     f.colour ? db`${f.colour} = any(p.colours)` : null,
@@ -369,6 +384,7 @@ export interface MakerProfile {
   customCommissionsEnabled: boolean;
   returnPolicy: string;
   followerCount: number;
+  approvedAt: Date | null;
   userId: string;
 }
 
@@ -378,7 +394,7 @@ export async function getMaker(
   const [maker] = await sql()<MakerProfile[]>`
     select m.id, m.slug, m.display_name, m.tagline, m.story, m.location, m.city, m.state, m.process, m.materials, m.sizing_notes,
            m.avatar_url, m.cover_url, m.lead_time_days, m.response_time_hours, m.rating::float as rating, m.review_count,
-           m.completed_orders, m.custom_commissions_enabled, m.return_policy, m.user_id,
+           m.completed_orders, m.custom_commissions_enabled, m.return_policy, m.user_id, m.approved_at,
            (select count(*) from public.maker_follows f where f.maker_id = m.id)::int as follower_count
     from public.makers m where m.slug = ${slug} and m.status = 'approved'`;
   if (!maker) return null;

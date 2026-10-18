@@ -1,4 +1,3 @@
-import { Img as Image } from '@/components/ui/Img';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { getSessionUser } from '@/lib/auth/session';
@@ -7,18 +6,21 @@ import {
   getCollections,
   getFacetOptions,
   getFeed,
+  getMakersDirectory,
   getPlacements,
   getSavedProductIds,
   parseFilters,
   type FeedFilters,
 } from '@/lib/queries/catalog';
-import { BRAND } from '@/lib/brand';
-import { FeedTabs } from '@/components/feed/FeedTabs';
-import { Filters } from '@/components/feed/Filters';
+import { FEED_EDITORIAL } from '@/lib/editorial';
+import { CollectionChips, FeedTabs } from '@/components/feed/FeedTabs';
+import { FilterBar } from '@/components/feed/FilterBar';
 import { CollectionCard } from '@/components/editorial/CollectionCard';
+import { TrustStrip } from '@/components/editorial/TrustStrip';
 import { ProductGrid, ProductGridSkeleton } from '@/components/product/ProductCard';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { ButtonLink } from '@/components/ui/Button';
+import { BoxButtonGroup, ButtonLink, boxButtonClass } from '@/components/ui/Button';
+import { Img as Image } from '@/components/ui/Img';
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -47,7 +49,7 @@ async function Feed({ filters }: { filters: FeedFilters }) {
   if (filters.tab === 'collections') {
     const collections = await getCollections();
     return (
-      <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" role="list">
+      <ul className="grid gap-[2px] md:grid-cols-2" role="list">
         {collections.map((c) => (
           <li key={c.id}>
             <CollectionCard collection={c} />
@@ -58,12 +60,18 @@ async function Feed({ filters }: { filters: FeedFilters }) {
   }
   if (filters.tab === 'following' && !user) {
     return (
-      <EmptyState
-        title="Follow makers you love"
-        action={<ButtonLink href="/login?next=/?tab=following">Sign in</ButtonLink>}
-      >
-        Sign in and follow makers to see their newest pieces here.
-      </EmptyState>
+      <div className="container-page py-10">
+        <EmptyState
+          title="Follow makers you love"
+          action={
+            <ButtonLink href="/login?next=/?tab=following" variant="secondary">
+              Log in
+            </ButtonLink>
+          }
+        >
+          Log in and follow makers to see their newest pieces here.
+        </EmptyState>
+      </div>
     );
   }
   const [{ items, hasMore }, savedIds] = await Promise.all([
@@ -71,39 +79,49 @@ async function Feed({ filters }: { filters: FeedFilters }) {
     getSavedProductIds(user?.id ?? null),
   ]);
   if (items.length === 0) {
-    return filters.tab === 'following' && activeFilterCount(filters) === 0 ? (
-      <EmptyState
-        title="Nothing from your makers yet"
-        action={
-          <ButtonLink href="/makers" variant="secondary">
-            Find makers to follow
-          </ButtonLink>
-        }
-      >
-        Follow makers to fill this feed with their newest pieces.
-      </EmptyState>
-    ) : (
-      <EmptyState
-        title="No pieces match those filters yet."
-        action={
-          <ButtonLink href="/?tab=new" variant="secondary">
-            Explore new arrivals
-          </ButtonLink>
-        }
-      >
-        Try removing a filter or explore new arrivals.
-      </EmptyState>
+    return (
+      <div className="container-page py-10">
+        {filters.tab === 'following' && activeFilterCount(filters) === 0 ? (
+          <EmptyState
+            title="Nothing from your makers yet"
+            action={
+              <ButtonLink href="/makers" variant="secondary">
+                Find makers to follow
+              </ButtonLink>
+            }
+          >
+            Follow makers to fill this feed with their newest pieces.
+          </EmptyState>
+        ) : (
+          <EmptyState
+            title="No pieces match those filters yet."
+            action={
+              <ButtonLink href="/?tab=new" variant="secondary">
+                Explore new arrivals
+              </ButtonLink>
+            }
+          >
+            Try removing a filter or explore new arrivals.
+          </EmptyState>
+        )}
+      </div>
     );
   }
+  const showEditorial = filters.tab === 'for-you' && activeFilterCount(filters) === 0;
   return (
     <>
-      <ProductGrid products={items} savedIds={savedIds} />
+      <ProductGrid
+        products={items}
+        savedIds={savedIds}
+        editorial={showEditorial ? FEED_EDITORIAL : []}
+      />
       {hasMore && (
         <div className="mt-10 flex justify-center">
           <ButtonLink
             href={queryString(filters, { page: (filters.page ?? 1) + 1 })}
             variant="secondary"
             scroll={false}
+            className="min-w-[250px]"
           >
             Show more pieces
           </ButtonLink>
@@ -115,104 +133,112 @@ async function Feed({ filters }: { filters: FeedFilters }) {
 
 export default async function DiscoverPage({ searchParams }: { searchParams: SearchParams }) {
   const filters = parseFilters(searchParams);
-  const [placements, options] = await Promise.all([getPlacements(), getFacetOptions()]);
+  const [placements, options, collections, makers] = await Promise.all([
+    getPlacements(),
+    getFacetOptions(),
+    getCollections(),
+    getMakersDirectory(),
+  ]);
   const hero = placements.find((p) => p.slot === 'home_hero');
   const isDefault = filters.tab === 'for-you' && activeFilterCount(filters) === 0 && !filters.page;
 
   return (
-    <div className="container-page pt-4 sm:pt-8">
+    <div>
       {isDefault && hero && (
         <section
           aria-labelledby="hero-title"
-          className="mb-8 grid items-center gap-6 overflow-hidden rounded-3xl bg-stone-light sm:mb-12 md:grid-cols-2"
+          className="relative -mt-[60px] flex h-[min(88vh,860px)] min-h-[560px] items-center justify-center overflow-hidden text-ground md:-mt-[76px]"
         >
-          <div className="order-2 px-6 pb-8 md:order-1 md:px-12 md:py-14">
-            <p className="eyebrow">Independent · Australian · Original</p>
-            <h1 id="hero-title" className="mt-3 text-4xl leading-[1.05] sm:text-5xl lg:text-6xl">
+          {hero.imageUrl && (
+            <Image
+              src={hero.imageUrl}
+              alt=""
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover"
+            />
+          )}
+          <span aria-hidden className="absolute inset-0 bg-[rgba(0,0,0,0.28)]" />
+          <div className="relative px-4 pt-16 text-center">
+            {hero.subtitle && (
+              <p className="text-[11px] uppercase tracking-wide2">{hero.subtitle}</p>
+            )}
+            <h1
+              id="hero-title"
+              className="mx-auto mt-4 max-w-[17ch] text-[clamp(64px,9vw,136px)] leading-[0.92]"
+            >
               {hero.title}
             </h1>
-            <p className="mt-4 max-w-md text-ink-soft">{BRAND.tagline}</p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <ButtonLink href={hero.href}>Shop statement dresses</ButtonLink>
-              <ButtonLink href="/makers" variant="secondary">
+            <BoxButtonGroup className="mt-10">
+              <Link href={hero.href} className={boxButtonClass('min-w-[150px] md:min-w-[220px]')}>
+                Shop the edit
+              </Link>
+              <Link href="/makers" className={boxButtonClass('min-w-[150px] md:min-w-[220px]')}>
                 Meet the makers
-              </ButtonLink>
-            </div>
+              </Link>
+            </BoxButtonGroup>
           </div>
-          {hero.imageUrl && (
-            <div className="relative order-1 aspect-[4/3] md:order-2 md:aspect-auto md:h-full md:min-h-[420px]">
-              <Image
-                src={hero.imageUrl}
-                alt="A statement gown photographed under a studio arch"
-                fill
-                priority
-                sizes="(min-width: 768px) 50vw, 100vw"
-                className="object-cover"
-              />
-            </div>
-          )}
         </section>
       )}
       {!isDefault && <h1 className="sr-only">Discover</h1>}
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="mt-10 space-y-6 md:mt-14">
         <FeedTabs active={filters.tab} />
-        {filters.tab !== 'collections' && (
-          <Filters filters={filters} options={options} activeCount={activeFilterCount(filters)} />
-        )}
+        {filters.tab !== 'collections' && <CollectionChips collections={collections.slice(0, 5)} />}
       </div>
+      <div className="mt-6">{filters.tab !== 'collections' && <FilterBar options={options} />}</div>
 
-      {isDefault && (
-        <section
-          aria-label="Featured collections"
-          className="no-scrollbar -mx-4 mt-6 flex gap-3 overflow-x-auto px-4 sm:mx-0 sm:px-0"
-        >
-          {placements
-            .filter((p) => p.slot === 'home_feature')
-            .map((p) => (
-              <Link
-                key={p.id}
-                href={p.href}
-                className="flex shrink-0 items-center gap-3 rounded-full border border-stone bg-white py-1.5 pl-1.5 pr-4 text-sm hover:border-ink"
-              >
-                {p.imageUrl && (
-                  <Image
-                    src={p.imageUrl}
-                    alt=""
-                    width={32}
-                    height={32}
-                    className="h-8 w-8 rounded-full object-cover"
-                  />
-                )}
-                {p.title}
-              </Link>
-            ))}
-          <Link
-            href="/collections/one-of-one-pieces"
-            className="shrink-0 rounded-full border border-stone bg-white px-4 py-2.5 text-sm hover:border-ink"
-          >
-            One-of-one pieces
-          </Link>
-          <Link
-            href="/collections/melbourne-made"
-            className="shrink-0 rounded-full border border-stone bg-white px-4 py-2.5 text-sm hover:border-ink"
-          >
-            Melbourne made
-          </Link>
-          <Link
-            href="/collections/made-to-order"
-            className="shrink-0 rounded-full border border-stone bg-white px-4 py-2.5 text-sm hover:border-ink"
-          >
-            Made to order
-          </Link>
-        </section>
-      )}
-
-      <section aria-label="Pieces" className="mt-6 sm:mt-8">
+      <section aria-label="Pieces" className="mt-[2px]">
         <Suspense key={JSON.stringify(filters)} fallback={<ProductGridSkeleton />}>
           <Feed filters={filters} />
         </Suspense>
       </section>
+
+      {isDefault && (
+        <>
+          <section aria-labelledby="makers-title" className="container-page mt-24 text-center">
+            <h2 id="makers-title" className="text-[44px] leading-none md:text-[64px]">
+              Every maker, hand-selected
+            </h2>
+            <p className="mx-auto mt-4 max-w-xl text-[15px] text-muted">
+              Independent studios across Australia, reviewed one by one before they go live. No
+              resellers, no dropshippers — just people who make clothes.
+            </p>
+          </section>
+          <ul
+            className="no-scrollbar bleed mt-10 flex gap-[2px] overflow-x-auto md:grid md:grid-cols-4 md:overflow-visible"
+            role="list"
+          >
+            {makers.slice(0, 4).map((m) => (
+              <li key={m.id} className="w-[44vw] shrink-0 md:w-auto">
+                <Link href={`/makers/${m.slug}`} className="group block">
+                  <span className="relative block aspect-4/5 overflow-hidden bg-stone-light">
+                    {m.coverUrl && (
+                      <Image
+                        src={m.coverUrl}
+                        alt=""
+                        fill
+                        sizes="(min-width: 768px) 25vw, 45vw"
+                        className="object-cover"
+                      />
+                    )}
+                  </span>
+                  <span className="mt-3 block px-1 text-left font-display text-[24px] leading-tight group-hover:underline md:text-[28px]">
+                    {m.displayName}
+                  </span>
+                  <span className="block px-1 text-left text-[11px] uppercase tracking-label text-muted-2">
+                    {m.city}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-16">
+            <TrustStrip />
+          </div>
+        </>
+      )}
     </div>
   );
 }

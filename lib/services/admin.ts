@@ -307,3 +307,16 @@ export async function marketplaceMetrics(days = 30): Promise<Metrics> {
     flaggedMessages: r.flaggedMessages,
   };
 }
+
+export async function reorderCollections(actorId: string, ids: string[]) {
+  await sql().begin(async (tx) => {
+    for (const [i, id] of ids.entries())
+      await tx`update public.collections set sort_order = ${i} where id = ${id}`;
+  });
+  await audit('admin.collections_reordered', { type: 'collection' }, { ids }, actorId);
+}
+
+export async function setCollectionHero(actorId: string, collectionId: string, url: string) {
+  await sql()`update public.collections set hero_image_url = ${url} where id = ${collectionId}`;
+  await audit('admin.collection_hero', { type: 'collection', id: collectionId }, { url }, actorId);
+}

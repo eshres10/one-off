@@ -37,7 +37,9 @@ export default async function AdminCommissionsPage() {
     select id, display_name from public.makers where status = 'approved' order by custom_commissions_enabled desc, display_name`;
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl">Custom commissions (concierge pilot)</h1>
+      <h1 className="text-[40px] leading-none md:text-[48px]">
+        Custom commissions (concierge pilot)
+      </h1>
       <p className="max-w-3xl text-sm text-ink-muted">
         Checkout for commissions is manual in this MVP. When a buyer accepts a quote, create a
         Stripe Payment Link or invoice for the deposit (Stripe Dashboard → Payment Links), email it
@@ -87,7 +89,9 @@ export default async function AdminCommissionsPage() {
                     </option>
                   ))}
                 </select>
-                <button className="rounded-full border border-ink px-3 text-xs">Assign</button>
+                <button className="min-h-[44px] border border-ink px-4 text-[10px] uppercase tracking-label">
+                  Assign
+                </button>
               </form>
               <form action={commissionAdminAction} className="flex flex-wrap gap-1.5">
                 <input type="hidden" name="requestId" value={r.id} />
@@ -116,7 +120,9 @@ export default async function AdminCommissionsPage() {
                   aria-label="Admin notes"
                   className="input w-64 py-1 text-xs"
                 />
-                <button className="rounded-full bg-ink px-3 text-xs text-paper">Update</button>
+                <button className="glass-dark min-h-[44px] px-4 text-[10px] uppercase tracking-label">
+                  Update
+                </button>
               </form>
             </div>
           </li>

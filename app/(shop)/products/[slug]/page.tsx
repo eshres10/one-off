@@ -18,13 +18,14 @@ import {
 } from '@/lib/queries/catalog';
 import { Gallery } from '@/components/product/Gallery';
 import { PurchasePanel } from '@/components/product/PurchasePanel';
-import { TrustBlock } from '@/components/product/TrustBlock';
 import { Reviews } from '@/components/product/Reviews';
 import { ProductGrid } from '@/components/product/ProductCard';
 import { SaveButton } from '@/components/product/SaveButton';
-import { MakerByline } from '@/components/maker/MakerByline';
+import { MakerStrip } from '@/components/maker/MakerByline';
 import { ProductBadgePill } from '@/components/ui/Badge';
-import { NeedleIcon } from '@/components/ui/icons';
+import { Accordion, InfoPanel, SectionTitle } from '@/components/ui/Panels';
+import { TrustList } from '@/components/ui/TrustList';
+import { ChevronIcon } from '@/components/ui/icons';
 
 export async function generateMetadata({
   params,
@@ -39,32 +40,13 @@ export async function generateMetadata({
   };
 }
 
-function Section({
-  id,
-  title,
-  children,
-  open = false,
-}: {
-  id?: string;
-  title: string;
-  children: React.ReactNode;
-  open?: boolean;
-}) {
-  return (
-    <details id={id} open={open} className="group border-b border-stone/70 py-4">
-      <summary className="flex cursor-pointer list-none items-center justify-between text-[15px] font-medium [&::-webkit-details-marker]:hidden">
-        {title}
-        <span
-          aria-hidden
-          className="text-xl leading-none text-ink-muted transition group-open:rotate-45"
-        >
-          +
-        </span>
-      </summary>
-      <div className="mt-3 text-sm leading-relaxed text-ink-soft">{children}</div>
-    </details>
-  );
-}
+const fmtDay = (d: Date) =>
+  d.toLocaleDateString('en-AU', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'UTC',
+  });
 
 export default async function ProductPage({ params }: { params: { slug: string } }) {
   const user = await getSessionUser();
@@ -81,7 +63,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
   if (!product) notFound();
   const [related, reviews, savedIds] = await Promise.all([
     getRelated(product.id, product.maker.id, product.category, product.colours),
-    getReviews({ productId: product.id }),
+    getReviews({ productId: product.id }, 3),
     getSavedProductIds(user?.id ?? null),
   ]);
 
@@ -105,89 +87,93 @@ export default async function ProductPage({ params }: { params: { slug: string }
     dispatchDays: m.dispatchDays,
   });
   const badges = productBadges(product.productType, product.variants);
+  const primaryBadge = badges.find((b) => b === 'sold_out') ?? badges[0]!;
   const totalStock = product.variants.reduce((s, v) => s + Math.max(0, v.stockQuantity), 0);
-  const shippingText = `${m.freeShippingOverCents ? `Free over ${formatPrice(m.freeShippingOverCents)}, otherwise ` : ''}${formatPrice(
-    m.shippingStandardCents,
-  )} tracked from ${m.city}. Estimated delivery ${formatDateRange(estimate.deliveryFrom, estimate.deliveryTo)}.`;
+  const shippingText = `Shipping ${m.freeShippingOverCents ? `free over ${formatPrice(m.freeShippingOverCents)}, otherwise ` : ''}${formatPrice(m.shippingStandardCents)} [placeholder], shown before you pay.`;
   const returnsText = product.returnPolicy ?? m.returnPolicy;
-  const askHref = `/products/${product.slug}/ask`;
+  const saved = savedIds.has(product.id);
+  const modelLine = product.modelHeightCm
+    ? `Model is ${product.modelHeightCm} cm and wears size ${product.modelSizeWorn ?? '—'}.`
+    : null;
+
+  const typeLine =
+    product.productType === 'made_to_order'
+      ? `Made to order — production takes ${product.leadTimeDays} days`
+      : totalStock === 0
+        ? 'Sold out'
+        : product.productType === 'one_of_one'
+          ? 'One of one — only this piece exists'
+          : `Ready to ship — ${totalStock} in stock`;
+  const dateLine =
+    totalStock === 0 && product.productType !== 'made_to_order'
+      ? 'Follow the maker to hear about restocks.'
+      : `Dispatch by ${fmtDay(estimate.dispatchBy)} · Estimated delivery ${formatDateRange(estimate.deliveryFrom, estimate.deliveryTo)}`;
 
   return (
-    <div className="container-page pb-28 pt-4 sm:pb-0 sm:pt-8">
+    <div className="pb-28 md:pb-0">
       {preview && (
-        <p className="mb-4 rounded-lg bg-clay-light px-3 py-2 text-sm text-clay" role="status">
-          Preview — this listing isn’t visible to shoppers yet.
+        <p
+          className="bg-stone-light px-4 py-2 text-center text-[11px] uppercase tracking-label"
+          role="status"
+        >
+          Preview — this listing isn’t visible to shoppers yet
         </p>
       )}
-      <nav aria-label="Breadcrumb" className="mb-4 text-xs text-ink-muted">
-        <Link href="/" className="hover:underline">
-          Discover
-        </Link>{' '}
-        /{' '}
-        <Link href={`/makers/${m.slug}`} className="hover:underline">
-          {m.displayName}
-        </Link>{' '}
-        / <span aria-current="page">{product.title}</span>
-      </nav>
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-14">
-        <div className="lg:sticky lg:top-24 lg:self-start">
-          <Gallery images={product.images} title={product.title} />
+      <div className="md:grid md:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
+        <div className="md:sticky md:top-[76px] md:self-start">
+          <Gallery
+            images={product.images}
+            title={product.title}
+            overlay={
+              <>
+                <Link
+                  href="/"
+                  aria-label="Back to Discover"
+                  className="absolute left-3 top-3 flex h-11 w-11 items-center justify-center bg-[rgba(246,244,240,0.92)] md:hidden"
+                >
+                  <ChevronIcon dir="left" width={18} height={18} />
+                </Link>
+                <div className="absolute right-3 top-3">
+                  <SaveButton productId={product.id} saved={saved} title={product.title} boxed />
+                </div>
+              </>
+            }
+          />
         </div>
 
-        <div>
-          <MakerByline maker={m} />
-          <div className="mt-5 flex items-start justify-between gap-4">
-            <div>
-              <h1 className="text-3xl leading-tight sm:text-4xl">{product.title}</h1>
-              <p className="mt-2 text-xl">{formatPrice(product.priceCents)}</p>
-            </div>
-            <SaveButton
-              productId={product.id}
-              saved={savedIds.has(product.id)}
-              title={product.title}
-              className="border border-stone"
-            />
-          </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {badges.map((b) => (
-              <ProductBadgePill key={b} badge={b} className="border border-stone/70" />
-            ))}
-          </div>
-
-          <div
-            className="mt-5 rounded-2xl bg-stone-light/70 p-4 text-sm"
-            data-testid="availability"
+        <div className="px-4 pt-4 md:px-10 md:pt-8 lg:px-12">
+          <nav
+            aria-label="Breadcrumb"
+            className="hidden text-[11px] uppercase tracking-label text-muted-2 md:block"
           >
-            {product.productType === 'made_to_order' ? (
-              <>
-                <p className="font-medium">Made to order in {product.leadTimeDays} days</p>
-                <p className="mt-1 text-ink-soft">
-                  Cut and sewn for you after you order. Expected delivery{' '}
-                  {formatDateRange(estimate.deliveryFrom, estimate.deliveryTo)}.
-                </p>
-                {product.madeToOrderOptions && (
-                  <p className="mt-1 text-ink-soft">{product.madeToOrderOptions}</p>
-                )}
-              </>
-            ) : (
-              <>
-                <p className="font-medium">
-                  {totalStock === 0
-                    ? 'Sold out'
-                    : product.productType === 'one_of_one'
-                      ? 'One of one — only this piece exists'
-                      : `Ready to ship · ${totalStock} in stock`}
-                </p>
-                {totalStock > 0 && (
-                  <p className="mt-1 text-ink-soft">
-                    Dispatches within {m.dispatchDays} business day{m.dispatchDays === 1 ? '' : 's'}
-                    . Estimated delivery{' '}
-                    {formatDateRange(estimate.deliveryFrom, estimate.deliveryTo)}.
-                  </p>
-                )}
-              </>
-            )}
+            <Link href="/" className="hover:underline">
+              Discover
+            </Link>{' '}
+            /{' '}
+            <Link href={`/?category=${product.category}`} className="hover:underline">
+              {product.category}
+            </Link>
+          </nav>
+          <div className="md:mt-5">
+            <MakerStrip maker={m} />
           </div>
+          <div className="mt-5">
+            <ProductBadgePill badge={primaryBadge} outlined />
+          </div>
+          <h1 className="mt-3 text-[40px] leading-[0.95] md:text-[clamp(44px,4vw,58px)]">
+            {product.title}
+          </h1>
+          <p className="mt-3 text-[15px]">{formatPrice(product.priceCents)}</p>
+
+          <InfoPanel className="mt-5">
+            <span data-testid="availability" className="block">
+              <span className="block font-normal text-ink">{typeLine}</span>
+              <span className="block text-muted">{dateLine}</span>
+              {product.madeToOrderOptions && (
+                <span className="mt-1 block text-muted">{product.madeToOrderOptions}</span>
+              )}
+            </span>
+          </InfoPanel>
 
           <div className="mt-6">
             <PurchasePanel
@@ -197,109 +183,119 @@ export default async function ProductPage({ params }: { params: { slug: string }
               priceCents={product.priceCents}
               colours={product.colours}
               variants={product.variants}
-              askHref={askHref}
+              askHref={`/products/${product.slug}/ask`}
+              requestHref={
+                m.customCommissionsEnabled
+                  ? `/makers/${m.slug}/commission?product=${product.id}`
+                  : undefined
+              }
+              modelLine={modelLine}
               checkoutEnabled={checkoutEnabled()}
               previewMessage={PREVIEW_MESSAGE}
             />
           </div>
 
           <div className="mt-6">
-            <TrustBlock shipping={shippingText} returns={returnsText} />
+            <TrustList shipsFrom={`${m.displayName}, ${m.city}`} shipping={shippingText} />
           </div>
 
-          <div className="mt-6">
-            <Section title="Description" open>
+          <div className="mt-2">
+            <Accordion title="Description" open>
               <p className="whitespace-pre-line">{product.description}</p>
-            </Section>
-            <Section id="size-and-fit" title="Size & fit">
-              {product.measurements.length > 0 && (
-                <table className="mb-3 w-full text-left text-sm">
-                  <caption className="mb-2 text-left text-xs text-ink-muted">
-                    Garment measurements
-                    {product.measurements[0]?.size ? ` (AU ${product.measurements[0].size})` : ''},
-                    in centimetres
+            </Accordion>
+            <Accordion title="Garment details" open>
+              <dl className="grid grid-cols-[110px_1fr] gap-y-1.5">
+                <dt className="text-muted-2">Fabric</dt>
+                <dd>{product.fabricComposition}</dd>
+                <dt className="text-muted-2">Care</dt>
+                <dd>{product.careInstructions}</dd>
+                <dt className="text-muted-2">Made in</dt>
+                <dd>
+                  {m.city}, {product.countryOfMaking}
+                </dd>
+                {modelLine && (
+                  <>
+                    <dt className="text-muted-2">Model</dt>
+                    <dd>
+                      {product.modelHeightCm} cm, wears size {product.modelSizeWorn}
+                    </dd>
+                  </>
+                )}
+              </dl>
+            </Accordion>
+            <Accordion id="garment-measurements" title="Garment measurements">
+              {product.measurements.length ? (
+                <table className="w-full text-left">
+                  <caption className="mb-2 text-left text-[12px] text-muted-2">
+                    Measured flat
+                    {product.measurements[0]?.size
+                      ? ` on size ${product.measurements[0].size}`
+                      : ''}
+                    , in centimetres
                   </caption>
                   <tbody>
                     {product.measurements.map((ms) => (
-                      <tr key={ms.name} className="border-t border-stone/60">
-                        <th scope="row" className="py-1.5 font-normal">
+                      <tr key={ms.name} className="border-t border-line">
+                        <th scope="row" className="py-2 font-light">
                           {ms.name}
                         </th>
-                        <td className="py-1.5 text-right tabular-nums">{ms.valueCm} cm</td>
+                        <td className="py-2 text-right tabular-nums">{ms.valueCm} cm</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
+              ) : (
+                <p>Ask the maker for exact measurements.</p>
               )}
-              {product.modelHeightCm && (
-                <p>
-                  Model is {product.modelHeightCm} cm and wears AU {product.modelSizeWorn ?? '—'}.
-                </p>
-              )}
-            </Section>
-            <Section title="Fabric & care">
-              <p>
-                <span className="font-medium text-ink">Fabric:</span> {product.fabricComposition}
-              </p>
-              <p className="mt-1">
-                <span className="font-medium text-ink">Care:</span> {product.careInstructions}
-              </p>
-            </Section>
-            <Section title="Where it’s made">
-              <p>
-                Made in {product.countryOfMaking} by {m.displayName}, {m.location}.{' '}
-                {m.completedOrders} orders completed.
-              </p>
-            </Section>
+            </Accordion>
+            <Accordion title="Shipping and returns">
+              <p>{shippingText}</p>
+              <p className="mt-2">{returnsText}</p>
+            </Accordion>
           </div>
-
-          {m.customCommissionsEnabled && (
-            <Link
-              href={`/makers/${m.slug}/commission?product=${product.id}`}
-              className="mt-6 flex items-center gap-3 rounded-2xl border border-dashed border-stone-dark p-4 text-sm hover:border-ink"
-            >
-              <NeedleIcon className="shrink-0" />
-              <span>
-                <span className="block font-medium">Request something similar</span>
-                <span className="text-ink-muted">
-                  Commission a custom piece from {m.displayName} (concierge pilot).
-                </span>
-              </span>
-            </Link>
-          )}
         </div>
       </div>
 
-      <section aria-labelledby="reviews-title" className="mt-16 max-w-3xl">
-        <h2 id="reviews-title" className="text-2xl">
-          Reviews
-        </h2>
-        <p className="mt-1 text-sm text-ink-muted">
-          Reviews come only from buyers whose orders were delivered.
-        </p>
-        <div className="mt-2">
-          <Reviews reviews={reviews} emptyText="No reviews for this piece yet." />
+      <section aria-labelledby="reviews-title" className="container-page mt-20">
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 id="reviews-title" className="text-[44px] leading-none md:text-[56px]">
+              Reviews
+            </h2>
+            <p className="mt-2 text-[13px] text-muted">
+              {m.reviewCount > 0
+                ? `★ ${m.rating.toFixed(1)} from ${m.reviewCount} buyers of ${m.displayName} pieces. `
+                : ''}
+              Only buyers with delivered orders can review.
+            </p>
+          </div>
+          <Link
+            href={`/makers/${m.slug}#reviews`}
+            className="text-[11px] uppercase tracking-label underline underline-offset-[6px]"
+          >
+            All reviews
+          </Link>
         </div>
+        <Reviews reviews={reviews} emptyText="No reviews for this piece yet." />
       </section>
 
       {related.fromMaker.length > 0 && (
-        <section aria-labelledby="more-maker" className="mt-16">
-          <div className="mb-5 flex items-end justify-between">
-            <h2 id="more-maker" className="text-2xl">
-              More from {m.displayName}
-            </h2>
-            <Link href={`/makers/${m.slug}`} className="text-sm underline underline-offset-4">
-              View all
-            </Link>
+        <section aria-labelledby="more-maker" className="mt-20">
+          <div className="container-page">
+            <SectionTitle>
+              <span id="more-maker">More from {m.displayName}</span>
+            </SectionTitle>
           </div>
           <ProductGrid products={related.fromMaker} savedIds={savedIds} priorityCount={0} />
         </section>
       )}
       {related.similar.length > 0 && (
-        <section aria-labelledby="similar" className="mt-16">
-          <h2 id="similar" className="mb-5 text-2xl">
-            You might also love
-          </h2>
+        <section aria-labelledby="similar" className="mt-20">
+          <div className="container-page">
+            <SectionTitle>
+              <span id="similar">You may also like</span>
+            </SectionTitle>
+          </div>
           <ProductGrid products={related.similar} savedIds={savedIds} priorityCount={0} />
         </section>
       )}

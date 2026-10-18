@@ -19,6 +19,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         { href: '/admin/commissions', label: 'Commissions' },
         { href: '/admin/moderation', label: 'Moderation', count: m.flaggedMessages },
         { href: '/admin/emails', label: 'Emails' },
+        { href: '/admin/audit', label: 'Audit log' },
       ]}
     >
       {children}

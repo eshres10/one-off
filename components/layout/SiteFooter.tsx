@@ -1,67 +1,62 @@
 import Link from 'next/link';
 import { BRAND } from '@/lib/brand';
+import { Wordmark } from '@/components/ui/Wordmark';
+import { NewsletterForm } from './NewsletterForm';
+
+const COLS = [
+  [
+    { href: '/?tab=new', label: 'New in' },
+    { href: '/collections', label: 'Collections' },
+    { href: '/collections/made-to-order', label: 'Made to order' },
+    { href: '/makers', label: 'Makers' },
+  ],
+  [
+    { href: '/help/how-it-works', label: 'How it works' },
+    { href: '/help/shipping', label: 'Shipping' },
+    { href: '/help/returns-and-fit', label: 'Returns & fit' },
+    { href: '/help/contact', label: 'Contact & help' },
+  ],
+  [
+    { href: '/help/sell-with-us', label: 'Sell with us' },
+    { href: '/help/about', label: 'About' },
+    { href: '/help/privacy', label: 'Privacy' },
+    { href: '/help/terms', label: 'Terms' },
+  ],
+];
 
 export function SiteFooter() {
   return (
-    <footer className="mt-24 border-t border-stone/70 bg-stone-light/50">
-      <div className="container-page grid gap-10 py-14 md:grid-cols-4">
-        <div className="md:col-span-2">
-          <p className="font-display text-2xl">{BRAND.name}</p>
-          <p className="mt-3 max-w-sm text-sm text-ink-soft">{BRAND.tagline}</p>
-          <p className="mt-6 text-xs text-ink-muted">
-            Ships within Australia only. Prices in AUD and include GST where applicable.
+    <footer className="mt-24 border-t border-line">
+      <div className="container-page grid gap-10 py-14 md:grid-cols-[repeat(3,minmax(0,1fr))_minmax(0,1.6fr)]">
+        {COLS.map((col, i) => (
+          <ul key={i} className="space-y-3">
+            {col.map((l) => (
+              <li key={l.href}>
+                <Link
+                  href={l.href}
+                  className="text-[11px] uppercase tracking-label hover:underline hover:underline-offset-[6px]"
+                >
+                  {l.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ))}
+        <div>
+          <p className="font-display text-[32px] italic leading-none">Stay connected</p>
+          <p className="mt-3 text-[13px] text-muted">First look at every drop from our makers.</p>
+          <NewsletterForm />
+          <p className="mt-6 text-[12px] leading-relaxed text-muted-2">
+            {BRAND.name} acknowledges the Traditional Custodians of the lands on which our makers
+            work, and pays respect to Elders past and present.
           </p>
         </div>
-        <div>
-          <p className="eyebrow">Shop</p>
-          <ul className="mt-3 space-y-2 text-sm">
-            <li>
-              <Link href="/" className="hover:underline">
-                Discover
-              </Link>
-            </li>
-            <li>
-              <Link href="/collections" className="hover:underline">
-                Collections
-              </Link>
-            </li>
-            <li>
-              <Link href="/makers" className="hover:underline">
-                Makers
-              </Link>
-            </li>
-            <li>
-              <Link href="/custom" className="hover:underline">
-                Request a custom piece
-              </Link>
-            </li>
-          </ul>
-        </div>
-        <div>
-          <p className="eyebrow">Help</p>
-          <ul className="mt-3 space-y-2 text-sm">
-            <li>
-              <Link href="/help/buyer-protection" className="hover:underline">
-                Buyer protection
-              </Link>
-            </li>
-            <li>
-              <Link href="/help/shipping-returns" className="hover:underline">
-                Shipping & returns
-              </Link>
-            </li>
-            <li>
-              <Link href="/help/selling" className="hover:underline">
-                Selling (invite only)
-              </Link>
-            </li>
-            <li>
-              <a href={`mailto:${BRAND.supportEmail}`} className="hover:underline">
-                Contact us
-              </a>
-            </li>
-          </ul>
-        </div>
+      </div>
+      <div className="container-page flex flex-wrap items-center justify-between gap-4 border-t border-line py-8">
+        <Wordmark size="footer" />
+        <p className="text-[11px] uppercase tracking-label text-muted-2">
+          © {new Date().getFullYear()} {BRAND.name} · Made in Australia, straight from the maker
+        </p>
       </div>
     </footer>
   );

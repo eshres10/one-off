@@ -14,7 +14,7 @@ export default async function CommissionsPage() {
   return (
     <div className="max-w-3xl">
       <div className="mb-6 flex items-end justify-between">
-        <h1 className="text-3xl">Custom requests</h1>
+        <h1 className="text-[40px] leading-none md:text-[48px]">Custom requests</h1>
         <Link href="/custom" className="text-sm underline underline-offset-4">
           New request
         </Link>

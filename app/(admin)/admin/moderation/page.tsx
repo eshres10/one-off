@@ -19,7 +19,7 @@ export default async function ModerationPage() {
     where msg.is_flagged order by msg.created_at desc limit 100`;
   return (
     <div className="space-y-4">
-      <h1 className="text-3xl">Flagged messages</h1>
+      <h1 className="text-[40px] leading-none md:text-[48px]">Flagged messages</h1>
       <p className="text-sm text-ink-muted">
         Blocked automatically for sharing contact details, bank details, links or off-platform
         payment requests. They were never delivered.

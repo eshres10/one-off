@@ -4,109 +4,129 @@ import { getSessionUser } from '@/lib/auth/session';
 import { cartCount } from '@/lib/services/cart';
 import { checkoutEnabled } from '@/lib/features';
 import { getCartSessionId } from '@/lib/actions/util';
-import { BagIcon, ChatIcon, HeartIcon, UserIcon } from '@/components/ui/icons';
+import { BagIcon } from '@/components/ui/icons';
+import { Wordmark } from '@/components/ui/Wordmark';
+import { MobileMenu } from './MobileMenu';
 
-const NAV = [
+const PRIMARY = [
   { href: '/', label: 'Discover' },
   { href: '/collections', label: 'Collections' },
   { href: '/makers', label: 'Makers' },
-  { href: '/?tab=new', label: 'New this week' },
+  { href: '/?tab=following', label: 'Following' },
 ];
+
+const navLink = 'text-[11px] uppercase tracking-label hover:underline hover:underline-offset-[6px]';
 
 export async function SiteHeader() {
   const checkoutOn = checkoutEnabled();
-  const [user, count] = await Promise.all([getSessionUser(), cartCount(getCartSessionId())]);
-  const iconLink =
-    'relative inline-flex h-10 w-10 items-center justify-center rounded-full hover:bg-stone-light';
+  const [user, count] = await Promise.all([
+    getSessionUser(),
+    checkoutOn ? cartCount(getCartSessionId()) : Promise.resolve(0),
+  ]);
+  const accountHref = user
+    ? user.role === 'seller'
+      ? '/seller'
+      : user.role === 'admin'
+        ? '/admin'
+        : '/account'
+    : '/login';
+  const accountLabel = user
+    ? user.role === 'seller'
+      ? 'Studio'
+      : user.role === 'admin'
+        ? 'Admin'
+        : 'Account'
+    : 'Log in';
+  const menuLinks = [
+    ...PRIMARY,
+    { href: '/search', label: 'Search' },
+    { href: '/account/saved', label: 'Saved' },
+    ...(user
+      ? [
+          {
+            href: user.role === 'seller' ? '/seller/messages' : '/account/messages',
+            label: 'Messages',
+          },
+        ]
+      : []),
+    { href: accountHref, label: accountLabel },
+    { href: '/help/how-it-works', label: 'How it works' },
+  ];
   return (
-    <header className="sticky top-0 z-40 border-b border-stone/60 bg-paper/95 backdrop-blur supports-[backdrop-filter]:bg-paper/80">
+    <>
       <a
         href="#main"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:bg-ink focus:px-3 focus:py-2 focus:text-paper"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-[60] focus:bg-ink focus:px-3 focus:py-2 focus:text-ground"
       >
         Skip to content
       </a>
-      <div className="container-page flex h-14 items-center justify-between gap-4 sm:h-16">
-        <Link
-          href="/"
-          className="font-display text-xl tracking-tight sm:text-2xl"
-          aria-label={`${BRAND.name} home`}
-        >
-          {BRAND.name}
-        </Link>
-        <nav aria-label="Primary" className="hidden items-center gap-6 text-sm md:flex">
-          {NAV.map((n) => (
-            <Link key={n.href} href={n.href} className="text-ink-soft hover:text-ink">
-              {n.label}
-            </Link>
-          ))}
-        </nav>
-        <div className="flex items-center gap-0.5">
-          {user?.role === 'seller' && (
-            <Link
-              href="/seller"
-              className="mr-1 hidden rounded-full border border-stone px-3 py-1.5 text-xs font-medium sm:inline-block"
-            >
-              Seller dashboard
-            </Link>
-          )}
-          {user?.role === 'admin' && (
-            <Link
-              href="/admin"
-              className="mr-1 hidden rounded-full border border-stone px-3 py-1.5 text-xs font-medium sm:inline-block"
-            >
-              Admin
-            </Link>
-          )}
-          <Link href="/account/saved" className={iconLink} aria-label="Saved pieces">
-            <HeartIcon />
+      <p className="bg-ink px-4 py-2 text-center text-[10px] uppercase tracking-label text-ground sm:text-[11px]">
+        {BRAND.announcement}
+      </p>
+      <header className="glass-light sticky top-0 z-40">
+        <div className="container-page grid h-[60px] grid-cols-[1fr_auto_1fr] items-center md:h-[76px]">
+          <div className="flex items-center">
+            <div className="md:hidden">
+              <MobileMenu links={menuLinks} />
+            </div>
+            <nav aria-label="Primary" className="hidden items-center gap-7 md:flex">
+              {PRIMARY.map((n) => (
+                <Link key={n.href} href={n.href} className={navLink}>
+                  {n.label}
+                </Link>
+              ))}
+            </nav>
+          </div>
+          <Link href="/" aria-label={`${BRAND.name} home`} className="justify-self-center">
+            <Wordmark />
           </Link>
-          {user && (
-            <Link
-              href={user.role === 'seller' ? '/seller/messages' : '/account/messages'}
-              className={iconLink}
-              aria-label="Messages"
-            >
-              <ChatIcon />
-            </Link>
-          )}
-          <Link
-            href={user ? '/account' : '/login'}
-            className={iconLink}
-            aria-label={user ? 'Your account' : 'Sign in'}
-          >
-            <UserIcon />
-          </Link>
-          {checkoutOn && (
-            <Link
-              href="/bag"
-              className={iconLink}
-              aria-label={`Bag, ${count} ${count === 1 ? 'item' : 'items'}`}
-              data-testid="bag-link"
-            >
-              <BagIcon />
-              {count > 0 && (
-                <span
-                  className="absolute right-0.5 top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-ink px-1 text-[10px] font-semibold text-paper"
-                  aria-hidden
+          <div className="flex items-center justify-end gap-6">
+            <nav aria-label="Account" className="hidden items-center gap-6 md:flex">
+              <Link href="/search" className={navLink}>
+                Search
+              </Link>
+              <Link href="/account/saved" className={navLink}>
+                Saved
+              </Link>
+              {user && (
+                <Link
+                  href={user.role === 'seller' ? '/seller/messages' : '/account/messages'}
+                  className={navLink}
                 >
-                  {count}
-                </span>
+                  Messages
+                </Link>
               )}
-            </Link>
-          )}
+              <Link href={accountHref} className={navLink}>
+                {accountLabel}
+              </Link>
+              {checkoutOn && (
+                <Link
+                  href="/bag"
+                  className={navLink}
+                  data-testid="bag-link"
+                  aria-label={`Bag, ${count} ${count === 1 ? 'item' : 'items'}`}
+                >
+                  Bag ({count})
+                </Link>
+              )}
+            </nav>
+            {checkoutOn && (
+              <Link
+                href="/bag"
+                className="relative flex h-11 w-11 items-center justify-center md:hidden"
+                aria-label={`Bag, ${count} ${count === 1 ? 'item' : 'items'}`}
+              >
+                <BagIcon />
+                {count > 0 && (
+                  <span aria-hidden className="absolute right-1 top-1.5 text-[10px] font-medium">
+                    {count}
+                  </span>
+                )}
+              </Link>
+            )}
+          </div>
         </div>
-      </div>
-      <nav
-        aria-label="Sections"
-        className="no-scrollbar container-page flex gap-5 overflow-x-auto pb-2.5 text-sm md:hidden"
-      >
-        {NAV.map((n) => (
-          <Link key={n.href} href={n.href} className="shrink-0 text-ink-soft hover:text-ink">
-            {n.label}
-          </Link>
-        ))}
-      </nav>
-    </header>
+      </header>
+    </>
   );
 }

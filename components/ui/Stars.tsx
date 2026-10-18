@@ -1,9 +1,7 @@
-import { StarIcon } from './icons';
-
 export function Stars({
   rating,
   count,
-  size = 14,
+  size = 12,
 }: {
   rating: number;
   count?: number;
@@ -11,14 +9,13 @@ export function Stars({
 }) {
   const rounded = Math.round(rating);
   return (
-    <span className="inline-flex items-center gap-1 text-sm text-ink-soft">
-      <span className="inline-flex text-ink" aria-hidden>
-        {[1, 2, 3, 4, 5].map((i) => (
-          <StarIcon key={i} width={size} height={size} filled={i <= rounded} />
-        ))}
+    <span className="inline-flex items-center gap-1 text-ink" style={{ fontSize: size }}>
+      <span aria-hidden className="tracking-[0.12em]">
+        {'★★★★★'.slice(0, rounded)}
+        <span className="text-disabled">{'★★★★★'.slice(rounded)}</span>
       </span>
       <span className="sr-only">Rated {rating.toFixed(1)} out of 5</span>
-      {count !== undefined && <span aria-hidden>({count})</span>}
+      {count !== undefined && <span className="text-muted-2">({count})</span>}
     </span>
   );
 }

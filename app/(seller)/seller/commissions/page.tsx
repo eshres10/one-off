@@ -13,7 +13,7 @@ export default async function SellerCommissionsPage() {
   const { requests } = await getSellerCommissions(seller);
   return (
     <div className="max-w-3xl space-y-6">
-      <h1 className="text-3xl">Custom requests</h1>
+      <h1 className="text-[40px] leading-none md:text-[48px]">Custom requests</h1>
       <PilotNotice />
       {requests.length === 0 ? (
         <EmptyState title="No requests yet">

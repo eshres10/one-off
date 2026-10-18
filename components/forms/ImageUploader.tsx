@@ -14,7 +14,7 @@ export function ImageUploader({
   onChange,
 }: {
   name?: string;
-  kind: 'messages' | 'commissions' | 'products' | 'reviews' | 'makers';
+  kind: 'messages' | 'commissions' | 'products' | 'reviews' | 'makers' | 'collections';
   max?: number;
   initial?: string[];
   label?: string;
@@ -64,12 +64,12 @@ export function ImageUploader({
       ))}
       <div className="flex flex-wrap items-center gap-2">
         {urls.map((u) => (
-          <span key={u} className="relative h-16 w-16 overflow-hidden rounded-lg bg-stone-light">
+          <span key={u} className="relative h-16 w-14 overflow-hidden bg-stone-light">
             <img src={u} alt="Attached image" className="h-full w-full object-cover" />
             <button
               type="button"
               onClick={() => update(urls.filter((x) => x !== u))}
-              className="absolute right-0.5 top-0.5 rounded-full bg-white/90 p-0.5"
+              className="absolute right-0 top-0 flex h-6 w-6 items-center justify-center bg-ground/90"
               aria-label="Remove image"
             >
               <CloseIcon width={14} height={14} />
@@ -77,7 +77,7 @@ export function ImageUploader({
           </span>
         ))}
         {urls.length < max && (
-          <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-stone bg-white px-3 py-2 text-sm hover:border-ink">
+          <label className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 border border-line-strong bg-surface px-3 text-[11px] uppercase tracking-label hover:border-ink">
             <ImageIcon width={16} height={16} />
             {busy ? 'Uploading…' : label}
             <input
@@ -93,7 +93,7 @@ export function ImageUploader({
         )}
       </div>
       {error && (
-        <p className="mt-1 text-sm text-alert" role="alert">
+        <p className="mt-1 text-[12px] text-error" role="alert">
           {error}
         </p>
       )}

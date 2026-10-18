@@ -16,7 +16,7 @@ export default async function AdminHome() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl">Marketplace metrics</h1>
+        <h1 className="text-[40px] leading-none md:text-[48px]">Marketplace metrics</h1>
         <p className="text-sm text-ink-muted">Last 30 days (repeat purchase rate is all-time)</p>
       </div>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4" data-testid="admin-metrics">
@@ -42,7 +42,7 @@ export default async function AdminHome() {
         />
       </div>
       <section>
-        <h2 className="mb-3 text-xl">Recent activity</h2>
+        <h2 className="mb-4 text-[28px] leading-none">Recent activity</h2>
         <ul
           className="divide-y divide-stone/70 rounded-2xl border border-stone/70 bg-white text-sm"
           role="list"

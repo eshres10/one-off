@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { BUYERS, PASSWORD, PRODUCTS } from '../scripts/seed-data';
+import { BUYERS, MAKERS, PASSWORD, PRODUCTS } from '../scripts/seed-data';
 
 // A ready-to-ship piece with plenty of stock in at least one size.
 const product = PRODUCTS.find(
@@ -12,9 +12,9 @@ const size = product.variants.find((v) => v.stock >= 4)!.size;
 
 async function login(page: Page, email: string, next: string) {
   await page.goto(`/login?next=${encodeURIComponent(next)}`);
-  await page.getByLabel('Email').fill(email);
-  await page.getByLabel('Password').fill(PASSWORD);
-  await page.getByRole('button', { name: 'Sign in' }).click();
+  await page.getByLabel('Email', { exact: true }).fill(email);
+  await page.getByLabel('Password', { exact: true }).fill(PASSWORD);
+  await page.locator('form').getByRole('button', { name: 'Sign in' }).click();
   await page.waitForURL((url) => url.pathname === next.split('?')[0]);
 }
 
@@ -23,12 +23,14 @@ test.describe.serial('marketplace smoke', () => {
 
   test('browse the home feed', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: /Original fashion/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Pieces nobody else/i })).toBeVisible();
     const cards = page.getByTestId('product-card');
     await expect(cards.first()).toBeVisible();
     expect(await cards.count()).toBeGreaterThanOrEqual(8);
     // Every card shows the maker.
-    await expect(cards.first()).toContainText('·');
+    await expect(cards.first()).toContainText(
+      new RegExp(MAKERS.map((m) => m.displayName).join('|')),
+    );
     await page.getByRole('link', { name: 'New this week' }).first().click();
     await expect(page).toHaveURL(/tab=new/);
     await expect(page.getByTestId('product-card').first()).toBeVisible();
@@ -42,8 +44,11 @@ test.describe.serial('marketplace smoke', () => {
     ).toBeVisible();
     await expect(page.getByTestId('availability')).toContainText('Ready to ship');
 
-    await page.getByRole('radio', { name: `Size ${size}` }).click();
-    await page.getByRole('button', { name: 'Add to bag' }).click();
+    await page.getByRole('button', { name: `Size ${size}`, exact: true }).click();
+    await page
+      .getByRole('button', { name: /^Add to bag/ })
+      .filter({ visible: true })
+      .click();
     await page.getByTestId('view-bag').click();
 
     await expect(page.getByTestId('bag-line')).toHaveCount(1);

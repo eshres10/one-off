@@ -6,7 +6,7 @@ import { storeImage } from '@/lib/storage';
 import { uploadsEnabled } from '@/lib/features';
 import { reportError } from '@/lib/log';
 
-const KINDS = ['products', 'messages', 'commissions', 'makers', 'reviews'] as const;
+const KINDS = ['products', 'messages', 'commissions', 'makers', 'reviews', 'collections'] as const;
 
 /** Authenticated image upload. Validates type by signature and size (8 MB) server-side. */
 export async function POST(req: Request) {

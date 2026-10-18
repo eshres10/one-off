@@ -16,7 +16,7 @@ export default async function ListingsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-end justify-between">
-        <h1 className="text-3xl">Listings</h1>
+        <h1 className="text-[40px] leading-none md:text-[48px]">Listings</h1>
         <ButtonLink href="/seller/listings/new">New listing</ButtonLink>
       </div>
       <p className="text-sm text-ink-muted">

@@ -307,9 +307,10 @@ async function onDisputeCreated(dispute: Stripe.Dispute) {
     { id: string }[]
   >`select id from public.orders where stripe_charge_id = ${chargeId}`;
   await sql()`
-    insert into public.disputes (order_id, stripe_dispute_id, stripe_charge_id, amount_cents, reason, status)
-    values (${order?.id ?? null}, ${dispute.id}, ${chargeId}, ${dispute.amount}, ${dispute.reason}, ${dispute.status})
-    on conflict (stripe_dispute_id) do update set status = excluded.status, updated_at = now()`;
+    insert into public.disputes (order_id, stripe_dispute_id, stripe_charge_id, amount_cents, reason, status, evidence_due_by)
+    values (${order?.id ?? null}, ${dispute.id}, ${chargeId}, ${dispute.amount}, ${dispute.reason}, ${dispute.status},
+      ${dispute.evidence_details?.due_by ? new Date(dispute.evidence_details.due_by * 1000) : null})
+    on conflict (stripe_dispute_id) do update set status = excluded.status, evidence_due_by = excluded.evidence_due_by, updated_at = now()`;
   await audit(
     'dispute.created',
     { type: 'order', id: order?.id ?? null },

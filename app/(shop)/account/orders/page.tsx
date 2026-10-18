@@ -11,7 +11,7 @@ export default async function OrdersPage() {
   const orders = await getBuyerOrders(user);
   return (
     <div className="max-w-3xl space-y-6">
-      <h1 className="text-3xl">Orders</h1>
+      <h1 className="text-[40px] leading-none md:text-[48px]">Orders</h1>
       {orders.length === 0 ? (
         <EmptyState
           title="No orders yet"

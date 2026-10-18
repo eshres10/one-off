@@ -31,7 +31,7 @@ export default async function CommissionDetailPage({
         ← All custom requests
       </Link>
       {searchParams.submitted && (
-        <p className="rounded-lg bg-moss-light px-3 py-2 text-sm text-moss" role="status">
+        <p className="bg-stone-light px-3 py-2.5 text-[13px]" role="status">
           Request sent!{' '}
           {r.makerName
             ? `${r.makerName} has been notified by email.`
@@ -40,7 +40,7 @@ export default async function CommissionDetailPage({
       )}
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-3xl">{r.garmentType}</h1>
+          <h1 className="text-[40px] leading-none md:text-[48px]">{r.garmentType}</h1>
           <p className="text-sm text-ink-muted">
             {r.makerName ? `With ${r.makerName}` : 'Awaiting maker match'} · submitted{' '}
             {new Date(r.createdAt).toLocaleDateString('en-AU', { dateStyle: 'medium' })}

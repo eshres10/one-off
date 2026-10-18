@@ -27,7 +27,7 @@ export default async function SellerCommissionPage({ params }: { params: { id: s
           ← All requests
         </Link>
         <div className="flex items-start justify-between gap-3">
-          <h1 className="text-3xl">{r.garmentType}</h1>
+          <h1 className="text-[40px] leading-none md:text-[48px]">{r.garmentType}</h1>
           <StatusPill status={r.status} />
         </div>
         <dl className="card grid gap-3 p-5 text-sm sm:grid-cols-2">

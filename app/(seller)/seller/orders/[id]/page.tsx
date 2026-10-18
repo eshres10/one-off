@@ -23,7 +23,7 @@ export default async function SellerOrderPage({ params }: { params: { id: string
           ← All orders
         </Link>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-3xl">Order {o.orderNumber}</h1>
+          <h1 className="text-[40px] leading-none md:text-[48px]">Order {o.orderNumber}</h1>
           <StatusPill status={o.status} />
         </div>
         <ul
@@ -120,7 +120,7 @@ export default async function SellerOrderPage({ params }: { params: { id: string
         <Link
           href={`/packing-slip/${o.id}`}
           target="_blank"
-          className="block rounded-full border border-ink py-2.5 text-center text-sm font-medium hover:bg-ink hover:text-paper"
+          className="flex min-h-[52px] items-center justify-center border border-ink text-[11px] uppercase tracking-label hover:bg-ink hover:text-ground"
         >
           Print packing slip
         </Link>

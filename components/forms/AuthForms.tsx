@@ -37,7 +37,7 @@ export function AuthForms({ next, magicLinks = true }: { next: string; magicLink
         setMode(m);
         setClientErrors({});
       }}
-      className={`flex-1 rounded-full px-3 py-2 text-sm ${mode === m ? 'bg-ink text-paper' : 'text-ink-soft hover:text-ink'}`}
+      className={`min-h-[44px] text-[11px] uppercase tracking-label ${mode === m ? 'text-ink underline underline-offset-[8px]' : 'text-muted-2 hover:text-ink'}`}
     >
       {label}
     </button>
@@ -45,11 +45,7 @@ export function AuthForms({ next, magicLinks = true }: { next: string; magicLink
 
   return (
     <div>
-      <div
-        role="tablist"
-        aria-label="Sign in options"
-        className="flex gap-1 rounded-full border border-stone bg-white p-1"
-      >
+      <div role="tablist" aria-label="Sign in options" className="flex gap-6 border-b border-line">
         {tab('password', 'Sign in')}
         {magicLinks && tab('magic', 'Email me a link')}
         {tab('signup', 'Create account')}
@@ -69,7 +65,7 @@ export function AuthForms({ next, magicLinks = true }: { next: string; magicLink
             <Input name="password" type="password" autoComplete="current-password" required />
           </Field>
           <FormAlert message={loginState?.message} />
-          <SubmitButton className="w-full" pendingLabel="Signing in…">
+          <SubmitButton size="lg" className="w-full" pendingLabel="Signing in…">
             Sign in
           </SubmitButton>
         </form>
@@ -87,7 +83,7 @@ export function AuthForms({ next, magicLinks = true }: { next: string; magicLink
             <Input name="email" type="email" autoComplete="email" required />
           </Field>
           <FormAlert message={magicState?.message} tone={magicState?.ok ? 'success' : 'error'} />
-          <SubmitButton className="w-full" pendingLabel="Sending…">
+          <SubmitButton size="lg" className="w-full" pendingLabel="Sending…">
             Email me a sign-in link
           </SubmitButton>
         </form>
@@ -120,10 +116,10 @@ export function AuthForms({ next, magicLinks = true }: { next: string; magicLink
             <Input name="password" type="password" autoComplete="new-password" required />
           </Field>
           <FormAlert message={signupState?.message} tone={signupState?.ok ? 'success' : 'error'} />
-          <SubmitButton className="w-full" pendingLabel="Creating account…">
+          <SubmitButton size="lg" className="w-full" pendingLabel="Creating account…">
             Create account
           </SubmitButton>
-          <p className="text-xs text-ink-muted">
+          <p className="text-[12px] text-muted-2">
             Selling on the platform is by invitation. Seller accounts are set up by our team.
           </p>
         </form>

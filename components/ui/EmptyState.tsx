@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 
+/** One serif line, one line of guidance, one outline button. */
 export function EmptyState({
   title,
   children,
@@ -10,10 +11,10 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="mx-auto max-w-md rounded-2xl border border-dashed border-stone-dark/60 px-6 py-12 text-center">
-      <p className="font-display text-xl">{title}</p>
-      {children && <div className="mt-2 text-sm text-ink-muted">{children}</div>}
-      {action && <div className="mt-5 flex justify-center">{action}</div>}
+    <div className="mx-auto max-w-lg border-y border-line px-6 py-16 text-center">
+      <p className="font-display text-[32px] leading-tight">{title}</p>
+      {children && <div className="mt-2 text-[14px] text-muted">{children}</div>}
+      {action && <div className="mt-6 flex justify-center">{action}</div>}
     </div>
   );
 }

@@ -10,7 +10,7 @@ export default async function MessagesPage() {
   const threads = await listThreads(user, 'buyer');
   return (
     <div className="max-w-3xl">
-      <h1 className="mb-6 text-3xl">Messages</h1>
+      <h1 className="mb-8 text-[40px] leading-none md:text-[48px]">Messages</h1>
       {threads.length ? (
         <ThreadList threads={threads} base="/account/messages" />
       ) : (

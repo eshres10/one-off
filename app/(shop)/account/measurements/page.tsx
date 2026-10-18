@@ -9,7 +9,7 @@ export default async function MeasurementsPage() {
   const m = await getMeasurements(user);
   return (
     <div className="max-w-lg">
-      <h1 className="text-3xl">Your measurements</h1>
+      <h1 className="text-[40px] leading-none md:text-[48px]">Your measurements</h1>
       <p className="mt-2 text-sm text-ink-muted">
         Saved privately to your account to make sizing questions and custom requests quicker. Only
         you can see them.

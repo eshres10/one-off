@@ -4,7 +4,6 @@ import { sql } from '@/lib/db';
 import { formatPrice } from '@/lib/domain/money';
 import { formatDateRange } from '@/lib/domain/leadTime';
 import { ButtonLink } from '@/components/ui/Button';
-import { CheckIcon } from '@/components/ui/icons';
 
 export const metadata = { title: 'Order confirmed' };
 
@@ -36,7 +35,7 @@ export default async function SuccessPage({
   if (!order) {
     return (
       <div className="container-page max-w-xl pt-16 text-center">
-        <h1 className="text-3xl">We couldn’t find that order</h1>
+        <h1 className="text-[40px] leading-none md:text-[48px]">We couldn’t find that order</h1>
         <p className="mt-2 text-ink-muted">
           If you were charged, your confirmation email has the details.
         </p>
@@ -47,7 +46,7 @@ export default async function SuccessPage({
     return (
       <div className="container-page max-w-xl pt-16 text-center">
         <meta httpEquiv="refresh" content="2" />
-        <h1 className="text-3xl">Confirming your payment…</h1>
+        <h1 className="text-[40px] leading-none md:text-[48px]">Confirming your payment…</h1>
         <p className="mt-2 text-ink-muted" role="status">
           This usually takes a few seconds. This page will update automatically.
         </p>
@@ -62,64 +61,74 @@ export default async function SuccessPage({
       quantity: number;
       lineTotalCents: number;
       imageUrl: string | null;
+      productType: string;
       makerName: string;
       from: Date;
       to: Date;
     }[]
   >`
-    select oi.id, oi.product_title, oi.variant_label, oi.quantity, oi.line_total_cents, oi.image_url, m.display_name as maker_name,
+    select oi.id, oi.product_title, oi.variant_label, oi.quantity, oi.line_total_cents, oi.image_url, oi.product_type, m.display_name as maker_name,
            f.estimated_delivery_from as from, f.estimated_delivery_to as to
     from public.order_items oi join public.makers m on m.id = oi.maker_id join public.fulfilments f on f.id = oi.fulfilment_id
     where oi.order_id = ${order.id} order by m.display_name`;
-  const makers = new Set(items.map((i) => i.makerName));
+  const byMaker = new Map<string, Array<(typeof items)[number]>>();
+  for (const i of items) byMaker.set(i.makerName, [...(byMaker.get(i.makerName) ?? []), i]);
 
   return (
-    <div className="container-page max-w-2xl pt-12" data-testid="order-confirmation">
-      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-moss-light text-moss">
-        <CheckIcon />
-      </span>
-      <h1 className="mt-4 text-3xl sm:text-4xl">Thank you — your order is confirmed</h1>
-      <p className="mt-2 text-ink-soft">
+    <div className="mx-auto max-w-3xl px-4 pt-12 md:pt-20" data-testid="order-confirmation">
+      <p className="eyebrow">Order confirmed</p>
+      <h1 className="mt-3 text-[64px] leading-[0.92] md:text-[96px]">Thank you</h1>
+      <p className="mt-4 text-[15px] text-muted">
         Order{' '}
-        <span className="font-medium" data-testid="order-number">
+        <span className="text-ink" data-testid="order-number">
           {order.orderNumber}
-        </span>
-        . We’ve emailed a receipt to {order.buyerEmail}.{' '}
-        {makers.size > 1
-          ? `Your pieces ship separately from ${makers.size} makers.`
-          : 'Your maker has been notified.'}
+        </span>{' '}
+        is confirmed. We’ve emailed a receipt to {order.buyerEmail}.
       </p>
-      <ul
-        className="mt-8 divide-y divide-stone/70 rounded-2xl border border-stone/70 bg-white"
-        role="list"
-      >
-        {items.map((i) => (
-          <li key={i.id} className="flex gap-4 p-4">
-            <span className="relative aspect-4/5 w-16 shrink-0 overflow-hidden rounded-lg bg-stone-light">
-              {i.imageUrl && (
-                <Image
-                  src={i.imageUrl}
-                  alt={i.productTitle}
-                  fill
-                  sizes="64px"
-                  className="object-cover"
-                />
-              )}
-            </span>
-            <div className="min-w-0 flex-1 text-sm">
-              <p className="font-medium">{i.productTitle}</p>
-              <p className="text-ink-muted">
-                {i.variantLabel} × {i.quantity} · Ships from {i.makerName}
-              </p>
-              <p className="text-ink-muted">
-                Estimated delivery {formatDateRange(new Date(i.from), new Date(i.to))}
+
+      <div className="mt-10 space-y-8">
+        {Array.from(byMaker.entries()).map(([maker, group]) => (
+          <section
+            key={maker}
+            aria-label={`Ships from ${maker}`}
+            className="border-t border-ink pt-4"
+          >
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <p className="text-[11px] uppercase tracking-label">Ships from {maker}</p>
+              <p className="text-[12px] text-muted-2" data-dynamic>
+                Estimated delivery{' '}
+                {formatDateRange(new Date(group[0]!.from), new Date(group[0]!.to))}
               </p>
             </div>
-            <p className="text-sm font-medium">{formatPrice(i.lineTotalCents)}</p>
-          </li>
+            <ul role="list">
+              {group.map((i) => (
+                <li key={i.id} className="flex gap-4 border-b border-line py-4">
+                  <span className="relative aspect-4/5 w-16 shrink-0 overflow-hidden bg-stone-light">
+                    {i.imageUrl && (
+                      <Image
+                        src={i.imageUrl}
+                        alt={i.productTitle}
+                        fill
+                        sizes="64px"
+                        className="object-cover object-top"
+                      />
+                    )}
+                  </span>
+                  <div className="min-w-0 flex-1 text-[13px]">
+                    <p className="text-[14px]">{i.productTitle}</p>
+                    <p className="text-muted">
+                      {i.variantLabel.replace(/^AU /, 'Size ')} × {i.quantity}
+                    </p>
+                  </div>
+                  <p className="text-[14px]">{formatPrice(i.lineTotalCents)}</p>
+                </li>
+              ))}
+            </ul>
+          </section>
         ))}
-      </ul>
-      <dl className="mt-4 space-y-1 text-sm">
+      </div>
+
+      <dl className="mt-6 space-y-1.5 text-[14px]">
         <div className="flex justify-between">
           <dt>Subtotal</dt>
           <dd>{formatPrice(order.subtotalCents)}</dd>
@@ -128,18 +137,35 @@ export default async function SuccessPage({
           <dt>Shipping</dt>
           <dd>{formatPrice(order.shippingTotalCents)}</dd>
         </div>
-        <div className="flex justify-between font-semibold">
+        <div className="flex justify-between border-t border-ink pt-2 text-[16px]">
           <dt>Total paid</dt>
           <dd>{formatPrice(order.totalCents)}</dd>
         </div>
       </dl>
+
+      <section className="mt-12 bg-stone-light p-6">
+        <h2 className="text-[28px] leading-none">What happens next</h2>
+        <ol className="mt-4 space-y-2 text-[14px] text-text2">
+          <li>
+            1 · {byMaker.size > 1 ? `Each of your ${byMaker.size} makers` : 'Your maker'} prepares
+            your piece
+            {items.some((i) => i.productType === 'made_to_order')
+              ? ' — made-to-order pieces are cut and sewn for you first'
+              : ''}
+            .
+          </li>
+          <li>2 · You’ll get an email with tracking as each parcel ships.</li>
+          <li>3 · Questions about fit or timing? Message the maker from your order.</li>
+        </ol>
+      </section>
+
       <div className="mt-8 flex flex-wrap gap-3">
         <ButtonLink href="/account/orders">View your orders</ButtonLink>
         <ButtonLink href="/" variant="secondary">
           Keep exploring
         </ButtonLink>
       </div>
-      <p className="mt-6 text-xs text-ink-muted">
+      <p className="mt-6 text-[12px] text-muted-2">
         Checked out as a guest?{' '}
         <Link href="/login?next=/account/orders" className="link">
           Sign in with {order.buyerEmail}

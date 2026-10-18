@@ -7,7 +7,7 @@ const base = {
   viewBox: '0 0 24 24',
   fill: 'none',
   stroke: 'currentColor',
-  strokeWidth: 1.6,
+  strokeWidth: 1.3,
   strokeLinecap: 'round',
   strokeLinejoin: 'round',
   'aria-hidden': true,
@@ -107,5 +107,25 @@ export const ImageIcon = (p: P) => (
 export const StarIcon = ({ filled, ...p }: P & { filled?: boolean }) => (
   <svg {...base} {...p} fill={filled ? 'currentColor' : 'none'}>
     <path d="m12 3 2.7 5.6 6.1.8-4.5 4.3 1.1 6.1L12 17l-5.4 2.8 1.1-6.1-4.5-4.3 6.1-.8L12 3Z" />
+  </svg>
+);
+export const MenuIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M4 9h16M4 15h16" />
+  </svg>
+);
+export const ShareIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M12 3v12M7 8l5-5 5 5M5 14v6h14v-6" />
+  </svg>
+);
+export const MinusIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M5 12h14" />
+  </svg>
+);
+export const PlusIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M12 5v14M5 12h14" />
   </svg>
 );
