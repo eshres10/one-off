@@ -445,3 +445,55 @@ export async function recordProductView(productId: string, makerId: string, view
     )
     update public.products set view_count = view_count + (select count(*) from ins) where id = ${productId}`;
 }
+
+export const SEARCH_FILTERS = [
+  'all',
+  'ready_to_ship',
+  'made_to_order',
+  'one_of_one',
+  'under_300',
+] as const;
+export type SearchFilter = (typeof SEARCH_FILTERS)[number];
+
+export function parseSearchFilter(v: string | string[] | undefined): SearchFilter {
+  const s = Array.isArray(v) ? v[0] : v;
+  return (SEARCH_FILTERS as readonly string[]).includes(s ?? '') ? (s as SearchFilter) : 'all';
+}
+
+/** "wedding gue" → `wedding:* & gue:*` — every word must match, the last one as a prefix. */
+export function toPrefixQuery(q: string): string | null {
+  const words = q
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 8);
+  return words.length ? words.map((w) => `${w}:*`).join(' & ') : null;
+}
+
+/** Full-text search over name, maker, category, tags and occasion, ranked by relevance. */
+export async function searchProducts(
+  q: string | undefined,
+  filter: SearchFilter,
+  limit = 60,
+): Promise<ProductCard[]> {
+  const db = sql();
+  const tsq = q ? toPrefixQuery(q) : null;
+  const conditions = [
+    VISIBLE(),
+    tsq ? db`p.search_vector @@ to_tsquery('english', ${tsq})` : null,
+    filter === 'ready_to_ship' || filter === 'made_to_order' || filter === 'one_of_one'
+      ? db`p.product_type = ${filter}`
+      : null,
+    filter === 'under_300' ? db`p.price_cents < 30000` : null,
+  ].filter(Boolean);
+  const where = conditions.reduce((acc, c) => db`${acc} and ${c}`, db`true`);
+  const rows = await db<CardRow[]>`
+    select ${cardColumns()} from public.products p ${cardJoins()}
+    where ${where}
+    order by ${tsq ? db`ts_rank(p.search_vector, to_tsquery('english', ${tsq})) desc,` : db``}
+      (coalesce(st.total_stock, 0) > 0 or p.product_type = 'made_to_order') desc, p.save_count desc, p.id
+    limit ${limit}`;
+  return rows.map(toCard);
+}
