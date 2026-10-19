@@ -103,7 +103,7 @@ export default async function MakerPage({
     <div>
       {preview && (
         <p
-          className="fixed inset-x-0 top-[var(--header-h)] z-40 bg-ink px-4 py-2 text-center text-[11px] uppercase tracking-label text-ground"
+          className="follow-header fixed inset-x-0 top-[var(--header-offset)] z-40 bg-ink px-4 py-2 text-center text-[11px] uppercase tracking-label text-ground"
           role="status"
           data-testid="preview-banner-shop"
         >

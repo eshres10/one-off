@@ -181,7 +181,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
       </div>
       <div className="md:grid md:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] lg:flex lg:items-start">
         <div
-          className="sticky top-0 z-0 h-[max(480px,66vh)] md:top-[var(--header-h)] md:h-auto md:self-start lg:w-[59%] lg:shrink-0"
+          className="follow-header sticky top-0 z-0 h-[max(480px,66vh)] md:top-[var(--header-offset)] md:h-auto md:self-start lg:w-[59%] lg:shrink-0"
           data-testid="product-gallery"
         >
           <Gallery

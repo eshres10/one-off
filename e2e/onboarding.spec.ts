@@ -70,14 +70,28 @@ test.describe.serial('onboarding and scroll', () => {
     const header = await page.evaluate(
       () => document.querySelector('.site-header')!.getBoundingClientRect().height,
     );
+    // The header slides away while scrolling down, so the gallery pins right under wherever
+    // the header's bottom edge is (the top of the window once it has gone).
+    const headerBottom = () =>
+      page.evaluate(() =>
+        Math.max(0, document.querySelector('.site-header')!.getBoundingClientRect().bottom),
+      );
     await scrollTo(page, 800);
+    await page.waitForTimeout(450);
+    expect(Math.round(await top(page, '[data-testid=product-gallery]'))).toBe(
+      Math.round(await headerBottom()),
+    );
+    // Scrolling back up a little brings the header back, and the gallery sits under it.
+    await page.mouse.wheel(0, -120);
+    await page.waitForTimeout(500);
     expect(Math.round(await top(page, '[data-testid=product-gallery]'))).toBe(Math.round(header));
     const detailsEnd = await page.evaluate(() => {
       const r = document.querySelector('[data-testid=product-details]')!.getBoundingClientRect();
       return r.bottom + window.scrollY;
     });
     await scrollTo(page, detailsEnd + 400);
-    expect(await top(page, '[data-testid=product-gallery]')).toBeLessThan(header);
+    await page.waitForTimeout(450);
+    expect(await top(page, '[data-testid=product-gallery]')).toBeLessThan(0);
   });
 
   test('3. on a phone the photo stays at the top while the content card moves up', async ({
@@ -143,14 +157,15 @@ test.describe.serial('onboarding and scroll', () => {
       insert into public.customer_prefs (user_id, taste_tags, onboarding_completed_at)
       values (${shopper.id}, '{"Satin": 6, "Minimal": 6}', now())
       on conflict (user_id) do update set taste_tags = excluded.taste_tags`;
+    // The ranked order, as Discover's infinite scroll receives it (the masonry columns on the
+    // page interleave it, so the DOM order isn't the rank order).
     const topSlugs = async (page: Page) => {
-      await page.goto('/discover');
-      const cards = page.getByTestId('discover-piece').filter({ visible: true });
-      await expect(cards.first()).toBeVisible();
-      const hrefs = await cards
-        .locator('a[href^="/products/"]')
-        .evaluateAll((as) => [...new Set(as.map((a) => a.getAttribute('href')!.split('/')[2]!))]);
-      return hrefs.slice(0, 12);
+      const res = await page.request.get('/api/discover');
+      const body = (await res.json()) as { items: Array<{ kind: string; slug?: string }> };
+      return body.items
+        .filter((i) => i.kind === 'piece')
+        .map((i) => i.slug!)
+        .slice(0, 12);
     };
     const score = async (slugs: string[]) =>
       (

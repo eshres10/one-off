@@ -1,6 +1,7 @@
 'use client';
 
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { useHideOnScroll } from '@/lib/hooks/useHideOnScroll';
 import { useScrolled } from '@/lib/hooks/useScrolled';
 
 export type HeaderVariant = 'auto' | 'overlay' | 'solid';
@@ -18,6 +19,8 @@ export const useHeaderMenu = () => useContext(MenuState);
  * recipe once the page scrolls or a mega-menu panel opens. `overlay` keeps the logo and links
  * white while transparent (for full-bleed heroes); `auto` does the same only when the page
  * renders a `[data-hero]` section, so the server-rendered first paint is already right.
+ * It slides away while scrolling down and comes back on the way up; sticky bars below it
+ * follow `--header-offset`, which drops to 0 while it's hidden.
  */
 export function HeaderFrame({
   variant = 'auto',
@@ -29,6 +32,14 @@ export function HeaderFrame({
   const scrolled = useScrolled(8);
   const [open, setOpen] = useState(false);
   const glass = scrolled || open;
+  const [focused, setFocused] = useState(false);
+  const hidden = useHideOnScroll({ disabled: open || focused });
+  useEffect(() => {
+    const root = document.documentElement;
+    if (hidden) root.setAttribute('data-header-hidden', '');
+    else root.removeAttribute('data-header-hidden');
+    return () => root.removeAttribute('data-header-hidden');
+  }, [hidden]);
   return (
     <MenuState.Provider value={{ open, setOpen }}>
       <header
@@ -36,7 +47,13 @@ export function HeaderFrame({
         data-variant={variant}
         data-scrolled={glass ? '' : undefined}
         data-menu-open={open ? '' : undefined}
+        data-hidden={hidden ? '' : undefined}
         data-testid="site-header"
+        // Keyboard users tabbing into the header always see it.
+        onFocus={() => setFocused(true)}
+        onBlur={(e) => {
+          if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocused(false);
+        }}
       >
         {children}
       </header>

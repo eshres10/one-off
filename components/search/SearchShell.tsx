@@ -95,7 +95,7 @@ export function SearchShell({
 
   return (
     <div>
-      <div className="sticky top-[var(--header-h)] z-30 bg-ground/80 px-3 pb-3 pt-3 backdrop-blur-md md:px-[var(--gutter)] md:pt-6">
+      <div className="follow-header sticky top-[var(--header-offset)] z-30 bg-ground/80 px-3 pb-3 pt-3 backdrop-blur-md md:px-[var(--gutter)] md:pt-6">
         <h1 className="sr-only">Search</h1>
         <form
           role="search"

@@ -212,7 +212,7 @@ export function DiscoverView({
         </div>
       </div>
 
-      <div className="glass-light sticky top-[var(--header-h)] z-30 mt-5 border-b-0 py-3">
+      <div className="glass-light follow-header sticky top-[var(--header-offset)] z-30 mt-5 border-b-0 py-3">
         <div className="container-page space-y-3">
           <form
             role="search"
