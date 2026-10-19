@@ -641,6 +641,20 @@ export function SettingsForm({
               onChange={(e) => set('policyExtra', e.target.value)}
             />
           </Field>
+          <Field
+            id="set-size-notes"
+            label="Size notes"
+            hint="Shown with the size guide on your pieces, e.g. “Cut generously: size down if you’re between sizes.”"
+          >
+            <textarea
+              id="set-size-notes"
+              className="input min-h-[70px]"
+              maxLength={400}
+              value={s.sizeNotes}
+              onChange={(e) => set('sizeNotes', e.target.value)}
+              data-testid="size-notes"
+            />
+          </Field>
           <Field id="set-care" label="Default care notes" hint="Filled in on new pieces.">
             <textarea
               id="set-care"

@@ -43,6 +43,7 @@ const schema = z.object({
   customBlurb: z.string().max(800),
   policyExtra: z.string().max(400),
   returnAddress: z.string().max(500).default(''),
+  sizeNotes: z.string().max(500).default(''),
   careDefault: z.string().max(600),
   holidayOn: z.boolean(),
   holidayFrom: z.string().max(10),

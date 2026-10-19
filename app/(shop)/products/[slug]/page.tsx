@@ -326,6 +326,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
                   }
                   modelLine={modelLine}
                   savedSizes={fit}
+                  sizeNotes={m.sizeNotes}
                   signedIn={!!user}
                   makeToOrder={
                     product.productType === 'ready_to_ship' &&

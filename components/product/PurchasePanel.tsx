@@ -60,6 +60,7 @@ export function PurchasePanel({
   previewMessage,
   disabledLabel = 'Launching soon',
   savedSizes = null,
+  sizeNotes = null,
   signedIn = false,
   makeToOrder = null,
 }: {
@@ -79,6 +80,8 @@ export function PurchasePanel({
   disabledLabel?: string;
   /** The buyer's Sizes & fit: pre-selects their usual size and pre-fills custom measurements. */
   savedSizes?: SavedFit | null;
+  /** The maker's own sizing notes, shown above the sizes. */
+  sizeNotes?: string | null;
   signedIn?: boolean;
   /** The maker can make a sold-out size to order: who, how long, and where to ask. */
   makeToOrder?: { makerName: string; leadDays: number; href: string } | null;
@@ -159,13 +162,27 @@ export function PurchasePanel({
           <legend className="text-[11px] uppercase tracking-label">
             Size {selected && <span className="text-muted-2">— {selected.size}</span>}
           </legend>
-          <a
-            href="#garment-measurements"
-            className="text-[11px] uppercase tracking-label underline underline-offset-[5px]"
-          >
-            Garment measurements
-          </a>
+          <span className="flex gap-4">
+            <a
+              href="#garment-measurements"
+              className="text-[11px] uppercase tracking-label underline underline-offset-[5px]"
+            >
+              Measurements
+            </a>
+            <Link
+              href="/size-guide"
+              className="text-[11px] uppercase tracking-label underline underline-offset-[5px]"
+              data-testid="size-guide-link"
+            >
+              Size guide
+            </Link>
+          </span>
         </div>
+        {sizeNotes && (
+          <p className="mb-3 bg-stone-light px-3 py-2 text-[13px]" data-testid="maker-size-notes">
+            {sizeNotes}
+          </p>
+        )}
         <div
           className="grid grid-cols-[repeat(auto-fill,minmax(60px,1fr))] gap-2"
           aria-label="Size"

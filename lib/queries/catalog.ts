@@ -284,6 +284,7 @@ export interface ProductDetail {
     holidayUntil: Date | null;
     holidayNote: string | null;
     policyExtra: string | null;
+    sizeNotes: string | null;
   };
   images: Array<{ id: string; url: string; alt: string }>;
   variants: Array<{
@@ -320,7 +321,7 @@ export async function getProduct(
     select id, slug, display_name, avatar_url, city, state, location, rating::float as rating, review_count, completed_orders,
            response_time_hours, dispatch_days, shipping_standard_cents, free_shipping_over_cents, return_policy,
            custom_commissions_enabled, user_id, shop_status, stripe_charges_enabled as charges_enabled,
-           holiday_until, holiday_note, policy_extra
+           holiday_until, holiday_note, policy_extra, size_notes
     from public.makers where id = ${p.makerId}`;
   const images = await sql()<ProductDetail['images']>`
     select id, public_url as url, alt_text as alt from public.product_images where product_id = ${p.id} order by sort_order`;
