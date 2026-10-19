@@ -217,3 +217,23 @@ begin
   end if;
 end
 $$;
+
+-- ---------------------------------------------------------------------------
+-- Seed photography is marked so it's easy to find and replace with real maker photos.
+-- ---------------------------------------------------------------------------
+alter table public.product_images add column if not exists is_placeholder boolean not null default false;
+
+-- ---------------------------------------------------------------------------
+-- Future store sync (Shopify / WooCommerce). Columns only; nothing reads or writes them yet.
+-- ---------------------------------------------------------------------------
+do $$ begin
+  create type external_store as enum ('shopify', 'woocommerce');
+exception when duplicate_object then null; end $$;
+alter table public.products add column if not exists external_store external_store;
+alter table public.products add column if not exists external_product_id text;
+alter table public.orders add column if not exists external_store external_store;
+alter table public.orders add column if not exists external_order_id text;
+create unique index if not exists products_external_idx
+  on public.products (external_store, external_product_id) where external_product_id is not null;
+create unique index if not exists orders_external_idx
+  on public.orders (external_store, external_order_id) where external_order_id is not null;

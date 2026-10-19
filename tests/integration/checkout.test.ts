@@ -3,7 +3,7 @@ import { closeDb, sql } from '@/lib/db';
 import { mockStripe } from '@/lib/payments/mock';
 import { handleStripeEvent } from '@/lib/services/webhook';
 import { POST as webhookPOST } from '@/app/api/webhooks/stripe/route';
-import { buyAndPay, pickVariant } from './helpers';
+import { MAKERS, buyAndPay, pickVariant } from './helpers';
 
 afterAll(closeDb);
 
@@ -89,13 +89,13 @@ describe('checkout → webhook (made-to-order)', () => {
 describe('multi-maker cart', () => {
   it('creates one buyer order with a separate fulfilment and transfer per maker', async () => {
     const a = await pickVariant(
-      (p) => p.productType === 'ready_to_ship' && p.maker.slug === 'marlowe-atelier',
+      (p) => p.productType === 'ready_to_ship' && p.maker.slug === MAKERS[0]!.slug,
     );
     const b = await pickVariant(
-      (p) => p.productType !== 'one_of_one' && p.maker.slug === 'saltbush-studio',
+      (p) => p.productType !== 'one_of_one' && p.maker.slug === MAKERS[1]!.slug,
     );
     const c = await pickVariant(
-      (p) => p.productType !== 'one_of_one' && p.maker.slug === 'norwood-noir',
+      (p) => p.productType !== 'one_of_one' && p.maker.slug === MAKERS[2]!.slug,
     );
     const { orderId } = await buyAndPay([
       { productId: a.product.id, variantId: a.variantId },

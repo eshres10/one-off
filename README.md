@@ -23,7 +23,7 @@ npm install && npm run local
 | Role   | Email                                                               | Password      |
 | ------ | ------------------------------------------------------------------- | ------------- |
 | Admin  | `admin@oneoff.test`                                                 | `password123` |
-| Seller | `studio@marlowe-atelier.test` (any `studio@<maker-slug>.test`)      | `password123` |
+| Seller | `studio@halde-studio.test` (any `studio@<maker-slug>.test`)         | `password123` |
 | Buyer  | `ava@buyer.test` (20 buyers: `charlotte@`, `mia@`, … `@buyer.test`) | `password123` |
 
 Locally, payments use a **mock Stripe** (`/dev/checkout/...`) that sends correctly signed webhooks to the real webhook endpoint, and every email goes to an **outbox** you can read at **/admin/emails** (including magic sign-in links). Test card `4242 4242 4242 4242` pays; `4000 0000 0000 0002` declines.

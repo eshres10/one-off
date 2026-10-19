@@ -56,6 +56,8 @@ export const COLOURS: Record<string, string> = {
   Scarlet: '#A8322D',
   Oat: '#D8C8AE',
   Olive: '#6C6A3A',
+  Tangerine: '#D9733A',
+  Wine: '#6B1E2A',
 };
 
 export const BACKDROPS = [
@@ -92,278 +94,244 @@ export interface MakerSeed {
   focus: Shape[];
   palette: string[];
   accent: string;
+  /** Days since the maker was approved; under 60 shows them in the "New makers" rail. */
+  joinedDaysAgo: number;
+  /** Supplied portrait in public/seed (placeholder until the maker uploads their own). */
+  portrait?: string;
 }
 
 const MAKER_DEFS: Array<Omit<MakerSeed, 'id' | 'userId' | 'email' | 'key'>> = [
   {
-    slug: 'marlowe-atelier',
-    displayName: 'Marlowe Atelier',
-    tagline: 'Sculptural statement dresses, cut by hand in Brunswick.',
-    city: 'Melbourne',
-    state: 'VIC',
-    suburb: 'Brunswick',
-    story:
-      'Marlowe began on a kitchen table in 2019 with one pattern and a roll of deadstock silk. Today it is still one designer and one machinist, making dresses that feel like an event.',
-    process:
-      'Every piece is drafted, cut and sewn in our Brunswick studio. We work in small batches of six to ten per size.',
-    materials:
-      'Deadstock silks and Italian cottons sourced from Melbourne mills’ end-of-roll stock.',
-    sizingNotes:
-      'True to AU sizing with a fitted bodice. Between sizes? Size up and we can take in the side seams.',
-    leadTimeDays: 14,
-    responseTimeHours: 4,
-    dispatchDays: 2,
-    shippingStandardCents: 1200,
-    freeShippingOverCents: 40000,
-    customCommissions: true,
-    focus: ['dress', 'maxi', 'dress'],
-    palette: ['Scarlet', 'Cobalt', 'Black', 'Butter'],
-    accent: '#A8322D',
-  },
-  {
-    slug: 'fitzroy-thread-co',
-    displayName: 'Fitzroy Thread Co',
-    tagline: 'Upcycled one-of-one pieces from vintage linens.',
-    city: 'Melbourne',
-    state: 'VIC',
-    suburb: 'Fitzroy',
-    story:
-      'We rescue tablecloths, quilts and vintage linens from op shops across Victoria and give them a second life as wearable patchwork.',
-    process: 'Each garment is pieced from three to nine salvaged textiles, so no two are alike.',
-    materials: '100% reclaimed natural fibres — linen, cotton and the occasional wool blanket.',
-    sizingNotes:
-      'Relaxed fits with generous ease. Full garment measurements are listed on every piece.',
-    leadTimeDays: 21,
-    responseTimeHours: 12,
-    dispatchDays: 3,
-    shippingStandardCents: 1000,
-    freeShippingOverCents: null,
-    customCommissions: true,
-    focus: ['set', 'jacket', 'skirt'],
-    palette: ['Oat', 'Rust', 'Sage', 'Ivory'],
-    accent: '#A3552D',
-  },
-  {
-    slug: 'wren-and-sable',
-    displayName: 'Wren & Sable',
-    tagline: 'Occasionwear for people who hate occasionwear.',
+    slug: 'halde-studio',
+    displayName: 'Halde Studio',
+    tagline: 'Bias-cut silk slips, cut one at a time in Collingwood.',
     city: 'Melbourne',
     state: 'VIC',
     suburb: 'Collingwood',
     story:
-      'Wren & Sable designs wedding-guest and race-day pieces that you’ll actually wear again — strong colour, clean lines, pockets.',
-    process: 'Made to order in our Collingwood workroom so we only cut what is bought.',
-    materials: 'Recycled satins, heavyweight crepe and certified organic cotton linings.',
-    sizingNotes: 'Made to your size from AU 6 to 22. Add notes at checkout for length adjustments.',
-    leadTimeDays: 18,
-    responseTimeHours: 6,
-    dispatchDays: 2,
-    shippingStandardCents: 1200,
-    freeShippingOverCents: 35000,
-    customCommissions: false,
-    focus: ['dress', 'slip', 'maxi'],
-    palette: ['Emerald', 'Lilac', 'Butter', 'Navy'],
-    accent: '#2E6A4E',
-  },
-  {
-    slug: 'saltbush-studio',
-    displayName: 'Saltbush Studio',
-    tagline: 'Linen made for long Sydney summers.',
-    city: 'Sydney',
-    state: 'NSW',
-    suburb: 'Marrickville',
-    story:
-      'Saltbush is a two-person studio making breathable linen pieces designed around heat, sea air and bare feet.',
-    process: 'Garment-washed in small batches for softness, then finished by hand.',
-    materials: 'European flax linen and linen-cotton blends, naturally dyed in house.',
-    sizingNotes: 'Relaxed, slightly oversized. Size down for a closer fit.',
-    leadTimeDays: 10,
-    responseTimeHours: 8,
-    dispatchDays: 2,
-    shippingStandardCents: 1100,
-    freeShippingOverCents: 30000,
-    customCommissions: false,
-    focus: ['dress', 'set', 'skirt'],
-    palette: ['Sage', 'Oat', 'Ivory', 'Terracotta'],
-    accent: '#9FAE8A',
-  },
-  {
-    slug: 'bondi-bias',
-    displayName: 'Bondi Bias',
-    tagline: 'Bias-cut slips and skirts that move like water.',
-    city: 'Sydney',
-    state: 'NSW',
-    suburb: 'Bondi',
-    story:
-      'Founded by a former bridal cutter, Bondi Bias makes fluid bias-cut pieces in limited runs.',
-    process: 'Hand-cut on the bias and hung for 48 hours before hemming so the drape settles.',
-    materials: 'Sand-washed silk and recycled satin.',
-    sizingNotes: 'Bias cut stretches gently; take your hip measurement as your guide.',
-    leadTimeDays: 12,
+      'Halde started with a single slip pattern and a bolt of navy satin. Five years on, every piece is still cut on the bias by hand, one at a time.',
+    process: 'Drafted, cut and sewn in our Collingwood studio in runs of six per size.',
+    materials: 'Silk satin and crepe from Melbourne mill end-of-rolls.',
+    sizingNotes: 'Bias cut skims the body; take your usual AU size. Between sizes, size up.',
+    leadTimeDays: 14,
     responseTimeHours: 3,
-    dispatchDays: 1,
+    dispatchDays: 2,
     shippingStandardCents: 1200,
     freeShippingOverCents: 40000,
     customCommissions: true,
-    focus: ['slip', 'skirt', 'slip'],
-    palette: ['Blush', 'Chocolate', 'Black', 'Ivory'],
-    accent: '#E5B3AC',
-  },
-  {
-    slug: 'paddington-pleat',
-    displayName: 'Paddington Pleat',
-    tagline: 'Pleated skirts with a point of view.',
-    city: 'Sydney',
-    state: 'NSW',
-    suburb: 'Paddington',
-    story:
-      'Paddington Pleat makes skirts built to last decades — knife pleats, box pleats and generous pockets.',
-    process:
-      'Pleats are set by a third-generation pleating house in Sydney, then finished in our studio.',
-    materials: 'Wool blends, recycled polyester crepe and organic cotton drill.',
-    sizingNotes: 'Waist-led sizing. Each listing includes waist and length by size.',
-    leadTimeDays: 15,
-    responseTimeHours: 10,
-    dispatchDays: 2,
-    shippingStandardCents: 1000,
-    freeShippingOverCents: null,
-    customCommissions: false,
-    focus: ['skirt', 'skirt', 'set'],
-    palette: ['Navy', 'Olive', 'Butter', 'Scarlet'],
+    focus: ['slip', 'dress', 'maxi'],
+    palette: ['Navy', 'Butter', 'Black', 'Ivory'],
     accent: '#1F2A44',
+    joinedDaysAgo: 240,
+    portrait: '/seed/maker-halde-studio.jpg',
   },
   {
-    slug: 'jacaranda-house',
-    displayName: 'Jacaranda House',
-    tagline: 'Hand-printed florals from a Queenslander verandah.',
-    city: 'Brisbane',
-    state: 'QLD',
-    suburb: 'Paddington',
+    slug: 'mara-kovac',
+    displayName: 'Mara Kovač',
+    tagline: 'Satin sets and halter tops in jewel tones.',
+    city: 'Melbourne',
+    state: 'VIC',
+    suburb: 'Brunswick',
     story:
-      'Every Jacaranda House print starts as a gouache painting of something growing in our backyard.',
-    process: 'Screen-printed by hand in Brisbane in runs of 20 metres or less.',
-    materials: 'Organic cotton voile and linen, printed with water-based inks.',
-    sizingNotes: 'Fitted through the bust, relaxed through the waist.',
-    leadTimeDays: 16,
-    responseTimeHours: 12,
+      'Mara trained in costume before opening her Brunswick studio. Her sets are made to be split up and worn a dozen ways.',
+    process: 'Every set is made to order in Brunswick, so we only cut what is ordered.',
+    materials: 'Heavy satin and silk crepe, sourced from Australian wholesalers.',
+    sizingNotes: 'Halter tops tie to fit; trousers have an elasticated back waist.',
+    leadTimeDays: 18,
+    responseTimeHours: 5,
     dispatchDays: 3,
-    shippingStandardCents: 1300,
-    freeShippingOverCents: 35000,
-    customCommissions: true,
-    focus: ['dress', 'maxi', 'top'],
-    palette: ['Lilac', 'Ivory', 'Cobalt', 'Blush'],
-    accent: '#B6A3D1',
-  },
-  {
-    slug: 'rivercity-remade',
-    displayName: 'Rivercity Remade',
-    tagline: 'One-of-one reworked vintage.',
-    city: 'Brisbane',
-    state: 'QLD',
-    suburb: 'West End',
-    story:
-      'We take tired vintage dresses and denim and rebuild them into new silhouettes, one at a time.',
-    process:
-      'Deconstructed, re-cut and re-sewn by hand. Each piece is photographed on our studio model.',
-    materials: 'Vintage and deadstock fabrics only.',
-    sizingNotes: 'Each piece is unique — check the garment measurements carefully.',
-    leadTimeDays: 20,
-    responseTimeHours: 18,
-    dispatchDays: 3,
-    shippingStandardCents: 1000,
-    freeShippingOverCents: null,
-    customCommissions: false,
-    focus: ['jacket', 'dress', 'set'],
-    palette: ['Navy', 'Rust', 'Oat', 'Olive'],
-    accent: '#6C6A3A',
-  },
-  {
-    slug: 'fig-and-fern',
-    displayName: 'Fig & Fern',
-    tagline: 'Soft tailoring and everyday occasion dresses.',
-    city: 'Brisbane',
-    state: 'QLD',
-    suburb: 'New Farm',
-    story:
-      'Fig & Fern makes considered pieces for the in-between: dinners, christenings, gallery openings.',
-    process: 'Small-batch production with a Brisbane makers’ collective.',
-    materials: 'Tencel, organic cotton sateen and linen blends.',
-    sizingNotes: 'True to size. Most styles have adjustable ties.',
-    leadTimeDays: 14,
-    responseTimeHours: 6,
-    dispatchDays: 2,
     shippingStandardCents: 1200,
+    freeShippingOverCents: 40000,
+    customCommissions: true,
+    focus: ['set', 'top', 'slip'],
+    palette: ['Wine', 'Emerald', 'Chocolate', 'Black'],
+    accent: '#6B1E2A',
+    joinedDaysAgo: 200,
+    portrait: '/seed/maker-mara-kovac.jpg',
+  },
+  {
+    slug: 'ottilie-ree',
+    displayName: 'Ottilie Ree',
+    tagline: 'Romantic lace-trimmed dresses for long lunches and weddings.',
+    city: 'Melbourne',
+    state: 'VIC',
+    suburb: 'Northcote',
+    story: 'Ottilie makes the dresses she could never find: floaty, feminine and finished by hand.',
+    process: 'Pieces are cut in Northcote and finished with hand-sewn lace trims.',
+    materials: 'Cotton voile, silk and vintage lace trims.',
+    sizingNotes: 'Relaxed through the body with adjustable straps.',
+    leadTimeDays: 16,
+    responseTimeHours: 6,
+    dispatchDays: 3,
+    shippingStandardCents: 1200,
+    freeShippingOverCents: 35000,
+    customCommissions: false,
+    focus: ['dress', 'maxi', 'slip'],
+    palette: ['Ivory', 'Blush', 'Butter', 'Sage'],
+    accent: '#E5B3AC',
+    joinedDaysAgo: 170,
+    portrait: '/seed/maker-ottilie-ree.jpg',
+  },
+  {
+    slug: 'wren-label',
+    displayName: 'Wren Label',
+    tagline: 'Evening satin with an open back.',
+    city: 'Melbourne',
+    state: 'VIC',
+    suburb: 'Footscray',
+    story:
+      'Wren Label is two sisters in a Footscray warehouse making the eveningwear they wanted to wear out.',
+    process: 'Small runs, cut and sewn in Footscray.',
+    materials: 'Recycled satin and deadstock crepe.',
+    sizingNotes: 'Fitted through the hip; size up if between sizes.',
+    leadTimeDays: 12,
+    responseTimeHours: 4,
+    dispatchDays: 2,
+    shippingStandardCents: 1000,
     freeShippingOverCents: 30000,
     customCommissions: false,
-    focus: ['dress', 'top', 'skirt'],
-    palette: ['Olive', 'Butter', 'Chocolate', 'Ivory'],
-    accent: '#5A3A2A',
+    focus: ['slip', 'set', 'dress'],
+    palette: ['Black', 'Navy', 'Scarlet', 'Ivory'],
+    accent: '#24211E',
+    joinedDaysAgo: 140,
+    portrait: '/seed/maker-wren-label.jpg',
   },
   {
-    slug: 'hills-and-hem',
-    displayName: 'Hills & Hem',
-    tagline: 'Wool and linen pieces from the Adelaide Hills.',
-    city: 'Adelaide',
-    state: 'SA',
-    suburb: 'Stirling',
+    slug: 'sundry-atelier',
+    displayName: 'Sundry Atelier',
+    tagline: 'Hand-crocheted one-of-ones from reclaimed yarn.',
+    city: 'Melbourne',
+    state: 'VIC',
+    suburb: 'Fitzroy',
     story:
-      'Hills & Hem works with South Australian wool growers to make warm, structured pieces for cooler evenings.',
-    process: 'Cut and sewn in the Hills; knitted trims made by a local co-op.',
-    materials: 'South Australian merino, linen and organic cotton.',
-    sizingNotes: 'Structured fits. Shoulders are the key measurement for jackets.',
+      'Sundry Atelier hand-crochets every piece from reclaimed cotton yarn. No two are the same.',
+    process: 'Each piece is crocheted by hand over two to three weeks.',
+    materials: 'Reclaimed cotton yarn and vintage lace.',
+    sizingNotes: 'Stretchy crochet; each listing shows the exact measurements.',
     leadTimeDays: 21,
-    responseTimeHours: 24,
+    responseTimeHours: 8,
     dispatchDays: 3,
-    shippingStandardCents: 1400,
+    shippingStandardCents: 1200,
     freeShippingOverCents: null,
-    customCommissions: true,
-    focus: ['jacket', 'skirt', 'dress'],
-    palette: ['Oat', 'Chocolate', 'Olive', 'Navy'],
-    accent: '#5A3A2A',
+    customCommissions: false,
+    focus: ['maxi', 'top', 'dress'],
+    palette: ['Oat', 'Ivory', 'Blush', 'Rust'],
+    accent: '#D8C8AE',
+    joinedDaysAgo: 110,
   },
   {
-    slug: 'norwood-noir',
-    displayName: 'Norwood Noir',
-    tagline: 'Evening dresses in shades of black.',
-    city: 'Adelaide',
-    state: 'SA',
-    suburb: 'Norwood',
+    slug: 'atelier-noor',
+    displayName: 'Atelier Noor',
+    tagline: 'Embroidered occasionwear, made to your measurements.',
+    city: 'Melbourne',
+    state: 'VIC',
+    suburb: 'Carlton',
     story:
-      'Norwood Noir makes dramatic, minimal eveningwear — mostly black, occasionally midnight.',
-    process: 'Draped on the stand, then patterned and made to order.',
-    materials: 'Recycled satin, matte crepe and organza.',
-    sizingNotes: 'Made to measure available on request. Standard sizes AU 6–20.',
-    leadTimeDays: 24,
-    responseTimeHours: 8,
-    dispatchDays: 2,
+      'Atelier Noor opened in Carlton this spring, bringing hand embroidery to made-to-measure occasionwear.',
+    process: 'Every piece is made to order and embroidered by hand in Carlton.',
+    materials: 'Cotton organza, silk and hand embroidery threads.',
+    sizingNotes: 'Made to your measurements; we confirm fit before cutting.',
+    leadTimeDays: 21,
+    responseTimeHours: 4,
+    dispatchDays: 3,
     shippingStandardCents: 1200,
     freeShippingOverCents: 45000,
     customCommissions: true,
-    focus: ['maxi', 'slip', 'dress'],
-    palette: ['Black', 'Navy', 'Chocolate', 'Scarlet'],
-    accent: '#24211E',
+    focus: ['dress', 'maxi', 'dress'],
+    palette: ['Ivory', 'Butter', 'Sage', 'Blush'],
+    accent: '#EFE6D6',
+    joinedDaysAgo: 12,
   },
   {
-    slug: 'sorrel-made',
-    displayName: 'Sorrel Made',
-    tagline: 'Colourful, easy dresses with deep pockets.',
-    city: 'Adelaide',
-    state: 'SA',
-    suburb: 'Unley',
+    slug: 'fern-and-thread',
+    displayName: 'Fern & Thread',
+    tagline: 'Tiered ruffle dresses from deadstock cotton.',
+    city: 'Melbourne',
+    state: 'VIC',
+    suburb: 'Fitzroy',
     story:
-      'Sorrel Made is a one-woman label making joyful, easy-wearing dresses in bold block colours.',
-    process: 'Every dress is sewn start to finish by one person — me.',
-    materials: 'Cotton poplin, linen and deadstock rayon.',
-    sizingNotes: 'Roomy fit with elastic back waist; size down if between sizes.',
-    leadTimeDays: 12,
-    responseTimeHours: 5,
+      'Fern & Thread rescues deadstock cotton from Melbourne mills and turns it into tiered dresses.',
+    process: 'Cut and sewn in Fitzroy, often as one-off pieces when a roll runs out.',
+    materials: 'Deadstock cotton and linen.',
+    sizingNotes: 'Relaxed fit with an elasticated waist.',
+    leadTimeDays: 14,
+    responseTimeHours: 6,
+    dispatchDays: 3,
+    shippingStandardCents: 1000,
+    freeShippingOverCents: 30000,
+    customCommissions: false,
+    focus: ['dress', 'skirt', 'top'],
+    palette: ['Olive', 'Rust', 'Oat', 'Sage'],
+    accent: '#6C6A3A',
+    joinedDaysAgo: 20,
+  },
+  {
+    slug: 'lune-studio',
+    displayName: 'Lune Studio',
+    tagline: 'Bias maxis in sunset colours.',
+    city: 'Melbourne',
+    state: 'VIC',
+    suburb: 'St Kilda',
+    story:
+      'Lune Studio is a St Kilda label making bias-cut maxis inspired by late summer evenings by the water.',
+    process: 'Ready to ship from our St Kilda studio, cut in small runs.',
+    materials: 'Silk-feel recycled satin.',
+    sizingNotes: 'Bias cut; take your usual size.',
+    leadTimeDays: 10,
+    responseTimeHours: 3,
     dispatchDays: 2,
     shippingStandardCents: 1000,
-    freeShippingOverCents: 25000,
+    freeShippingOverCents: 30000,
     customCommissions: false,
-    focus: ['dress', 'dress', 'top'],
-    palette: ['Terracotta', 'Cobalt', 'Butter', 'Emerald'],
-    accent: '#C2694A',
+    focus: ['maxi', 'slip', 'dress'],
+    palette: ['Tangerine', 'Butter', 'Blush', 'Navy'],
+    accent: '#D9733A',
+    joinedDaysAgo: 31,
+  },
+  {
+    slug: 'studio-ines',
+    displayName: 'Studio Ines',
+    tagline: 'Draped satin midis for the races and beyond.',
+    city: 'Melbourne',
+    state: 'VIC',
+    suburb: 'Richmond',
+    story:
+      'Studio Ines drapes every pattern on the stand before it is cut, so the satin falls just so.',
+    process: 'Made to order in Richmond.',
+    materials: 'Heavy satin and crepe-back satin.',
+    sizingNotes: 'Draped fit; we can adjust the length to your height.',
+    leadTimeDays: 18,
+    responseTimeHours: 5,
+    dispatchDays: 3,
+    shippingStandardCents: 1200,
+    freeShippingOverCents: 40000,
+    customCommissions: true,
+    focus: ['dress', 'skirt', 'set'],
+    palette: ['Chocolate', 'Black', 'Emerald', 'Wine'],
+    accent: '#5A3A2A',
+    joinedDaysAgo: 42,
+  },
+  {
+    slug: 'pia-marchetti',
+    displayName: 'Pia Marchetti',
+    tagline: 'Corsetry-inspired minis and tops.',
+    city: 'Melbourne',
+    state: 'VIC',
+    suburb: 'Thornbury',
+    story: 'Pia Marchetti brings corsetry details to everyday dresses, cut and boned in Thornbury.',
+    process: 'Ready to ship from Thornbury in small runs.',
+    materials: 'Cotton drill, denim and satin with spiral steel boning.',
+    sizingNotes: 'Structured bodice; the lace-up front adjusts the fit.',
+    leadTimeDays: 12,
+    responseTimeHours: 7,
+    dispatchDays: 2,
+    shippingStandardCents: 1000,
+    freeShippingOverCents: 30000,
+    customCommissions: false,
+    focus: ['dress', 'top', 'skirt'],
+    palette: ['Navy', 'Black', 'Ivory', 'Scarlet'],
+    accent: '#2F51A0',
+    joinedDaysAgo: 55,
   },
 ];
 
@@ -464,7 +432,177 @@ export interface ProductSeed {
   variants: Array<{ id: string; size: string; colour: string; stock: number; sku: string }>;
   measurements: Array<{ name: string; valueCm: number }>;
   images: Array<{ path: string; url: string; alt: string; view: number }>;
+  occasions: string[];
 }
+
+/**
+ * The twelve photographed pieces (public/seed/<slug>.jpg). Each takes a fixed slot in its maker's
+ * range; the other generated pieces keep their drawn placeholder images.
+ */
+interface HeroSeed {
+  slug: string;
+  title: string;
+  maker: string;
+  slot: number;
+  shape: Shape;
+  category?: string;
+  productType: ProductType;
+  priceCents: number;
+  colour: string;
+  occasions: string[];
+  alt: string;
+  /** Leaves only two in stock, so Saved shows an "Only 2 left" alert. */
+  lowStock?: boolean;
+}
+
+export const HEROES: HeroSeed[] = [
+  {
+    slug: 'navy-satin-slip',
+    title: 'Navy Satin Slip',
+    maker: 'halde-studio',
+    slot: 0,
+    shape: 'slip',
+    productType: 'ready_to_ship',
+    priceCents: 26000,
+    colour: 'Navy',
+    occasions: ['evening', 'wedding guest'],
+    alt: 'Model in a navy satin cowl-neck slip dress that falls below the knee',
+  },
+  {
+    slug: 'butter-silk-slip',
+    title: 'Butter Silk Slip',
+    maker: 'halde-studio',
+    slot: 1,
+    shape: 'slip',
+    productType: 'ready_to_ship',
+    priceCents: 24000,
+    colour: 'Butter',
+    occasions: ['evening'],
+    alt: 'Model in a butter-yellow V-neck silk slip dress',
+  },
+  {
+    slug: 'wine-satin-halter-set',
+    title: 'Wine Satin Halter Set',
+    maker: 'mara-kovac',
+    slot: 0,
+    shape: 'set',
+    productType: 'made_to_order',
+    priceCents: 34000,
+    colour: 'Wine',
+    occasions: ['evening'],
+    alt: 'Model walking in a wine satin cowl halter top and matching wide-leg trousers',
+  },
+  {
+    slug: 'lace-trim-maxi-dress',
+    title: 'Lace Trim Maxi Dress',
+    maker: 'ottilie-ree',
+    slot: 0,
+    shape: 'maxi',
+    productType: 'made_to_order',
+    priceCents: 42000,
+    colour: 'Sage',
+    occasions: ['wedding guest'],
+    alt: 'Model seated in a sage satin maxi dress with lace trim',
+  },
+  {
+    slug: 'lace-strap-slip-dress',
+    title: 'Lace Panel Slip Maxi',
+    maker: 'ottilie-ree',
+    slot: 1,
+    shape: 'slip',
+    productType: 'ready_to_ship',
+    priceCents: 28000,
+    colour: 'Chocolate',
+    occasions: ['wedding guest'],
+    alt: 'Model in a sheer chocolate-brown maxi slip with a cream lace panel down one side',
+  },
+  {
+    slug: 'satin-open-back-jumpsuit',
+    title: 'Satin Open-Back Jumpsuit',
+    maker: 'wren-label',
+    slot: 0,
+    shape: 'set',
+    category: 'jumpsuits',
+    productType: 'ready_to_ship',
+    priceCents: 32000,
+    colour: 'Ivory',
+    occasions: ['evening'],
+    alt: 'Model in a champagne satin jumpsuit with fine straps and wide legs',
+  },
+  {
+    slug: 'crochet-lace-maxi',
+    title: 'Crochet Lace Maxi',
+    maker: 'sundry-atelier',
+    slot: 0,
+    shape: 'maxi',
+    productType: 'one_of_one',
+    priceCents: 38000,
+    colour: 'Blush',
+    occasions: ['wedding guest'],
+    alt: 'Model in a blush hand-crocheted lace maxi with a handkerchief hem',
+  },
+  {
+    slug: 'embroidered-ruffle-dress',
+    title: 'Embroidered Ruffle Dress',
+    maker: 'atelier-noor',
+    slot: 0,
+    shape: 'dress',
+    productType: 'made_to_order',
+    priceCents: 36000,
+    colour: 'Olive',
+    occasions: ['wedding guest'],
+    alt: 'Model walking in a sheer olive maxi dress with ruffled tiers and flutter sleeves',
+  },
+  {
+    slug: 'tiered-ruffle-dress',
+    title: 'Tiered Ruffle Dress',
+    maker: 'fern-and-thread',
+    slot: 0,
+    shape: 'dress',
+    productType: 'one_of_one',
+    priceCents: 27000,
+    colour: 'Ivory',
+    occasions: [],
+    alt: 'Model in a white tiered maxi dress with a sweetheart bodice',
+  },
+  {
+    slug: 'tangerine-bias-maxi',
+    title: 'Tangerine Bias Maxi',
+    maker: 'lune-studio',
+    slot: 0,
+    shape: 'maxi',
+    productType: 'ready_to_ship',
+    priceCents: 31000,
+    colour: 'Tangerine',
+    occasions: ['wedding guest', 'evening'],
+    alt: 'Model on a boat in a tangerine bias-cut satin maxi dress',
+  },
+  {
+    slug: 'draped-satin-midi',
+    title: 'Draped Satin Midi',
+    maker: 'studio-ines',
+    slot: 0,
+    shape: 'dress',
+    productType: 'made_to_order',
+    priceCents: 29000,
+    colour: 'Chocolate',
+    occasions: ['races'],
+    alt: 'Model leaning on a stone wall in a chocolate satin midi with a draped cowl neck',
+  },
+  {
+    slug: 'corset-front-mini',
+    title: 'Corset-Front Mini',
+    maker: 'pia-marchetti',
+    slot: 0,
+    shape: 'dress',
+    productType: 'ready_to_ship',
+    priceCents: 22000,
+    colour: 'Navy',
+    occasions: [],
+    alt: 'Model in a dark denim mini dress with a lace-up corset front',
+    lowStock: true,
+  },
+];
 
 function slugify(s: string): string {
   return s
@@ -485,11 +623,12 @@ const VIEW_ALT = [
 
 function buildProducts(): ProductSeed[] {
   const r = rng('products');
-  // Exact mix: 28 ready-to-ship, 32 made-to-order, 12 one-of-one, spread across makers.
+  // Exact mix before the photographed pieces take their slots: 24 ready-to-ship, 26 made-to-order,
+  // 10 one-of-one, spread across the ten makers.
   const types: ProductType[] = [
-    ...Array<ProductType>(12).fill('one_of_one'),
-    ...Array<ProductType>(32).fill('made_to_order'),
-    ...Array<ProductType>(28).fill('ready_to_ship'),
+    ...Array<ProductType>(10).fill('one_of_one'),
+    ...Array<ProductType>(26).fill('made_to_order'),
+    ...Array<ProductType>(24).fill('ready_to_ship'),
   ];
   for (let i = types.length - 1; i > 0; i--) {
     const j = Math.floor(r.next() * (i + 1));
@@ -499,37 +638,41 @@ function buildProducts(): ProductSeed[] {
   const swapToOoo = (makerIdx: number, slot: number) => {
     const idx = makerIdx * 6 + slot;
     const other = types.findIndex(
-      (t, k) => t === 'one_of_one' && Math.floor(k / 6) !== 1 && Math.floor(k / 6) !== 7,
+      (t, k) => t === 'one_of_one' && Math.floor(k / 6) !== 4 && Math.floor(k / 6) !== 6,
     );
     if (types[idx] !== 'one_of_one' && other >= 0)
       [types[idx], types[other]] = [types[other]!, types[idx]!];
   };
-  [0, 1, 2].forEach((s) => swapToOoo(1, s));
-  [0, 1, 2].forEach((s) => swapToOoo(7, s));
+  // Sundry Atelier and Fern & Thread work from reclaimed materials.
+  [0, 1, 2].forEach((s) => swapToOoo(4, s));
+  [0, 1, 2].forEach((s) => swapToOoo(6, s));
 
   const used = new Set<string>();
   const products: ProductSeed[] = [];
   MAKERS.forEach((maker, makerIdx) => {
     for (let k = 0; k < 6; k++) {
       const idx = makerIdx * 6 + k;
-      const productType = types[idx]!;
-      const shape = maker.focus[k % maker.focus.length]!;
-      let title = '';
-      for (let attempt = 0; attempt < 50; attempt++) {
+      const hero = HEROES.find((h) => h.maker === maker.slug && h.slot === k);
+      const productType = hero?.productType ?? types[idx]!;
+      const shape = hero?.shape ?? maker.focus[k % maker.focus.length]!;
+      let title = hero?.title ?? '';
+      for (let attempt = 0; !hero && attempt < 50; attempt++) {
         title = `${r.pick(FIRST_NAMES)} ${r.pick(STYLE_NAMES[shape])}`;
         if (!used.has(title)) break;
       }
       used.add(title);
-      const slug = slugify(title);
+      const slug = hero?.slug ?? slugify(title);
       const isUpcycled = productType === 'one_of_one';
       const pattern: Pattern = isUpcycled
         ? 'patchwork'
         : shape === 'skirt' && r.chance(0.5)
           ? 'pleats'
           : r.pick(['solid', 'solid', 'solid', 'stripes', 'dots', 'gingham', 'floral'] as const);
-      const colour = maker.palette[k % maker.palette.length]!;
+      const colour = hero?.colour ?? maker.palette[k % maker.palette.length]!;
       const secondColour =
-        r.chance(0.3) && !isUpcycled ? maker.palette[(k + 1) % maker.palette.length]! : null;
+        r.chance(0.3) && !isUpcycled && !hero
+          ? maker.palette[(k + 1) % maker.palette.length]!
+          : null;
       const colours = secondColour ? [colour, secondColour] : [colour];
 
       // Most pieces sit in the A$150–A$500 band; a handful sit just outside it.
@@ -537,6 +680,7 @@ function buildProducts(): ProductSeed[] {
       if (idx % 23 === 7) priceCents = 12900;
       if (idx % 29 === 11) priceCents = 58000;
       if (shape === 'top') priceCents = Math.min(priceCents, 22000);
+      if (hero) priceCents = hero.priceCents;
 
       const leadTimeDays =
         productType === 'made_to_order' ? maker.leadTimeDays + r.int(-3, 7) : null;
@@ -554,6 +698,7 @@ function buildProducts(): ProductSeed[] {
           if (productType === 'one_of_one') stock = idx % 5 === 0 ? 0 : 1;
           else if (productType === 'made_to_order') stock = 20;
           else stock = r.chance(0.15) ? 0 : r.chance(0.25) ? r.int(1, 2) : r.int(3, 8);
+          if (hero?.lowStock) stock = si === 2 ? 2 : 0;
           variants.push({
             id: seedId(`variant:${slug}:${c}:${size}`),
             size,
@@ -613,12 +758,16 @@ function buildProducts(): ProductSeed[] {
         shape === 'skirt' ? 'two deep side-seam pockets' : 'side-seam pockets'
       }, French seams throughout.`;
 
-      const images = VIEW_ALT.map((alt, view) => ({
-        path: `seed/products/${slug}-${view + 1}.svg`,
-        url: `/seed/products/${slug}-${view + 1}.svg`,
-        alt: alt(title, colour),
-        view,
-      }));
+      const images = hero
+        ? [{ path: `seed/${slug}.jpg`, url: `/seed/${slug}.jpg`, alt: hero.alt, view: 0 }]
+        : VIEW_ALT.map((alt, view) => ({
+            path: `seed/products/${slug}-${view + 1}.svg`,
+            url: `/seed/products/${slug}-${view + 1}.svg`,
+            alt: alt(title, colour),
+            view,
+          }));
+      const occasions =
+        hero?.occasions ?? (tags.includes('wedding-guest') ? ['wedding guest'] : []);
 
       products.push({
         id: seedId(`product:${slug}`),
@@ -626,7 +775,7 @@ function buildProducts(): ProductSeed[] {
         maker,
         title,
         description,
-        category: CATEGORY_BY_SHAPE[shape],
+        category: hero?.category ?? CATEGORY_BY_SHAPE[shape],
         shape,
         pattern,
         productType,
@@ -647,8 +796,9 @@ function buildProducts(): ProductSeed[] {
           productType === 'made_to_order'
             ? 'Made in AU 6–22. Length can be adjusted ±5cm at no charge — add a note after checkout or ask the maker.'
             : null,
-        isFeatured: idx % 9 === 0,
-        createdDaysAgo,
+        isFeatured: Boolean(hero) || idx % 9 === 0,
+        createdDaysAgo: hero ? Math.min(createdDaysAgo, 5) : createdDaysAgo,
+        occasions,
         variants,
         measurements,
         images,

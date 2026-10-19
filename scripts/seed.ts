@@ -14,6 +14,7 @@ import {
   COLLECTIONS,
   MAKERS,
   PASSWORD,
+  HEROES,
   PRODUCTS,
   rng,
   seedId,
@@ -78,12 +79,13 @@ async function seedProducts(db: Sql) {
       insert into public.products (
         id, maker_id, slug, title, description, category, tags, colours, price_cents, product_type, status,
         is_featured, fabric_composition, care_instructions, country_of_making, model_height_cm, model_size_worn,
-        lead_time_days, made_to_order_options, shipping_policy, return_policy, approved_at, created_at
+        lead_time_days, made_to_order_options, shipping_policy, return_policy, approved_at, created_at, occasions
       ) values (
         ${p.id}, ${p.maker.id}, ${p.slug}, ${p.title}, ${p.description}, ${p.category}, ${p.tags}, ${p.colours},
         ${p.priceCents}, ${p.productType}::product_type, 'approved', ${p.isFeatured}, ${p.fabric}, ${p.care},
         'Australia', ${p.modelHeightCm}, ${p.modelSizeWorn}, ${p.leadTimeDays}, ${p.madeToOrderOptions},
-        ${'Tracked Australia Post parcel. Ships from ' + p.maker.city + '.'}, null, ${approvedAt}, ${approvedAt}
+        ${'Tracked Australia Post parcel. Ships from ' + p.maker.city + '.'}, null, ${approvedAt}, ${approvedAt},
+        ${p.occasions}
       )
       on conflict (id) do update set
         title = excluded.title, description = excluded.description, category = excluded.category,
@@ -92,13 +94,18 @@ async function seedProducts(db: Sql) {
         fabric_composition = excluded.fabric_composition, care_instructions = excluded.care_instructions,
         model_height_cm = excluded.model_height_cm, model_size_worn = excluded.model_size_worn,
         lead_time_days = excluded.lead_time_days, made_to_order_options = excluded.made_to_order_options,
-        shipping_policy = excluded.shipping_policy, approved_at = excluded.approved_at, created_at = excluded.created_at`;
+        shipping_policy = excluded.shipping_policy, approved_at = excluded.approved_at, created_at = excluded.created_at,
+        occasions = excluded.occasions`;
 
+    // Every seeded image is a placeholder, to be swapped for real maker photography.
+    const imageIds = p.images.map((img) => seedId(`image:${p.slug}:${img.view}`));
+    await db`delete from public.product_images where product_id = ${p.id} and not (id = any(${imageIds}::uuid[]))`;
     for (const img of p.images) {
       await db`
-        insert into public.product_images (id, product_id, storage_path, public_url, alt_text, sort_order)
-        values (${seedId(`image:${p.slug}:${img.view}`)}, ${p.id}, ${img.path}, ${img.url}, ${img.alt}, ${img.view})
-        on conflict (id) do update set public_url = excluded.public_url, alt_text = excluded.alt_text, sort_order = excluded.sort_order`;
+        insert into public.product_images (id, product_id, storage_path, public_url, alt_text, sort_order, is_placeholder)
+        values (${seedId(`image:${p.slug}:${img.view}`)}, ${p.id}, ${img.path}, ${img.url}, ${img.alt}, ${img.view}, true)
+        on conflict (id) do update set storage_path = excluded.storage_path, public_url = excluded.public_url,
+          alt_text = excluded.alt_text, sort_order = excluded.sort_order, is_placeholder = true`;
     }
     for (const [i, v] of p.variants.entries()) {
       await db`
@@ -279,18 +286,53 @@ async function seedOrders(db: Sql) {
     )`;
 }
 
+const bySlug = (slug: string) => {
+  const p = PRODUCTS.find((x) => x.slug === slug);
+  if (!p) throw new Error(`No seeded product ${slug}`);
+  return p;
+};
+const makerBySlug = (slug: string) => MAKERS.find((m) => m.slug === slug)!;
+
+/** Profile banner: the supplied studio shot, or a new maker's own photographed piece. */
+function coverFor(makerSlug: string) {
+  const m = makerBySlug(makerSlug);
+  const hero = HEROES.find((h) => h.maker === makerSlug);
+  return m.joinedDaysAgo < 60 && hero ? `/seed/${hero.slug}.jpg` : '/seed/banner-velvet-sofa.jpg';
+}
+
+/** The demo buyer's saves: one dropped in price since saving, one nearly sold out. */
+const DEMO_SAVES: Array<{ slug: string; savedAtPrice?: number }> = [
+  { slug: 'tangerine-bias-maxi', savedAtPrice: 35000 },
+  { slug: 'corset-front-mini' },
+  { slug: 'navy-satin-slip' },
+  { slug: 'crochet-lace-maxi' },
+  { slug: 'wine-satin-halter-set' },
+  { slug: 'embroidered-ruffle-dress' },
+];
+const DEMO_FOLLOWS = ['halde-studio', 'atelier-noor', 'lune-studio', 'mara-kovac'];
+
 async function seedSocial(db: Sql) {
   const r = rng('social');
   for (const [i, buyer] of BUYERS.entries()) {
-    for (let k = 0; k < 3; k++) {
-      const maker = MAKERS[(i + k * 5) % MAKERS.length]!;
+    const follows =
+      i === 0
+        ? DEMO_FOLLOWS.map(makerBySlug)
+        : [0, 1, 2].map((k) => MAKERS[(i + k * 5) % MAKERS.length]!);
+    for (const maker of follows) {
       await db`insert into public.maker_follows (id, user_id, maker_id) values (${seedId(`follow:${buyer.id}:${maker.id}`)}, ${buyer.id}, ${maker.id})
                on conflict (user_id, maker_id) do nothing`;
     }
-    for (let k = 0; k < 4; k++) {
-      const p = PRODUCTS[(i * 11 + k * 17) % PRODUCTS.length]!;
-      await db`insert into public.saved_items (id, user_id, product_id) values (${seedId(`save:${buyer.id}:${p.id}`)}, ${buyer.id}, ${p.id})
-               on conflict (user_id, product_id) do nothing`;
+    const saves =
+      i === 0
+        ? DEMO_SAVES.map((d) => ({ p: bySlug(d.slug), price: d.savedAtPrice }))
+        : [0, 1, 2, 3].map((k) => ({
+            p: PRODUCTS[(i * 11 + k * 17) % PRODUCTS.length]!,
+            price: undefined as number | undefined,
+          }));
+    for (const { p, price } of saves) {
+      await db`insert into public.saved_items (id, user_id, product_id, price_at_save)
+               values (${seedId(`save:${buyer.id}:${p.id}`)}, ${buyer.id}, ${p.id}, ${price ?? p.priceCents})
+               on conflict (user_id, product_id) do update set price_at_save = excluded.price_at_save`;
     }
     if (i % 3 === 0) {
       await db`
@@ -317,126 +359,118 @@ async function seedSocial(db: Sql) {
 
 const THREADS: Array<{
   buyer: number;
-  product: number;
+  product: string;
   messages: Array<[from: 'buyer' | 'maker', body: string]>;
 }> = [
   {
     buyer: 0,
-    product: 0,
+    product: 'navy-satin-slip',
     messages: [
       ['buyer', 'What size should I get? I’m 168cm, bust 90, waist 72.'],
       [
         'maker',
-        'Hi Ava! I’d go a 10 — the bodice is fitted but there’s ease through the waist. Happy to shorten the hem if you like.',
+        'I’d go a 10 — the bias cut skims the body without clinging. Happy to take the hem up if you’d like it shorter.',
       ],
       ['buyer', 'Perfect, thank you!'],
     ],
   },
   {
-    buyer: 1,
-    product: 7,
+    buyer: 0,
+    product: 'tangerine-bias-maxi',
     messages: [
-      ['buyer', 'Can you make this in another colour or fabric? Thinking sage linen.'],
+      ['buyer', 'Can you adjust the length? I’m 160cm and would love it to just skim the floor.'],
+    ],
+  },
+  {
+    buyer: 1,
+    product: 'lace-trim-maxi-dress',
+    messages: [
+      ['buyer', 'Could you make this in ivory for a garden wedding?'],
       [
         'maker',
-        'Yes — sage linen is available for this style at the same price. Choose your size and add a note and I’ll confirm.',
+        'Yes — ivory silk with the same lace trim, same price. I’ll confirm the lace in daylight.',
       ],
     ],
   },
   {
     buyer: 2,
-    product: 14,
+    product: 'draped-satin-midi',
     messages: [
-      ['buyer', 'When would this arrive by 20 December? It’s for a wedding.'],
-      ['maker', 'If you order this week it’ll be with you by the 12th. I’ll prioritise it.'],
+      ['buyer', 'When would it arrive if I order this week? It’s for the races on the 8th.'],
+      ['maker', 'Order by Friday and it’ll be with you by the 4th. I’ll prioritise it.'],
     ],
-  },
-  {
-    buyer: 3,
-    product: 22,
-    messages: [
-      ['buyer', 'Can you send more photos or a video of the back?'],
-      ['maker', 'Of course, attached a couple more shots in natural light.'],
-    ],
-  },
-  {
-    buyer: 4,
-    product: 30,
-    messages: [
-      ['buyer', 'Can you adjust the length or fit? I’m 158cm.'],
-      ['maker', 'Yes, I can take 6cm off the hem at no cost. Just mention it after ordering.'],
-    ],
-  },
-  {
-    buyer: 5,
-    product: 41,
-    messages: [['buyer', 'I’d like something similar but custom — maybe with long sleeves?']],
-  },
-  {
-    buyer: 6,
-    product: 53,
-    messages: [
-      ['buyer', 'Is the fabric see-through at all?'],
-      ['maker', 'It’s fully lined so not at all.'],
-    ],
-  },
-  {
-    buyer: 7,
-    product: 66,
-    messages: [['buyer', 'What size should I get? Usually a 12 in Australian brands.']],
   },
 ];
 
 async function seedMessages(db: Sql) {
   for (const [i, t] of THREADS.entries()) {
     const buyer = BUYERS[t.buyer]!;
-    const p = PRODUCTS[t.product]!;
+    const p = bySlug(t.product);
     const threadId = seedId(`thread:${i}`);
-    const start = daysAgo(10 - i);
+    const start = daysAgo(6 - i);
+    const variant = p.variants[2 % p.variants.length]!;
     const context = {
+      productId: p.id,
       productTitle: p.title,
       productSlug: p.slug,
       imageUrl: p.images[0]!.url,
       priceCents: p.priceCents,
       productType: p.productType,
-      variantLabel: `AU ${p.variants[2 % p.variants.length]!.size}`,
+      variantId: variant.id,
+      variantLabel: `AU ${variant.size}`,
       leadTimeDays: p.leadTimeDays,
     };
     const last = new Date(start.getTime() + t.messages.length * 3_600_000);
     await db`
-      insert into public.message_threads (id, buyer_user_id, maker_id, product_id, context, last_message_at, created_at)
-      values (${threadId}, ${buyer.id}, ${p.maker.id}, ${p.id}, ${db.json(context)}, ${last}, ${start})
-      on conflict (id) do update set context = excluded.context, last_message_at = excluded.last_message_at`;
+      insert into public.message_threads (id, buyer_user_id, maker_id, product_id, context, last_message_at, created_at, kind)
+      values (${threadId}, ${buyer.id}, ${p.maker.id}, ${p.id}, ${db.json(context)}, ${last}, ${start}, 'enquiry')
+      on conflict (id) do update set buyer_user_id = excluded.buyer_user_id, maker_id = excluded.maker_id,
+        product_id = excluded.product_id, context = excluded.context, last_message_at = excluded.last_message_at`;
+    await db`delete from public.messages where thread_id = ${threadId}`;
     for (const [k, [from, body]] of t.messages.entries()) {
       await db`
         insert into public.messages (id, thread_id, sender_user_id, body, created_at)
         values (${seedId(`message:${i}:${k}`)}, ${threadId}, ${from === 'buyer' ? buyer.id : p.maker.userId}, ${body},
-          ${new Date(start.getTime() + k * 3_600_000)})
-        on conflict (id) do nothing`;
+          ${new Date(start.getTime() + k * 3_600_000)})`;
     }
   }
 }
 
+/** Unread counters and the reply clock, derived from the seeded messages. */
+async function refreshThreadState(db: Sql) {
+  // Each side has read up to its own last message.
+  await db`
+    update public.message_threads t set
+      buyer_last_read_at = (select max(m.created_at) from public.messages m
+        where m.thread_id = t.id and m.sender_user_id = t.buyer_user_id and m.kind <> 'system'),
+      maker_last_read_at = (select max(m.created_at) from public.messages m
+        where m.thread_id = t.id and m.sender_user_id <> t.buyer_user_id)`;
+  await db`
+    update public.message_threads t set
+      buyer_unread = (select count(*) from public.messages m where m.thread_id = t.id and not m.is_flagged
+        and m.sender_user_id <> t.buyer_user_id and m.kind <> 'system'
+        and m.created_at > coalesce(t.buyer_last_read_at, 'epoch')),
+      maker_unread = (select count(*) from public.messages m where m.thread_id = t.id and not m.is_flagged
+        and m.sender_user_id = t.buyer_user_id and m.created_at > coalesce(t.maker_last_read_at, 'epoch')),
+      maker_needs_reply = coalesce((select m.sender_user_id = t.buyer_user_id from public.messages m
+        where m.thread_id = t.id and not m.is_flagged order by m.created_at desc limit 1), false),
+      reply_due_at = (select m.created_at + interval '6 hours' from public.messages m
+        where m.thread_id = t.id and not m.is_flagged and m.sender_user_id = t.buyer_user_id
+        and m.created_at = (select max(x.created_at) from public.messages x where x.thread_id = t.id and not x.is_flagged)
+        limit 1)`;
+}
+
 async function seedCommissions(db: Sql) {
-  const custom = MAKERS.filter((m) => m.customCommissions);
+  const mara = makerBySlug('mara-kovac');
   const requests = [
     {
-      buyer: 8,
-      maker: custom[0]!,
-      garment: 'Dress',
-      occasion: 'Wedding guest (spring, garden)',
+      buyer: 0,
+      maker: mara,
+      garment: 'Satin halter set',
+      occasion: 'a summer wedding',
       min: 30000,
       max: 45000,
       status: 'quoted',
-    },
-    {
-      buyer: 9,
-      maker: custom[1]!,
-      garment: 'Jacket',
-      occasion: 'Everyday',
-      min: 25000,
-      max: 40000,
-      status: 'submitted',
     },
     {
       buyer: 10,
@@ -450,20 +484,62 @@ async function seedCommissions(db: Sql) {
   ];
   for (const [i, req] of requests.entries()) {
     const id = seedId(`commission:${i}`);
+    const buyer = BUYERS[req.buyer]!;
     await db`
       insert into public.commission_requests (id, buyer_user_id, maker_id, garment_type, occasion, budget_min_cents, budget_max_cents,
         deadline_date, measurements, fabric_preferences, colour_preferences, notes, status, created_at)
-      values (${id}, ${BUYERS[req.buyer]!.id}, ${req.maker?.id ?? null}, ${req.garment}, ${req.occasion}, ${req.min}, ${req.max},
-        ${toIsoDate(new Date(Date.now() + 60 * DAY))}, 'Bust 88, waist 70, hips 96, height 165cm', 'Natural fibres, nothing too shiny',
-        'Deep green or rust', 'Pockets please!', ${req.status}::commission_status, ${daysAgo(5 - i)})
+      values (${id}, ${buyer.id}, ${req.maker?.id ?? null}, ${req.garment}, ${req.occasion}, ${req.min}, ${req.max},
+        ${toIsoDate(new Date(Date.now() + 60 * DAY))}, 'Bust 88, waist 70, hips 96, height 165cm', 'Heavy satin, nothing sheer',
+        'Emerald or deep green', 'Like the wine halter set, but in emerald with a longer trouser.', ${req.status}::commission_status, ${daysAgo(3 - i)})
+      on conflict (id) do update set buyer_user_id = excluded.buyer_user_id, maker_id = excluded.maker_id,
+        garment_type = excluded.garment_type, occasion = excluded.occasion, notes = excluded.notes`;
+    if (req.status !== 'quoted' || !req.maker) continue;
+
+    const quoteId = seedId(`quote:${i}`);
+    await db`
+      insert into public.commission_quotes (id, commission_request_id, maker_id, total_price_cents, deposit_cents, production_days,
+        revisions_included, shipping_cents, estimated_delivery_date, message)
+      values (${quoteId}, ${id}, ${req.maker.id}, 42000, 12600, 21, 1, 0,
+        ${toIsoDate(new Date(Date.now() + 30 * DAY))}, 'Includes a calico fitting so the halter sits just right.')
       on conflict (id) do nothing`;
-    if (req.status === 'quoted' && req.maker) {
+
+    // The request's conversation: a summary, a question, then the maker's quote.
+    const threadId = seedId(`thread:commission:${i}`);
+    const start = daysAgo(3 - i);
+    const context = { commissionGarment: req.garment };
+    await db`
+      insert into public.message_threads (id, buyer_user_id, maker_id, commission_request_id, kind, context, last_message_at, created_at)
+      values (${threadId}, ${buyer.id}, ${req.maker.id}, ${id}, 'custom_request', ${db.json(context)}, ${new Date(start.getTime() + 3 * 3_600_000)}, ${start})
+      on conflict (id) do update set context = excluded.context, last_message_at = excluded.last_message_at`;
+    await db`delete from public.messages where thread_id = ${threadId}`;
+    const quote = {
+      price_cents: 42000,
+      deposit_pct: 30,
+      weeks: 3,
+      note: 'Includes a calico fitting.',
+      quote_id: quoteId,
+    };
+    const lines: Array<[string, string, string, Record<string, unknown> | null]> = [
+      [
+        buyer.id,
+        'system',
+        `Custom request: ${req.garment} for ${req.occasion}. Budget A$300–A$450.\n\nLike the wine halter set, but in emerald with a longer trouser.`,
+        null,
+      ],
+      [
+        req.maker.userId,
+        'text',
+        'I’d love to make this. Is a 3cm longer inseam right for 165cm in a flat sandal?',
+        null,
+      ],
+      [buyer.id, 'text', 'Yes, perfect — flats mostly.', null],
+      [req.maker.userId, 'quote', 'Quote: A$420, 30% deposit, made in 3 weeks', quote],
+    ];
+    for (const [k, [sender, kind, body, q]] of lines.entries()) {
       await db`
-        insert into public.commission_quotes (id, commission_request_id, maker_id, total_price_cents, deposit_cents, production_days,
-          revisions_included, shipping_cents, estimated_delivery_date, message)
-        values (${seedId(`quote:${i}`)}, ${id}, ${req.maker.id}, 42000, 21000, 28, 2, 1200,
-          ${toIsoDate(new Date(Date.now() + 40 * DAY))}, 'I’d love to make this. Quote includes a calico fitting and two rounds of adjustments.')
-        on conflict (id) do nothing`;
+        insert into public.messages (id, thread_id, sender_user_id, body, kind, quote, created_at)
+        values (${seedId(`message:commission:${i}:${k}`)}, ${threadId}, ${sender}, ${body}, ${kind}::message_kind,
+          ${q ? db.json(q as never) : null}, ${new Date(start.getTime() + k * 3_600_000)})`;
     }
   }
 }
@@ -487,10 +563,11 @@ export async function seed(databaseUrl: string) {
             free_shipping_over_cents, dispatch_days, approved_at
           ) values (
             ${m.id}, ${m.userId}, ${m.slug}, ${m.displayName}, ${m.tagline}, ${m.story}, ${`${m.suburb}, ${m.city}`}, ${m.city},
-            ${m.state}, ${m.process}, ${m.materials}, ${m.sizingNotes}, ${`/seed/makers/${m.slug}-avatar.svg`},
-            ${`/seed/makers/${m.slug}-cover.svg`}, ${m.leadTimeDays}, ${m.responseTimeHours}, ${m.customCommissions}, 'approved',
+            ${m.state}, ${m.process}, ${m.materials}, ${m.sizingNotes}, ${m.portrait ?? `/seed/makers/${m.slug}-avatar.svg`},
+            ${coverFor(m.slug)}, ${m.leadTimeDays}, ${m.responseTimeHours}, ${m.customCommissions}, 'approved',
             ${mockPayments ? `acct_mock_${m.slug.replace(/-/g, '_')}` : null}, ${mockPayments}, ${mockPayments},
-            ${m.shippingStandardCents}, ${m.freeShippingOverCents}, ${m.dispatchDays}, now() - interval '60 days'
+            ${m.shippingStandardCents}, ${m.freeShippingOverCents}, ${m.dispatchDays},
+            now() - make_interval(days => ${m.joinedDaysAgo})
           )
           on conflict (id) do update set
             display_name = excluded.display_name, tagline = excluded.tagline, story = excluded.story,
@@ -507,7 +584,8 @@ export async function seed(databaseUrl: string) {
               then excluded.stripe_onboarding_complete else public.makers.stripe_onboarding_complete end,
             stripe_payouts_enabled = case when public.makers.stripe_account_id is null or public.makers.stripe_account_id like 'acct_mock_%'
               then excluded.stripe_payouts_enabled else public.makers.stripe_payouts_enabled end,
-            free_shipping_over_cents = excluded.free_shipping_over_cents, dispatch_days = excluded.dispatch_days`;
+            free_shipping_over_cents = excluded.free_shipping_over_cents, dispatch_days = excluded.dispatch_days,
+            approved_at = excluded.approved_at`;
         await tx`
           insert into public.reply_templates (id, maker_id, title, body) values
             (${seedId(`tpl:${m.slug}:size`)}, ${m.id}, 'Sizing help', ${'Thanks for asking! Based on your measurements I’d recommend '}),
@@ -532,11 +610,11 @@ export async function seed(databaseUrl: string) {
 
       await tx`
         insert into public.editorial_placements (id, slot, title, subtitle, image_url, href, sort_order) values
-          (${seedId('placement:hero')}, 'home_hero', 'Pieces nobody else will be wearing',
-            'Made in Australia · straight from the maker',
-            '/seed/editorial/hero.svg', '/collections/statement-dresses', 0),
+          (${seedId('placement:hero')}, 'home_hero', 'Bespoke pieces made just for you',
+            'Melbourne-made · Straight from the maker',
+            '/seed/hero-linen-suit.jpg', '/?tab=new', 0),
           (${seedId('placement:wedding')}, 'home_feature', 'Wedding guest, but not boring',
-            'Season picks from 12 independent studios.', ${'/seed/editorial/race-day.svg'},
+            'Season picks from ten independent Melbourne studios.', ${'/seed/tangerine-bias-maxi.jpg'},
             '/collections/wedding-guest-but-not-boring', 1)
         on conflict (id) do update set title = excluded.title, subtitle = excluded.subtitle, image_url = excluded.image_url, href = excluded.href`;
 
@@ -544,6 +622,7 @@ export async function seed(databaseUrl: string) {
       await seedSocial(tx);
       await seedMessages(tx);
       await seedCommissions(tx);
+      await refreshThreadState(tx);
 
       await tx`
         insert into public.audit_events (id, actor_user_id, action, entity_type, entity_id, metadata)

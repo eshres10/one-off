@@ -241,7 +241,7 @@ export default async function DiscoverPage({ searchParams }: { searchParams: Sea
               fill
               priority
               sizes="100vw"
-              className="object-cover"
+              className="object-cover object-[center_30%]"
             />
           )}
           <span aria-hidden className="absolute inset-0 bg-[rgba(0,0,0,0.28)]" />
