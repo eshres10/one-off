@@ -59,7 +59,8 @@ export function RailProductCard({ product, saved }: { product: RailProduct; save
   );
 }
 
-const joined = (d: Date) =>
+/** Accepts a Date or its JSON string (rails are cached). */
+const joined = (d: Date | string) =>
   new Date(d).toLocaleDateString('en-AU', { month: 'short', year: 'numeric' });
 
 export function NewMakerCard({ maker, following }: { maker: NewMaker; following: boolean }) {

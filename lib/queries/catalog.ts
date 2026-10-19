@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache';
 import { z } from 'zod';
 import { sql, withUser } from '@/lib/db';
 import type { SessionUser } from '@/lib/auth/session';
@@ -162,7 +163,7 @@ export async function getFeed(
   return { items: rows.slice(0, limit).map(toCard), hasMore: rows.length > limit };
 }
 
-export async function getFacetOptions() {
+async function getFacetOptionsUncached() {
   const [row] = await sql()<{ categories: string[]; colours: string[]; sizes: string[] }[]>`
     select
       (select array_agg(distinct p.category order by p.category) from public.products p join public.makers m on m.id = p.maker_id where ${VISIBLE()}) as categories,
@@ -204,7 +205,7 @@ export interface Collection {
   productCount: number;
 }
 
-export async function getCollections(): Promise<Collection[]> {
+async function getCollectionsUncached(): Promise<Collection[]> {
   return sql()<Collection[]>`
     select c.id, c.slug, c.title, c.subtitle, c.description, c.hero_image_url,
       (select count(*) from public.collection_products cp join public.products p on p.id = cp.product_id
@@ -233,7 +234,7 @@ export interface Placement {
   href: string;
 }
 
-export async function getPlacements(): Promise<Placement[]> {
+async function getPlacementsUncached(): Promise<Placement[]> {
   return sql()<Placement[]>`
     select id, slot, title, subtitle, image_url, href from public.editorial_placements where is_active order by slot, sort_order`;
 }
@@ -553,3 +554,21 @@ export async function makerSlugRedirect(slug: string): Promise<string | null> {
     where r.old_slug = ${slug}`;
   return row?.slug ?? null;
 }
+
+/** Same for every visitor, so cached for a minute. */
+export const getFacetOptions = unstable_cache(getFacetOptionsUncached, ['facet-options'], {
+  revalidate: 60,
+  tags: ['catalog'],
+});
+
+/** Same for every visitor, so cached for a minute. */
+export const getCollections = unstable_cache(getCollectionsUncached, ['collections'], {
+  revalidate: 60,
+  tags: ['catalog'],
+});
+
+/** Same for every visitor, so cached for a minute. */
+export const getPlacements = unstable_cache(getPlacementsUncached, ['placements'], {
+  revalidate: 60,
+  tags: ['catalog'],
+});

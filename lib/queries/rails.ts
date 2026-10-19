@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache';
 import { sql } from '@/lib/db';
 import { VISIBLE, cardColumns, cardJoins, toCard, type CardRow, type ProductCard } from './catalog';
 
@@ -15,7 +16,7 @@ function toRail(r: RailRow): RailProduct {
 }
 
 /** Top pieces by saves plus views over the last 7 days (public.popular_products). */
-export async function getMostPopular(limit = 10): Promise<RailProduct[]> {
+async function getMostPopularUncached(limit = 10): Promise<RailProduct[]> {
   const rows = await sql()<(RailRow & { rank: number })[]>`
     with top as (
       select product_id, row_number() over () as rank from public.popular_products(7, ${limit})
@@ -45,7 +46,7 @@ export async function getPickedForYou(userId: string, limit = 10): Promise<RailP
   return rows.map(({ rank: _r, ...r }) => toRail(r));
 }
 
-export async function getUnder(limitCents: number, limit = 12): Promise<RailProduct[]> {
+async function getUnderUncached(limitCents: number, limit = 12): Promise<RailProduct[]> {
   const rows = await sql()<RailRow[]>`
     select ${cardColumns()}, p.save_count from public.products p ${cardJoins()}
     where ${VISIBLE()} and p.price_cents < ${limitCents}
@@ -68,7 +69,7 @@ export interface NewMaker {
 }
 
 /** Makers approved in the last 60 days, newest first, with three of their pieces. */
-export async function getNewMakers(limit = 10): Promise<NewMaker[]> {
+async function getNewMakersUncached(limit = 10): Promise<NewMaker[]> {
   return sql()<NewMaker[]>`
     select m.id, m.slug, m.display_name, m.tagline, m.cover_url, m.avatar_url, m.approved_at,
       nullif(trim(split_part(coalesce(m.location, m.city, ''), ',', 1)), '') as suburb,
@@ -95,7 +96,7 @@ export interface MakerTile {
 }
 
 /** Every active maker, most recent sales first (public.makers_by_recent_sales). */
-export async function getShopByMaker(limit = 16): Promise<MakerTile[]> {
+async function getShopByMakerUncached(limit = 16): Promise<MakerTile[]> {
   return sql()<MakerTile[]>`
     select m.id, m.slug, m.display_name, coalesce(m.avatar_url, m.cover_url) as image_url, r.piece_count,
       nullif(trim(split_part(coalesce(m.location, m.city, ''), ',', 1)), '') as suburb
@@ -112,3 +113,27 @@ export async function getFollowedMakerIds(userId: string | null): Promise<Set<st
   >`select maker_id from public.maker_follows where user_id = ${userId}`;
   return new Set(rows.map((r) => r.makerId));
 }
+
+/** Same for every visitor, so cached for a minute. */
+export const getMostPopular = unstable_cache(getMostPopularUncached, ['rail-popular'], {
+  revalidate: 60,
+  tags: ['catalog'],
+});
+
+/** Same for every visitor, so cached for a minute. */
+export const getUnder = unstable_cache(getUnderUncached, ['rail-under'], {
+  revalidate: 60,
+  tags: ['catalog'],
+});
+
+/** Same for every visitor, so cached for a minute. */
+export const getNewMakers = unstable_cache(getNewMakersUncached, ['rail-new-makers'], {
+  revalidate: 60,
+  tags: ['catalog'],
+});
+
+/** Same for every visitor, so cached for a minute. */
+export const getShopByMaker = unstable_cache(getShopByMakerUncached, ['rail-shop-by-maker'], {
+  revalidate: 60,
+  tags: ['catalog'],
+});
