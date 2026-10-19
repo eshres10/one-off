@@ -3,6 +3,7 @@ import { isPreviewOnly } from '@/lib/domain/preview';
 import { checkoutEnabled } from '@/lib/features';
 import { log } from '@/lib/log';
 import {
+  getNextSlot,
   getProduct,
   getSavedProductIds,
   isFollowing,
@@ -23,11 +24,12 @@ export default async function QuickViewPage({ params }: { params: { slug: string
         </h2>
       </div>
     );
-  const [saved, following, saveCount, qa] = await Promise.all([
+  const [saved, following, saveCount, qa, nextSlot] = await Promise.all([
     getSavedProductIds(user?.id ?? null),
     isFollowing(user?.id ?? null, product.maker.id),
     getSaveCount(product.id),
     getQuestionsAndReviews(product.id),
+    getNextSlot(product.id),
   ]);
   const isMaker = Boolean(user && user.id === product.maker.userId);
   if (user && !isMaker)
@@ -45,6 +47,7 @@ export default async function QuickViewPage({ params }: { params: { slug: string
       isMaker={isMaker}
       checkoutOn={checkoutEnabled()}
       previewOnly={isPreviewOnly(product.tags)}
+      nextSlot={nextSlot}
     />
   );
 }

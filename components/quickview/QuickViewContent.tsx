@@ -53,6 +53,7 @@ export function QuickViewContent({
   isMaker,
   checkoutOn,
   previewOnly,
+  nextSlot = null,
 }: {
   product: ProductDetail;
   saved: boolean;
@@ -63,6 +64,8 @@ export function QuickViewContent({
   isMaker: boolean;
   checkoutOn: boolean;
   previewOnly: boolean;
+  /** Made-to-order piece at capacity: when the next making slot opens. */
+  nextSlot?: string | null;
 }) {
   const m = p.maker;
   const suburb = (m.location ?? m.city ?? '').split(',')[0]?.trim();
@@ -116,6 +119,7 @@ export function QuickViewContent({
           <p className="mt-2 text-[15px]">{formatPrice(p.priceCents)}</p>
           <p className="mt-1 text-[13px] text-muted" data-testid="qv-timing">
             {timingLine(p)}
+            {nextSlot ? ` · Next slot: ${nextSlot}` : ''}
           </p>
 
           <QuickBuy

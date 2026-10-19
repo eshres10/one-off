@@ -1,5 +1,6 @@
 'use client';
 
+import { CustomMeasurements } from '@/components/product/CustomMeasurements';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useFormState, useFormStatus } from 'react-dom';
@@ -174,6 +175,7 @@ export function PurchasePanel({
             </p>
           )}
       </fieldset>
+      {selected?.size === 'Custom' && <CustomMeasurements />}
 
       <div className="mt-6 hidden md:block">
         <AddButton disabled={disabled} label={label} className="w-full" />

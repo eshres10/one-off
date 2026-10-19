@@ -1,82 +1,99 @@
 import Link from 'next/link';
-import { Img as Image } from '@/components/ui/Img';
+import { z } from 'zod';
 import { requireSeller } from '@/lib/auth/session';
-import { getSellerListings } from '@/lib/queries/seller';
-import { listingCommandAction } from '@/lib/actions/seller';
-import { formatPrice } from '@/lib/domain/money';
-import { StatusPill, ProductBadgePill } from '@/components/ui/Badge';
-import { ButtonLink } from '@/components/ui/Button';
-import { EmptyState } from '@/components/ui/EmptyState';
+import { isPreviewOnly } from '@/lib/domain/preview';
+import { getProduct } from '@/lib/queries/catalog';
+import { getQuestionsAndReviews, getSaveCount } from '@/lib/queries/questions';
+import { listPieces } from '@/lib/services/studio-listings';
+import { ListingCard } from '@/components/studio/ListingCard';
+import { RouteSheet } from '@/components/studio/RouteSheet';
+import { QuickViewContent } from '@/components/quickview/QuickViewContent';
+import { PlusIcon } from '@/components/ui/icons';
 
-export const metadata = { title: 'Listings' };
+export const metadata = { title: 'Listings · Studio' };
 
-export default async function ListingsPage() {
+export default async function StudioListingsPage({
+  searchParams,
+}: {
+  searchParams: { preview?: string };
+}) {
   const seller = await requireSeller();
-  const listings = await getSellerListings(seller);
+  const pieces = await listPieces(seller);
+  const previewId = z.string().uuid().safeParse(searchParams.preview);
+  const previewSlug = previewId.success
+    ? pieces.find((p) => p.id === previewId.data)?.slug
+    : undefined;
+  const product = previewSlug ? await getProduct(previewSlug, { includeUnapproved: true }) : null;
+  const [saveCount, qa] = product
+    ? await Promise.all([getSaveCount(product.id), getQuestionsAndReviews(product.id)])
+    : [0, []];
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-end justify-between">
-        <h1 className="text-[40px] leading-none md:text-[48px]">Listings</h1>
-        <ButtonLink href="/studio/listings/new">New listing</ButtonLink>
-      </div>
-      <p className="text-sm text-ink-muted">
-        New listings are reviewed by our team before they appear in the shop — usually within one
-        business day.
-      </p>
-      {listings.length === 0 ? (
-        <EmptyState
-          title="No listings yet"
-          action={<ButtonLink href="/studio/listings/new">Create your first listing</ButtonLink>}
-        />
-      ) : (
-        <ul
-          className="divide-y divide-stone/70 rounded-2xl border border-stone/70 bg-white"
-          role="list"
+    <div>
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <h1 className="text-[40px] leading-none md:text-[56px]">Listings</h1>
+          <p className="mt-2 text-[13px] text-muted">
+            {pieces.filter((p) => p.status === 'approved').length} live ·{' '}
+            {(() => {
+              const n = pieces.filter((p) => p.status === 'draft' || p.status === 'pending').length;
+              return `${n} ${n === 1 ? 'draft' : 'drafts'}`;
+            })()}{' '}
+            ·{' '}
+            {pieces.filter((p) => p.status === 'archived').length} hidden
+          </p>
+        </div>
+        <Link
+          href="/studio/listings/new"
+          className="glass-dark hidden min-h-[48px] items-center gap-2 px-5 text-[11px] uppercase tracking-[0.18em] md:flex"
+          data-testid="add-piece"
         >
-          {listings.map((l) => (
-            <li key={l.id} className="flex flex-wrap items-center gap-4 p-4">
-              <span className="relative aspect-4/5 w-14 shrink-0 overflow-hidden rounded-md bg-stone-light">
-                {l.imageUrl && (
-                  <Image src={l.imageUrl} alt="" fill sizes="56px" className="object-cover" />
-                )}
-              </span>
-              <div className="min-w-0 flex-1">
-                <Link href={`/studio/listings/${l.id}`} className="font-medium hover:underline">
-                  {l.title}
-                </Link>
-                <p className="flex flex-wrap items-center gap-2 text-sm text-ink-muted">
-                  {formatPrice(l.priceCents)} · {l.totalStock}{' '}
-                  {l.productType === 'made_to_order' ? 'capacity' : 'in stock'} · {l.viewCount}{' '}
-                  views · {l.saveCount} saves
-                  <ProductBadgePill badge={l.productType} className="border border-stone/70" />
-                </p>
-                {l.status === 'rejected' && l.rejectionReason && (
-                  <p className="mt-1 text-sm text-alert">Needs changes: {l.rejectionReason}</p>
-                )}
-              </div>
-              <StatusPill status={l.status === 'approved' ? 'live' : l.status} />
-              <div className="flex gap-2 text-sm">
-                {l.status === 'approved' && (
-                  <Link href={`/products/${l.slug}`} className="underline underline-offset-4">
-                    View
-                  </Link>
-                )}
-                <form action={listingCommandAction}>
-                  <input type="hidden" name="productId" value={l.id} />
-                  <input type="hidden" name="command" value="duplicate" />
-                  <button className="underline underline-offset-4">Duplicate</button>
-                </form>
-                {l.status !== 'archived' && (
-                  <form action={listingCommandAction}>
-                    <input type="hidden" name="productId" value={l.id} />
-                    <input type="hidden" name="command" value="archive" />
-                    <button className="text-ink-muted underline underline-offset-4">Archive</button>
-                  </form>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
+          <PlusIcon width={14} height={14} /> Add a piece
+        </Link>
+      </div>
+      <ul className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4" role="list">
+        <li className="md:hidden">
+          <Link
+            href="/studio/listings/new"
+            className="flex aspect-4/5 flex-col items-center justify-center gap-2 border border-dashed border-line-strong text-[12px] text-muted"
+          >
+            <PlusIcon width={20} height={20} />
+            Add a piece
+          </Link>
+        </li>
+        {pieces.map((p) => (
+          <li key={p.id}>
+            <ListingCard piece={p} />
+          </li>
+        ))}
+      </ul>
+      {product && (
+        <RouteSheet
+          closeHref="/studio/listings"
+          variant="center"
+          width={1096}
+          testId="listing-preview"
+          labelledBy="qv-title"
+          title={
+            <p className="text-[11px] uppercase tracking-label text-muted-2">
+              Preview · how buyers see it
+            </p>
+          }
+        >
+          <div className="h-[min(760px,78vh)] overflow-hidden border border-line">
+            <QuickViewContent
+              product={product}
+              saved={false}
+              saveCount={saveCount}
+              following={false}
+              qa={qa}
+              signedIn
+              isMaker
+              checkoutOn={false}
+              previewOnly={isPreviewOnly(product.tags)}
+            />
+          </div>
+        </RouteSheet>
       )}
     </div>
   );

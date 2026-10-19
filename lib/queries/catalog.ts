@@ -519,3 +519,25 @@ export async function watchSoldOutSizes(user: Pick<SessionUser, 'id' | 'role'>, 
       on conflict do nothing`,
   );
 }
+
+/**
+ * Made-to-order capacity: when a piece already has as many open orders as the maker can take at
+ * once, buyers see "Next slot: {date}" (the earliest open order's ship-by) instead of sold out.
+ */
+export async function getNextSlot(productId: string): Promise<string | null> {
+  const [row] = await sql()<{ capacity: number | null; open: number; earliest: string | null }[]>`
+    select p.mto_capacity as capacity,
+      (select count(distinct f.id) from public.order_items oi join public.fulfilments f on f.id = oi.fulfilment_id
+        where oi.product_id = p.id and f.status in ('paid', 'making', 'ready', 'preparing'))::int as open,
+      (select to_char(min(f.estimated_dispatch_date), 'YYYY-MM-DD') from public.order_items oi
+        join public.fulfilments f on f.id = oi.fulfilment_id
+        where oi.product_id = p.id and f.status in ('paid', 'making', 'ready', 'preparing')) as earliest
+    from public.products p where p.id = ${productId} and p.product_type = 'made_to_order'`;
+  if (!row?.capacity || row.open < row.capacity || !row.earliest) return null;
+  return new Date(`${row.earliest}T00:00:00Z`).toLocaleDateString('en-AU', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'UTC',
+  });
+}

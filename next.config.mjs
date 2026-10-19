@@ -9,7 +9,7 @@ const nextConfig = {
     remotePatterns: [{ protocol: 'https', hostname: '*.supabase.co' }],
   },
   experimental: {
-    serverComponentsExternalPackages: ['pino', 'postgres', 'bcryptjs'],
+    serverComponentsExternalPackages: ['pino', 'postgres', 'bcryptjs', 'sharp'],
     instrumentationHook: true,
   },
   async redirects() {

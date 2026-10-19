@@ -1,5 +1,6 @@
 'use client';
 
+import { CustomMeasurements } from '@/components/product/CustomMeasurements';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useFormState, useFormStatus } from 'react-dom';
@@ -159,6 +160,7 @@ export function QuickBuy({
             })}
           </div>
         </fieldset>
+        {selected?.size === 'Custom' && <CustomMeasurements />}
 
         <div className="mt-5">
           {added ? (

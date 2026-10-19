@@ -15,6 +15,18 @@ import {
 } from '@/lib/validation';
 import { clientIp, ensureCartSessionId, getCartSessionId, toFormState } from './util';
 
+const MEASURES = ['bust', 'waist', 'hips', 'height'] as const;
+
+/** Custom-size measurements from the form (cm), or null when none were given. */
+function customMeasurements(form: FormData): Record<string, string> | null {
+  const out: Record<string, string> = {};
+  for (const m of MEASURES) {
+    const v = Number(form.get(`measure_${m}`));
+    if (Number.isFinite(v) && v >= 30 && v <= 250) out[m] = `${Math.round(v)} cm`;
+  }
+  return Object.keys(out).length ? out : null;
+}
+
 export async function addToBagAction(_prev: FormState, form: FormData): Promise<FormState> {
   const parsed = addToCartSchema.safeParse(Object.fromEntries(form));
   if (!parsed.success)
@@ -25,7 +37,12 @@ export async function addToBagAction(_prev: FormState, form: FormData): Promise<
     };
   try {
     const user = await getSessionUser();
-    await addToCart({ sessionId: ensureCartSessionId(), userId: user?.id ?? null, ...parsed.data });
+    await addToCart({
+      sessionId: ensureCartSessionId(),
+      userId: user?.id ?? null,
+      ...parsed.data,
+      customMeasurements: customMeasurements(form),
+    });
     revalidatePath('/', 'layout');
     return { ok: true, message: 'Added to your bag' };
   } catch (err) {

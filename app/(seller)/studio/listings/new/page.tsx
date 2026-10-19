@@ -1,14 +1,14 @@
+import { notFound } from 'next/navigation';
 import { requireSeller } from '@/lib/auth/session';
-import { ListingForm } from '@/components/seller/ListingForm';
+import { getEditorShop, getPriceHints } from '@/lib/queries/editor';
+import { newPiece } from '@/lib/studio/pieces';
+import { PieceEditor } from '@/components/studio/editor/PieceEditor';
 
-export const metadata = { title: 'New listing' };
+export const metadata = { title: 'Add a piece · Studio' };
 
-export default async function NewListingPage() {
+export default async function NewPiecePage() {
   const seller = await requireSeller();
-  return (
-    <div className="max-w-3xl">
-      <h1 className="mb-8 text-[40px] leading-none md:text-[48px]">New listing</h1>
-      <ListingForm canSubmit={seller.makerStatus === 'approved'} />
-    </div>
-  );
+  const [shop, hints] = await Promise.all([getEditorShop(seller.makerId), getPriceHints()]);
+  if (!shop) notFound();
+  return <PieceEditor initial={newPiece(shop)} shop={shop} priceHints={hints} />;
 }

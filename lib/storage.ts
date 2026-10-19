@@ -28,31 +28,75 @@ export function validateImage(bytes: Uint8Array, declaredType: string): UploadCo
   return type;
 }
 
-export async function storeImage(
-  bytes: Uint8Array,
-  declaredType: string,
-  prefix: 'products' | 'messages' | 'commissions' | 'makers' | 'reviews' | 'collections',
-) {
-  const type = validateImage(bytes, declaredType);
-  // The size travels in the name (…-1200x1600.jpg) so listings can reserve the right space.
-  const size = imageSize(bytes);
-  const suffix = size ? `-${size.width}x${size.height}` : '';
-  const name = `${prefix}/${new Date().toISOString().slice(0, 7)}/${randomUUID()}${suffix}.${TYPES[type].ext}`;
+/** Long edge for catalogue photos after resizing. */
+export const PHOTO_MAX_EDGE = 2000;
+
+/**
+ * Catalogue photos (pieces, shop images): straightened from EXIF, resized to a 2000px long
+ * edge, saved as WebP with a JPEG copy alongside (same name, .jpg) for anything that can't
+ * show WebP. Falls back to storing the original if image processing isn't available.
+ */
+async function processPhoto(bytes: Uint8Array) {
+  try {
+    const sharp = (await import('sharp')).default;
+    const base = sharp(bytes, { failOn: 'none' })
+      .rotate()
+      .resize({
+        width: PHOTO_MAX_EDGE,
+        height: PHOTO_MAX_EDGE,
+        fit: 'inside',
+        withoutEnlargement: true,
+      });
+    const [webp, jpeg] = await Promise.all([
+      base.clone().webp({ quality: 82 }).toBuffer({ resolveWithObject: true }),
+      base.clone().jpeg({ quality: 84, mozjpeg: true }).toBuffer(),
+    ]);
+    return { webp: webp.data, jpeg, width: webp.info.width, height: webp.info.height };
+  } catch {
+    return null;
+  }
+}
+
+async function put(name: string, bytes: Uint8Array, contentType: string): Promise<string> {
   const e = env();
   if (e.STORAGE_DRIVER === 'supabase') {
     const { supabaseAdmin } = await import('@/lib/auth/supabase');
     const client = supabaseAdmin();
     const { error } = await client.storage
       .from(e.SUPABASE_STORAGE_BUCKET)
-      .upload(name, bytes, { contentType: type, upsert: false });
+      .upload(name, bytes, { contentType, upsert: false });
     if (error) throw new Error(`Upload failed: ${error.message}`);
-    const { data } = client.storage.from(e.SUPABASE_STORAGE_BUCKET).getPublicUrl(name);
-    return { path: name, url: data.publicUrl };
+    return client.storage.from(e.SUPABASE_STORAGE_BUCKET).getPublicUrl(name).data.publicUrl;
   }
   const file = path.join(LOCAL_UPLOAD_DIR, name);
   await mkdir(path.dirname(file), { recursive: true });
   await writeFile(file, bytes);
-  return { path: name, url: `/api/files/${name}` };
+  return `/api/files/${name}`;
+}
+
+export async function storeImage(
+  bytes: Uint8Array,
+  declaredType: string,
+  prefix: 'products' | 'messages' | 'commissions' | 'makers' | 'reviews' | 'collections',
+) {
+  const type = validateImage(bytes, declaredType);
+  const stem = `${prefix}/${new Date().toISOString().slice(0, 7)}/${randomUUID()}`;
+  if (prefix === 'products' || prefix === 'makers') {
+    const photo = await processPhoto(bytes);
+    if (photo) {
+      // The size travels in the name (…-1200x1600.webp) so listings can reserve the right space.
+      const name = `${stem}-${photo.width}x${photo.height}`;
+      const [url] = await Promise.all([
+        put(`${name}.webp`, photo.webp, 'image/webp'),
+        put(`${name}.jpg`, photo.jpeg, 'image/jpeg'),
+      ]);
+      return { path: `${name}.webp`, url, width: photo.width, height: photo.height };
+    }
+  }
+  const size = imageSize(bytes);
+  const name = `${stem}${size ? `-${size.width}x${size.height}` : ''}.${TYPES[type].ext}`;
+  const url = await put(name, bytes, type);
+  return { path: name, url, width: size?.width ?? null, height: size?.height ?? null };
 }
 
 export async function readLocalFile(

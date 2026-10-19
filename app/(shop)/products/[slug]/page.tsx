@@ -17,6 +17,7 @@ import {
   getProduct,
   getRelated,
   getReviews,
+  getNextSlot,
   getSavedProductIds,
   recordProductView,
   watchSoldOutSizes,
@@ -68,11 +69,12 @@ export default async function ProductPage({ params }: { params: { slug: string }
     }
   }
   if (!product) notFound();
-  const [related, reviews, savedIds, qa] = await Promise.all([
+  const [related, reviews, savedIds, qa, nextSlot] = await Promise.all([
     getRelated(product.id, product.maker.id, product.category, product.colours),
     getReviews({ productId: product.id }, 3),
     getSavedProductIds(user?.id ?? null),
     getQuestionsAndReviews(product.id),
+    getNextSlot(product.id),
   ]);
   const questions = qa.filter((e) => e.kind === 'question');
   const isMaker = Boolean(user && user.id === product.maker.userId);
@@ -112,7 +114,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
 
   const typeLine =
     product.productType === 'made_to_order'
-      ? `Made to order — production takes ${product.leadTimeDays} days`
+      ? `Made to order — production takes ${product.leadTimeDays} days${nextSlot ? ` · Next slot: ${nextSlot}` : ''}`
       : totalStock === 0
         ? 'Sold out'
         : product.productType === 'one_of_one'

@@ -176,6 +176,8 @@ export async function addToCart(input: {
   productId: string;
   variantId: string;
   quantity: number;
+  /** Required for a made-to-order "Custom" size: the buyer's measurements in cm. */
+  customMeasurements?: Record<string, string> | null;
 }): Promise<void> {
   assertCheckoutEnabled();
   await sql().begin(async (tx) => {
@@ -192,10 +194,11 @@ export async function addToCart(input: {
         shopStatus: string;
         chargesEnabled: boolean;
         holidayUntil: Date | null;
+        size: string;
       }[]
     >`
       select v.stock_quantity, v.is_active, v.low_stock_threshold, p.product_type,
-             m.shop_status, m.stripe_charges_enabled as charges_enabled, m.holiday_until,
+             m.shop_status, m.stripe_charges_enabled as charges_enabled, m.holiday_until, v.size,
              coalesce(v.price_cents, p.price_cents) as unit_price_cents,
              (p.status = 'approved' and m.status = 'approved') as visible,
              ${PREVIEW_ONLY_TAG} = any(p.tags) as preview_only
@@ -205,6 +208,9 @@ export async function addToCart(input: {
     if (variant.previewOnly) throw new CartError(`${PREVIEW_ONLY_LABEL}.`);
     const sale = shopBuyable(variant);
     if (!sale.ok) throw new CartError(sale.message);
+    const measurements = variant.size === 'Custom' ? (input.customMeasurements ?? null) : null;
+    if (variant.size === 'Custom' && (!measurements || Object.keys(measurements).length < 3))
+      throw new CartError('Add your bust, waist and hip measurements for a custom size.');
 
     const [cart] = await db<{ id: string }[]>`
       insert into public.carts (session_id, user_id) values (${input.sessionId}, ${input.userId})
@@ -230,10 +236,12 @@ export async function addToCart(input: {
           : check.reason,
       );
     await db`
-      insert into public.cart_items (cart_id, product_id, variant_id, quantity, unit_price_cents)
-      values (${cart!.id}, ${input.productId}, ${input.variantId}, ${input.quantity}, ${variant.unitPriceCents})
+      insert into public.cart_items (cart_id, product_id, variant_id, quantity, unit_price_cents, custom_measurements)
+      values (${cart!.id}, ${input.productId}, ${input.variantId}, ${input.quantity}, ${variant.unitPriceCents},
+        ${measurements ? db.json(measurements) : null})
       on conflict (cart_id, variant_id) do update set quantity = public.cart_items.quantity + excluded.quantity,
-        unit_price_cents = excluded.unit_price_cents`;
+        unit_price_cents = excluded.unit_price_cents,
+        custom_measurements = coalesce(excluded.custom_measurements, public.cart_items.custom_measurements)`;
   });
 }
 
