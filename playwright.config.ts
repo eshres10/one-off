@@ -19,6 +19,9 @@ const serverEnv = {
   SESSION_SECRET: 'e2e-session-secret-at-least-32-characters-long',
   LOG_LEVEL: 'warn',
   NEXT_TELEMETRY_DISABLED: '1',
+  CRON_SECRET: process.env.E2E_CRON_SECRET ?? 'e2e-cron-secret-0123456789',
+  // Texts are "sent" to the notification log only: no Twilio keys.
+  SMS_ENABLED: 'true',
 };
 
 export default defineConfig({
@@ -76,6 +79,12 @@ export default defineConfig({
       name: 'discover',
       testMatch: 'discover.spec.ts',
       dependencies: ['app-shell'],
+      use: { browserName: 'chromium', viewport: { width: 1280, height: 860 } },
+    },
+    {
+      name: 'studio',
+      testMatch: 'studio.spec.ts',
+      dependencies: ['discover'],
       use: { browserName: 'chromium', viewport: { width: 1280, height: 860 } },
     },
   ],

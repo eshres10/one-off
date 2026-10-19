@@ -3,6 +3,7 @@ import { closeDb, sql, withUser } from '@/lib/db';
 import { getSellerOrders } from '@/lib/queries/seller';
 import { getBuyerOrders } from '@/lib/queries/account';
 import { archiveListing } from '@/lib/services/listings';
+import { getStudioOrder } from '@/lib/services/studio-orders';
 import { MAKERS, buyer, seller } from './helpers';
 
 afterAll(closeDb);
@@ -29,6 +30,43 @@ describe('row level security: sellers', () => {
       { id: string }[]
     >`select id from public.fulfilments where maker_id = ${b.makerId}`;
     expect(theirs.some((t) => ids.has(t.id))).toBe(false);
+  });
+
+  it('a seller cannot read another shop’s buyers’ addresses, payouts or Studio records', async () => {
+    // Orders that only contain the other shop's pieces (and with them, the ship-to address).
+    const theirOrders = await sql()<{ id: string }[]>`
+      select o.id from public.orders o where o.shipping_address is not null
+        and exists (select 1 from public.fulfilments f where f.order_id = o.id and f.maker_id = ${b.makerId})
+        and not exists (select 1 from public.fulfilments f where f.order_id = o.id and f.maker_id = ${a.makerId})`;
+    expect(theirOrders.length).toBeGreaterThan(0);
+    const ids = theirOrders.map((o) => o.id);
+    const leaked = await withUser(
+      a,
+      (db) => db`select shipping_address from public.orders where id = any(${ids}::uuid[])`,
+    );
+    expect(leaked).toHaveLength(0);
+
+    // (Shipping rates are public: buyers see them.)
+    // Halde (seller 0) has payouts and history; another seller reads none of it.
+    await sql()`insert into public.shop_events (maker_id, event) values (${a.makerId}, 'went_live')`;
+    for (const table of ['payouts', 'shop_events']) {
+      const all =
+        await sql()`select 1 from ${sql()(`public.${table}`)} where maker_id = ${a.makerId}`;
+      const rows = await withUser(
+        b,
+        (db) => db`select 1 from ${db(`public.${table}`)} where maker_id = ${a.makerId}`,
+      );
+      expect(all.length, table).toBeGreaterThan(0);
+      expect(rows, table).toHaveLength(0);
+    }
+    const prefs = await withUser(
+      a,
+      (db) => db`select 1 from public.notification_prefs where user_id <> ${a.id}`,
+    );
+    expect(prefs).toHaveLength(0);
+    const [other] = await sql()<{ id: string }[]>`
+      select id from public.fulfilments where maker_id = ${b.makerId} limit 1`;
+    await expect(getStudioOrder(a, other!.id)).resolves.toBeNull();
   });
 
   it('a seller cannot see or modify another seller’s unpublished products', async () => {

@@ -95,10 +95,14 @@ test.describe.serial('marketplace smoke', () => {
   test('seller logs in and sees the order', async ({ page }) => {
     expect(orderNumber).not.toBe('');
     await login(page, product.maker.email, '/studio/orders');
-    await expect(page.getByTestId('seller-orders')).toContainText(orderNumber);
-    await page.getByRole('link', { name: orderNumber }).click();
-    await page.getByLabel('Tracking number').fill('AP998877AU');
-    await page.getByRole('button', { name: 'Mark as shipped' }).click();
-    await expect(page.getByText('Order updated')).toBeVisible();
+    // On a phone, orders are cards showing "#10002".
+    const card = page
+      .getByTestId('order-card')
+      .filter({ hasText: orderNumber.replace(/^OO-/, '#') });
+    await expect(card).toBeVisible();
+    await card.click();
+    await page.getByTestId('tracking-number').fill('AP998877AU');
+    await page.getByTestId('mark-shipped').click();
+    await expect(page.getByTestId('toast')).toContainText(/shipped/i);
   });
 });
