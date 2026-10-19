@@ -1,3 +1,4 @@
+import { DISCOVER_ONLY_TAG } from '@/lib/domain/preview';
 import { unstable_cache } from 'next/cache';
 import { z } from 'zod';
 import { sql, withUser } from '@/lib/db';
@@ -118,6 +119,8 @@ export async function getFeed(
   const limit = scope.limit ?? PAGE_SIZE * page;
   const conditions = [
     VISIBLE(),
+    // Pieces tagged discover-only show in Discover and on their shop, not in the home grid.
+    scope.collectionId ? db`true` : db`not (${DISCOVER_ONLY_TAG} = any(p.tags))`,
     f.q
       ? db`(p.title ilike ${'%' + f.q + '%'} or m.display_name ilike ${'%' + f.q + '%'} or p.category ilike ${'%' + f.q + '%'}
             or ${f.q.toLowerCase()} = any(p.tags) or exists (select 1 from unnest(p.colours) c where c ilike ${f.q}))`

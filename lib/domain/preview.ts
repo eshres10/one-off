@@ -10,3 +10,6 @@ export const PREVIEW_ONLY_NOTE =
 export function isPreviewOnly(tags: readonly string[] | null | undefined): boolean {
   return Boolean(tags?.includes(PREVIEW_ONLY_TAG));
 }
+
+/** Listed in Discover and on the shop page, but kept out of the home page's main grid. */
+export const DISCOVER_ONLY_TAG = 'discover-only';
