@@ -33,7 +33,7 @@ test.describe.serial('marketplace smoke', () => {
     await expect(cards.first()).toContainText(
       new RegExp(MAKERS.map((m) => m.displayName).join('|')),
     );
-    await page.getByRole('link', { name: 'New this week' }).first().click();
+    await page.getByRole('tab', { name: 'New this week' }).click();
     await expect(page).toHaveURL(/tab=new/);
     await expect(page.getByTestId('product-card').first()).toBeVisible();
   });
@@ -87,6 +87,8 @@ test.describe.serial('marketplace smoke', () => {
     await expect(page.getByTestId('message-list')).toContainText('What size should I get?');
 
     // Moderation blocks off-platform payment requests before sending.
+    // Wait for the post-send reset so it can't wipe the next draft.
+    await expect(page.getByTestId('message-input')).toHaveValue('');
     await page.getByTestId('message-input').fill('Can I just PayID you instead?');
     await expect(page.getByTestId('moderation-error')).toContainText('covered by buyer protection');
     await expect(page.getByTestId('send-message')).toBeDisabled();
