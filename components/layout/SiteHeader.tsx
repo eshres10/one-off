@@ -99,8 +99,12 @@ export async function SiteHeader({ variant = 'auto' }: { variant?: HeaderVariant
           <div className="flex items-center justify-end gap-6">
             <SavedHeart count={saved} />
             <nav aria-label="Account" className="hidden items-center gap-6 md:flex">
-              <NavLink href="/search">Search</NavLink>
-              <NavLink href={accountHref}>{accountLabel}</NavLink>
+              <NavLink href="/search" data-tour="search">
+                Search
+              </NavLink>
+              <NavLink href={accountHref} data-tour="account">
+                {accountLabel}
+              </NavLink>
               <NavLink href="/saved">Saved</NavLink>
               <NavLink
                 href={messagesHref(user?.role)}
@@ -113,6 +117,7 @@ export async function SiteHeader({ variant = 'auto' }: { variant?: HeaderVariant
                 <NavLink
                   href="/bag"
                   data-testid="bag-link"
+                  data-tour="bag"
                   aria-label={`Bag, ${count} ${count === 1 ? 'item' : 'items'}`}
                 >
                   Bag ({count})

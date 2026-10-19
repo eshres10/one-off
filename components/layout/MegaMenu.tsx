@@ -189,6 +189,7 @@ export function MegaMenu({ panels }: { panels: MegaPanel[] }) {
             <Link
               key={n.key}
               href={n.href}
+              data-tour={n.key}
               aria-current={isCurrent ? 'page' : undefined}
               className={navLinkClass(isCurrent)}
               onMouseEnter={() => active && scheduleClose()}
@@ -205,6 +206,7 @@ export function MegaMenu({ panels }: { panels: MegaPanel[] }) {
               triggers.current[mega.key] = el;
             }}
             type="button"
+            data-tour={n.key}
             aria-expanded={open}
             aria-controls={open ? panelId : undefined}
             aria-current={isCurrent ? 'page' : undefined}

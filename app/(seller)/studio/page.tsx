@@ -8,7 +8,7 @@ import { TERMS } from '@/lib/studio/terms';
 import { ShipSheetButton } from '@/components/studio/overview/ShipSheetButton';
 import { WeeklyBars } from '@/components/studio/overview/WeeklyBars';
 import { StockStepper } from '@/components/studio/StockStepper';
-import { CheckIcon } from '@/components/ui/icons';
+import { CheckIcon, PlusIcon } from '@/components/ui/icons';
 import { Img as Image } from '@/components/ui/Img';
 import { Monogram } from '@/components/ui/Monogram';
 
@@ -74,6 +74,7 @@ function Checklist({ items }: { items: Overview['checklist'] }) {
       className="border border-line bg-surface p-5"
       aria-labelledby="setup-title"
       data-testid="setup-checklist"
+      data-tour="setup-checklist"
     >
       <h2 id="setup-title" className="font-display text-[26px] leading-none">
         Shop setup
@@ -176,16 +177,25 @@ export default async function StudioOverview() {
 
   return (
     <div>
-      <header>
-        <p className="text-[11px] uppercase tracking-label text-muted-2">{longDate()}</p>
-        <h1 className="mt-2 text-[40px] leading-none md:text-[56px]">
-          <span className="md:hidden">
-            {g.short}, {firstWord}
-          </span>
-          <span className="hidden md:inline">
-            {g.long}, {shop.displayName}
-          </span>
-        </h1>
+      <header className="flex items-end justify-between gap-4">
+        <div>
+          <p className="text-[11px] uppercase tracking-label text-muted-2">{longDate()}</p>
+          <h1 className="mt-2 text-[40px] leading-none md:text-[56px]">
+            <span className="md:hidden">
+              {g.short}, {firstWord}
+            </span>
+            <span className="hidden md:inline">
+              {g.long}, {shop.displayName}
+            </span>
+          </h1>
+        </div>
+        <Link
+          href="/studio/listings/new"
+          className="glass-dark hidden min-h-[48px] shrink-0 items-center gap-2 px-5 text-[11px] uppercase tracking-[0.18em] text-ground md:flex"
+          data-tour="add-piece"
+        >
+          <PlusIcon width={14} height={14} /> Add a piece
+        </Link>
       </header>
 
       {/* Desktop */}
@@ -222,7 +232,7 @@ export default async function StudioOverview() {
               sub={monthName()}
             />
           </div>
-          <section aria-labelledby="needs-title">
+          <section aria-labelledby="needs-title" data-tour="needs-today">
             <h2 id="needs-title" className="mb-3 text-[32px] leading-none">
               Needs you today
             </h2>

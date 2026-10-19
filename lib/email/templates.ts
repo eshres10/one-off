@@ -444,6 +444,30 @@ export const emails = {
     };
   },
 
+  supportNew: (
+    to: string,
+    m: { userId: string; from: string; body: string; topic: string | null },
+  ): EmailMessage => ({
+    to,
+    template: 'support_new',
+    subject: `Message from a maker${m.topic ? ` · ${m.topic}` : ''}: ${m.from}`,
+    text: `${m.from} wrote:\n\n${m.body}\n\nReply: ${url(`/admin/support/${m.userId}`)}`,
+    related: { type: 'user', id: m.userId },
+  }),
+
+  supportReply: (to: string, body: string): EmailMessage => ({
+    to,
+    template: 'support_reply',
+    subject: 'One Off replied to your message',
+    text: `${body}\n\nSee the conversation in Studio: ${url('/studio/support')}${sign}`,
+    html: renderEmail({
+      heading: 'One Off replied',
+      paragraphs: [body],
+      button: { label: 'Open the conversation', url: '/studio/support' },
+      sellerFooter: true,
+    }),
+  }),
+
   shopBack: (
     to: string,
     shop: { id: string; displayName: string; slug: string },

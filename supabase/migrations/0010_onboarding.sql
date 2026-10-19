@@ -95,6 +95,10 @@ grant all on public.customer_prefs to service_role;
 -- First-visit tours, shown once each unless replayed.
 alter table public.users add column if not exists tour_completed_at timestamptz;
 alter table public.users add column if not exists studio_tour_completed_at timestamptz;
+-- People who signed up before the tours existed skip them (they can replay from Help).
+update public.users set tour_completed_at = coalesce(tour_completed_at, created_at),
+  studio_tour_completed_at = coalesce(studio_tour_completed_at, created_at)
+  where created_at < '2026-10-20';
 
 -- Adds a piece's tags to a shopper's taste, after decaying what's there since the last change.
 create or replace function public.bump_taste(p_user uuid, p_product uuid, p_weight numeric)
@@ -211,3 +215,28 @@ language sql stable security definer set search_path = public as $$
 $$;
 revoke all on function public.discover_feed(text, text, text[], text[], integer, text[], text, text, uuid) from public;
 grant execute on function public.discover_feed(text, text, text[], text[], integer, text[], text, text, uuid) to anon, authenticated, service_role;
+
+-- ---------------------------------------------------------------------------
+-- Makers ↔ One Off: one conversation per maker account ("Message One Off" in Studio, and
+-- "Rather we list your first pieces for you?" in seller sign-up). Admins reply from /admin/support.
+-- ---------------------------------------------------------------------------
+create table if not exists public.support_messages (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.users (id) on delete cascade,
+  maker_id uuid references public.makers (id) on delete set null,
+  from_admin boolean not null default false,
+  sender_user_id uuid references public.users (id) on delete set null,
+  body text not null check (char_length(body) between 1 and 4000),
+  topic text,
+  read_at timestamptz,
+  created_at timestamptz not null default now()
+);
+create index if not exists support_messages_user_idx on public.support_messages (user_id, created_at);
+alter table public.support_messages enable row level security;
+drop policy if exists support_messages_own_read on public.support_messages;
+create policy support_messages_own_read on public.support_messages for select using (user_id = auth.uid());
+drop policy if exists support_messages_own_write on public.support_messages;
+create policy support_messages_own_write on public.support_messages for insert
+  with check (user_id = auth.uid() and sender_user_id = auth.uid() and not from_admin);
+grant select, insert on public.support_messages to authenticated;
+grant all on public.support_messages to service_role;

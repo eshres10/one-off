@@ -68,9 +68,11 @@ async function upsertUser(
 ) {
   await upsertAuthUser(db, id, email, hash);
   await db`
-    insert into public.users (id, auth_user_id, email, display_name, role)
-    values (${id}, ${id}, ${email}, ${name}, ${role}::user_role)
-    on conflict (id) do update set email = excluded.email, display_name = excluded.display_name, role = excluded.role`;
+    insert into public.users (id, auth_user_id, email, display_name, role, tour_completed_at, studio_tour_completed_at)
+    values (${id}, ${id}, ${email}, ${name}, ${role}::user_role, now(), now())
+    on conflict (id) do update set email = excluded.email, display_name = excluded.display_name, role = excluded.role,
+      tour_completed_at = coalesce(public.users.tour_completed_at, now()),
+      studio_tour_completed_at = coalesce(public.users.studio_tour_completed_at, now())`;
 }
 
 async function seedProducts(db: Sql) {

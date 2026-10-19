@@ -2,6 +2,7 @@ import { SiteFooter } from '@/components/layout/SiteFooter';
 import { SiteHeader } from '@/components/layout/SiteHeader';
 import { AppTabBar } from '@/components/layout/AppTabBar';
 import { QuickViewLinks } from '@/components/quickview/QuickViewLinks';
+import { CustomerTourGate } from '@/components/tour/CustomerTourGate';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,6 +23,7 @@ export default function ShopLayout({
       <AppTabBar />
       {modal}
       <QuickViewLinks />
+      <CustomerTourGate />
     </>
   );
 }

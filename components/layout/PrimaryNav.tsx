@@ -15,6 +15,7 @@ export function PrimaryNavLinks() {
         <Link
           key={n.key}
           href={n.href}
+          data-tour={n.key}
           aria-current={current === n.key ? 'page' : undefined}
           className={navLinkClass(current === n.key)}
         >

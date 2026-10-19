@@ -32,6 +32,7 @@ export function StudioNav({ counts }: { counts: StudioCounts }) {
           <Link
             key={l.href}
             href={l.href}
+            data-tour={`nav-${l.label.toLowerCase()}`}
             aria-current={on ? 'page' : undefined}
             className={`flex min-h-[44px] items-center gap-1.5 text-[11px] uppercase tracking-label underline-offset-[7px] ${on ? 'underline decoration-1' : 'text-ground/75 hover:text-ground'}`}
           >
