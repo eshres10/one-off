@@ -13,7 +13,7 @@ export const FEED_EDITORIAL: EditorialTileData[] = [
     kicker: 'Made to order',
     title: 'Cut to your measurements',
     cta: 'How it works',
-    href: '/help/how-it-works',
+    href: '/how-it-works',
     imageUrl: '/seed/lace-trim-maxi-dress.jpg',
   },
   {

@@ -15,7 +15,17 @@ const nextConfig = {
   async redirects() {
     // Canonical domain: send www traffic to the apex.
     return [
-      { source: '/help/terms', destination: '/terms', permanent: true },
+      // Content pages moved to their own addresses; old links keep working.
+      { source: '/help/terms', destination: '/legal/terms', permanent: true },
+      { source: '/terms', destination: '/legal/terms', permanent: true },
+      { source: '/returns', destination: '/legal/returns', permanent: true },
+      { source: '/seller-terms', destination: '/legal/seller-agreement', permanent: true },
+      { source: '/help/privacy', destination: '/legal/privacy', permanent: true },
+      { source: '/help/shipping', destination: '/legal/shipping', permanent: true },
+      { source: '/help/about', destination: '/about', permanent: true },
+      { source: '/help/how-it-works', destination: '/how-it-works', permanent: true },
+      { source: '/help/returns-and-fit', destination: '/size-guide', permanent: true },
+      { source: '/help/contact', destination: '/help#contact', permanent: true },
       // The maker dashboard moved from /seller to /studio.
       { source: '/seller', destination: '/studio', permanent: true },
       { source: '/seller/:path*', destination: '/studio/:path*', permanent: true },

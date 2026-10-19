@@ -140,7 +140,7 @@ export default function WaitlistPage({ searchParams }: { searchParams: SearchPar
           <a href={`mailto:${BRAND.supportEmail}`} className="link">
             {BRAND.supportEmail}
           </a>
-          <Link href="/help/privacy" className="link">
+          <Link href="/legal/privacy" className="link">
             Privacy
           </Link>
         </p>

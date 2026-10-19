@@ -11,12 +11,11 @@ export function generateMetadata({ params }: { params: { topic: string } }) {
 }
 
 const NAV = [
-  ['how-it-works', 'How it works'],
-  ['shipping', 'Shipping'],
-  ['returns-and-fit', 'Fit & sizing'],
-  ['contact', 'Contact & help'],
-  ['about', 'About'],
-  ['sell-with-us', 'Sell with us'],
+  ['/how-it-works', 'How it works'],
+  ['/size-guide', 'Size guide'],
+  ['/help', 'Help & FAQ'],
+  ['/about', 'Our story'],
+  ['/help/sell-with-us', 'Sell with us'],
 ] as const;
 
 export default async function HelpPage({ params }: { params: { topic: string } }) {
@@ -37,17 +36,17 @@ export default async function HelpPage({ params }: { params: { topic: string } }
           <ul className="space-y-3 border-t border-ink pt-4">
             <li>
               <a
-                href="/returns"
+                href="/legal/returns"
                 className="text-[11px] uppercase tracking-label text-muted-2 hover:text-ink"
               >
                 Returns & faults
               </a>
             </li>
-            {NAV.map(([slug, label]) => (
-              <li key={slug}>
+            {NAV.map(([href, label]) => (
+              <li key={href}>
                 <a
-                  href={`/help/${slug}`}
-                  className={`text-[11px] uppercase tracking-label ${slug === params.topic ? 'underline underline-offset-[6px]' : 'text-muted-2 hover:text-ink'}`}
+                  href={href}
+                  className={`text-[11px] uppercase tracking-label ${href === `/help/${params.topic}` ? 'underline underline-offset-[6px]' : 'text-muted-2 hover:text-ink'}`}
                 >
                   {label}
                 </a>

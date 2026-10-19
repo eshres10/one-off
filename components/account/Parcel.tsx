@@ -183,7 +183,7 @@ function ItemActions({ item, orderNumber }: { item: BuyerOrderItem; orderNumber:
           </Link>
         ) : delivered ? (
           <Link
-            href="/help/contact"
+            href="/help#contact"
             className="text-muted underline underline-offset-[3px]"
             data-testid="contact-us"
           >

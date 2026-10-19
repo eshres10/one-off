@@ -223,7 +223,7 @@ export function CommissionForm({
           maxLength={300}
         />
         <a
-          href="/help/returns-and-fit#how-to-measure"
+          href="/size-guide#how-to-measure"
           className="mt-3 inline-block text-[11px] uppercase tracking-label underline underline-offset-[5px]"
         >
           How to measure

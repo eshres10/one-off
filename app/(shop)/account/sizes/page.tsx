@@ -12,7 +12,7 @@ export default async function SizesPage() {
     <div className="max-w-xl">
       <h1 className="font-display text-[40px] leading-none md:text-[44px]">Sizes &amp; fit</h1>
       <Link
-        href="/help/returns-and-fit#how-to-measure"
+        href="/size-guide#how-to-measure"
         className="mt-3 inline-flex min-h-[44px] items-center text-[13px] underline underline-offset-[3px]"
         data-testid="how-to-measure"
       >

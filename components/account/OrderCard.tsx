@@ -99,7 +99,7 @@ function ItemHelp({ item, orderId }: { item: BuyerOrderItem; orderId: string }) 
   }
   return (
     <Link
-      href="/help/contact"
+      href="/help#contact"
       className="mt-1 inline-block text-[12px] text-muted underline underline-offset-[3px]"
       data-testid="contact-us"
     >

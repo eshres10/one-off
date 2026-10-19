@@ -85,11 +85,11 @@ export default async function JoinPage() {
         </p>
         <p className="mt-4 text-center text-[12px] leading-relaxed text-muted-2">
           By joining you agree to our{' '}
-          <Link href="/terms" className="underline underline-offset-2">
+          <Link href="/legal/terms" className="underline underline-offset-2">
             terms
           </Link>{' '}
           and{' '}
-          <Link href="/terms#privacy" className="underline underline-offset-2">
+          <Link href="/legal/terms#privacy" className="underline underline-offset-2">
             privacy policy
           </Link>
           .

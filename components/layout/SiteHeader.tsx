@@ -55,7 +55,7 @@ export async function SiteHeader({ variant = 'auto' }: { variant?: HeaderVariant
     { href: '/saved', label: 'Saved' },
     { href: messagesHref(user?.role), label: 'Messages' },
     { href: accountHref, label: accountLabel },
-    { href: '/help/how-it-works', label: 'How it works' },
+    { href: '/how-it-works', label: 'How it works' },
   ];
   return (
     <>

@@ -31,7 +31,7 @@ export default function PopUpsPage() {
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
           <ButtonLink href="/custom">Request a custom piece</ButtonLink>
-          <ButtonLink href="/help/how-it-works" variant="secondary">
+          <ButtonLink href="/how-it-works" variant="secondary">
             How made-to-order works
           </ButtonLink>
         </div>

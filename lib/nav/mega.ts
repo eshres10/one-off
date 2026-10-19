@@ -120,7 +120,7 @@ export const MEGA: MegaPanel[] = [
         title: 'Made for you',
         links: [
           { label: 'Request a custom piece', href: '/custom' },
-          { label: 'How made-to-order works', href: '/help/how-it-works' },
+          { label: 'How made-to-order works', href: '/how-it-works' },
           { label: 'Book a fitting', href: '/pop-ups#fittings' },
         ],
       },

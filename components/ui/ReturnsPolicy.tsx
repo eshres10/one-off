@@ -36,7 +36,7 @@ export function ReturnsPolicy({
       {link && (
         <>
           {' '}
-          <Link href="/returns" className="link">
+          <Link href="/legal/returns" className="link">
             Read more
           </Link>
         </>

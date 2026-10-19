@@ -50,7 +50,7 @@ export const emails = {
         ? `\nYou saved ${formatPrice(order.shippingSavingCents)} on shipping.`
         : '') +
       `\n\nView your order: ${url(`/orders/${order.id}`)}` +
-      `\n\nFaulty or not as described? We’ll make it right. ${RETURNS.aclNote}\nReturns & faults: ${url('/returns')}${sign}`,
+      `\n\nFaulty or not as described? We’ll make it right. ${RETURNS.aclNote}\nReturns & faults: ${url('/legal/returns')}${sign}`,
     related: { type: 'order', id: order.id },
   }),
 

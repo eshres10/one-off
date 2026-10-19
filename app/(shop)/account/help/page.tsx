@@ -31,12 +31,12 @@ export default function AccountHelpPage() {
       <section className="border-t border-line pt-6">
         <ul className="space-y-3 text-[14px]" role="list">
           <li>
-            <Link href="/help/how-it-works" className="underline underline-offset-4">
+            <Link href="/how-it-works" className="underline underline-offset-4">
               How One Off works
             </Link>
           </li>
           <li>
-            <Link href="/returns" className="underline underline-offset-4">
+            <Link href="/legal/returns" className="underline underline-offset-4">
               Returns and faults
             </Link>
           </li>
