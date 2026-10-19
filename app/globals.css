@@ -307,6 +307,12 @@ html {
     --tabbar-h: calc(64px + env(safe-area-inset-bottom));
   }
 }
+/* The shop's tab bar also shows on tablets (the Studio's is phone only). */
+@media (max-width: 1279px) {
+  :root:has([data-tabbar='shop']) {
+    --tabbar-h: calc(64px + env(safe-area-inset-bottom));
+  }
+}
 body {
   padding-bottom: var(--tabbar-h);
 }

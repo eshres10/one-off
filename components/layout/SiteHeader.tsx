@@ -8,7 +8,6 @@ import { Wordmark } from '@/components/ui/Wordmark';
 import { unreadCount } from '@/lib/services/messaging';
 import { HeaderFrame, type HeaderVariant } from './HeaderFrame';
 import { MobileMenu } from './MobileMenu';
-import { PrimaryNavLinks } from './PrimaryNav';
 import { PRIMARY_NAV } from '@/lib/nav/primary';
 import { SavedHeart } from './SavedHeart';
 import { NavLink } from './NavLink';
@@ -80,16 +79,12 @@ export async function SiteHeader({ variant = 'auto' }: { variant?: HeaderVariant
         </p>
         <div className="container-page relative grid h-[var(--nav-h)] grid-cols-[1fr_auto_1fr] items-center">
           <div className="flex items-center">
-            <div className="md:hidden">
+            {/* Phones and tablets get the menu button; the full nav needs a laptop-wide screen. */}
+            <div className="xl:hidden">
               <MobileMenu links={menuLinks} groups={mega} />
             </div>
-            <nav aria-label="Primary" className="hidden items-center md:flex">
-              <div className="flex items-center gap-7 lg:hidden">
-                <PrimaryNavLinks />
-              </div>
-              <div className="hidden lg:flex">
-                <MegaMenu panels={mega} />
-              </div>
+            <nav aria-label="Primary" className="hidden items-center xl:flex">
+              <MegaMenu panels={mega} />
             </nav>
           </div>
           <Link href="/" aria-label={`${BRAND.name} home`} className="justify-self-center">
@@ -97,7 +92,7 @@ export async function SiteHeader({ variant = 'auto' }: { variant?: HeaderVariant
           </Link>
           <div className="flex items-center justify-end gap-6">
             <SavedHeart count={saved} />
-            <nav aria-label="Account" className="hidden items-center gap-6 md:flex">
+            <nav aria-label="Account" className="hidden items-center gap-6 xl:flex">
               <NavLink href="/search" data-tour="search">
                 Search
               </NavLink>

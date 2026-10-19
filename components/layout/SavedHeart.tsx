@@ -25,7 +25,7 @@ export function SavedHeart({ count, always = false }: { count: number; always?: 
       href="/saved"
       aria-label={any ? 'Saved, has items' : 'Saved'}
       data-testid="header-saved"
-      className="relative flex h-11 w-11 items-center justify-center md:hidden"
+      className="relative flex h-11 w-11 items-center justify-center xl:hidden"
     >
       <HeartIcon width={20} height={20} strokeWidth={1.4} />
       {any && (

@@ -43,6 +43,8 @@ export function CustomerTour({ firstName }: { firstName: string }) {
   return (
     <Tour
       testId="customer-tour"
+      // Its stops point at the desktop header, which only shows from 1280px.
+      minWidth={1280}
       onComplete={() => completeTourAction('customer')}
       welcome={{
         title: `Welcome, ${firstName}`,

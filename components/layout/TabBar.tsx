@@ -18,7 +18,7 @@ export function hidesTabBar(pathname: string) {
   );
 }
 
-/** Phone app shell: fixed frosted-glass tab bar (≤768px). */
+/** Phone and tablet app shell: fixed frosted-glass tab bar (below 1280px). */
 export function TabBar({ counts, messagesHref }: { counts: TabBarCounts; messagesHref: string }) {
   const pathname = usePathname() ?? '/';
   if (hidesTabBar(pathname)) return null;
@@ -53,8 +53,8 @@ export function TabBar({ counts, messagesHref }: { counts: TabBarCounts; message
   return (
     <nav
       aria-label="App"
-      data-tabbar
-      className="glass-nav fixed inset-x-0 bottom-0 z-40 pb-[env(safe-area-inset-bottom)] md:hidden"
+      data-tabbar="shop"
+      className="glass-nav fixed inset-x-0 bottom-0 z-40 pb-[env(safe-area-inset-bottom)] xl:hidden"
     >
       <ul className="grid h-16 grid-cols-5" role="list">
         {tabs.map(({ href, label, icon: Icon, active, fill, count, testId }) => (
