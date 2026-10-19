@@ -40,18 +40,36 @@ test.describe.serial('app shell', () => {
       .toBe('rgba(246, 244, 240, 0.55)');
   });
 
-  test('the header stays pinned on the homepage and scrolls away on Discover', async ({ page }) => {
-    const headerTopAfterScroll = async (url: string) => {
-      await page.goto(url);
-      for (let i = 0; i < 6; i++) await page.mouse.wheel(0, 300);
-      await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(1000);
-      await page.waitForTimeout(500);
-      return page
+  test('on the homepage the content pushes the header up; scrolling up brings it back', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    const header = page.getByTestId('site-header');
+    const top = () => header.evaluate((el) => Math.round(el.getBoundingClientRect().top));
+    const sheetTop = () =>
+      page.evaluate(() =>
+        Math.round(document.querySelector('[data-shutter]')!.getBoundingClientRect().top),
+      );
+    const h = await header.evaluate((el) => (el as HTMLElement).offsetHeight);
+    // Bring the content up to the header, then 40px into it: the header moves up 40px with it.
+    await page.evaluate((y) => window.scrollTo(0, y), (await sheetTop()) - h + 40);
+    await expect.poll(top).toBe(-40);
+    // Past it, the header is gone; a small scroll up slides it back.
+    await page.evaluate(() => window.scrollBy(0, 600));
+    await expect.poll(top).toBe(-h);
+    await page.evaluate(() => window.scrollBy(0, -60));
+    await expect.poll(top).toBe(0);
+  });
+
+  test('on Discover the header scrolls away with the page', async ({ page }) => {
+    await page.goto('/discover');
+    for (let i = 0; i < 6; i++) await page.mouse.wheel(0, 300);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(1000);
+    expect(
+      await page
         .getByTestId('site-header')
-        .evaluate((el) => Math.round(el.getBoundingClientRect().top));
-    };
-    expect(await headerTopAfterScroll('/')).toBe(0);
-    expect(await headerTopAfterScroll('/discover')).toBeLessThan(-1000);
+        .evaluate((el) => Math.round(el.getBoundingClientRect().top)),
+    ).toBeLessThan(-1000);
   });
 
   test('rail arrows scroll the track', async ({ page }) => {

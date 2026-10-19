@@ -1,7 +1,8 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useKickHeader } from '@/lib/hooks/useKickHeader';
 import { useHideOnScroll } from '@/lib/hooks/useHideOnScroll';
 import { useScrolled } from '@/lib/hooks/useScrolled';
 
@@ -22,11 +23,12 @@ export const useHeaderMenu = () => useContext(MenuState);
  * renders a `[data-hero]` section, so the server-rendered first paint is already right.
  * It slides away while scrolling down and comes back on the way up; sticky bars below it
  * follow `--header-offset`, which drops to 0 while it's hidden. Two pages differ: on the
- * homepage it stays pinned, and on Discover it isn't fixed at all (it scrolls off with the
- * page, so the filter bar has the top of the screen).
+ * homepage the content sheet pushes it up as it scrolls into it (useKickHeader), and on
+ * Discover it isn't fixed at all (it scrolls off with the page, so the filter bar has the top
+ * of the screen).
  */
-function scrollModeFor(pathname: string): 'hide' | 'pinned' | 'static' {
-  if (pathname === '/') return 'pinned';
+function scrollModeFor(pathname: string): 'hide' | 'kick' | 'static' {
+  if (pathname === '/') return 'kick';
   if (pathname === '/discover') return 'static';
   return 'hide';
 }
@@ -43,7 +45,10 @@ export function HeaderFrame({
   const glass = scrolled || open;
   const [focused, setFocused] = useState(false);
   const mode = scrollModeFor(usePathname() ?? '/');
-  const hidden = useHideOnScroll({ disabled: open || focused || mode !== 'hide' });
+  const ref = useRef<HTMLElement>(null);
+  const hideOnScroll = useHideOnScroll({ disabled: open || focused || mode !== 'hide' });
+  const kicked = useKickHeader(ref, { enabled: mode === 'kick' && !open && !focused });
+  const hidden = hideOnScroll || kicked;
   useEffect(() => {
     const root = document.documentElement;
     if (hidden) root.setAttribute('data-header-hidden', '');
@@ -57,7 +62,9 @@ export function HeaderFrame({
         data-variant={variant}
         data-scrolled={glass ? '' : undefined}
         data-menu-open={open ? '' : undefined}
-        data-hidden={hidden ? '' : undefined}
+        ref={ref}
+        // The kicked header is moved by useKickHeader itself, not by [data-hidden].
+        data-hidden={hideOnScroll ? '' : undefined}
         data-static={mode === 'static' ? '' : undefined}
         data-testid="site-header"
         // Keyboard users tabbing into the header always see it.

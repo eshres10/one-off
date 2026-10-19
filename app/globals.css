@@ -286,6 +286,10 @@
 .site-header[data-hidden] {
   transform: translateY(-100%);
 }
+/* Homepage: while the content pushes the header up it follows the scroll exactly (no easing). */
+.site-header[data-kick='track'] {
+  transition-property: background-color, border-color, box-shadow, color;
+}
 /* Discover: the header sits at the top of the page and scrolls away with it. */
 .site-header[data-static] {
   position: absolute;
