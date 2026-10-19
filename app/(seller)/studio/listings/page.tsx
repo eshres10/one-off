@@ -39,8 +39,7 @@ export default async function StudioListingsPage({
               const n = pieces.filter((p) => p.status === 'draft' || p.status === 'pending').length;
               return `${n} ${n === 1 ? 'draft' : 'drafts'}`;
             })()}{' '}
-            ·{' '}
-            {pieces.filter((p) => p.status === 'archived').length} hidden
+            · {pieces.filter((p) => p.status === 'archived').length} hidden
           </p>
         </div>
         <Link

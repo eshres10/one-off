@@ -3,6 +3,7 @@ import { formatPrice } from '@/lib/domain/money';
 import { env } from '@/lib/env';
 import { RETURNS } from '@/lib/content/returns';
 import type { EmailMessage } from './send';
+import { renderEmail } from './layout';
 
 const url = (path: string) => `${env().APP_URL}${path}`;
 /** Added to the shipped email so buyers know where to go if something's wrong. */
@@ -47,20 +48,184 @@ export const emails = {
 
   makerNewOrder: (
     to: string,
-    order: { id: string; orderNumber: string },
-    items: Array<{ title: string; variant: string; quantity: number }>,
-    netCents: number,
+    o: {
+      orderId: string;
+      orderNumber: string;
+      fulfilmentId: string;
+      shipBy: string;
+      items: Array<{ title: string; variant: string; quantity: number }>;
+      shippingCents: number;
+      giftNote: string | null;
+      shipTo: string;
+      youGetCents: number;
+      replyTo: string | null;
+    },
+  ): EmailMessage => {
+    const first = o.items[0]!;
+    const more = o.items.length > 1 ? ` + ${o.items.length - 1} more` : '';
+    const link = url(`/studio/orders?order=${o.fulfilmentId}`);
+    const pieces = o.items.map(
+      (i) => `${i.title} · ${i.variant}${i.quantity > 1 ? ` × ${i.quantity}` : ''}`,
+    );
+    const rows: Array<[string, string]> = [
+      ...pieces.map((t, n): [string, string] => [n === 0 ? 'Piece' : '', t]),
+      ['Shipping paid', formatPrice(o.shippingCents)],
+      ...(o.giftNote ? [['Gift note', o.giftNote] as [string, string]] : []),
+      ['Ship to', o.shipTo],
+      ['Order', o.orderNumber],
+    ];
+    const replyLine = o.replyTo ? 'Or reply to this email with the tracking number.' : null;
+    return {
+      to,
+      template: 'maker_new_order',
+      subject: `You made a sale · ${first.title}, size ${first.variant}${more}`,
+      text:
+        `Ship by ${o.shipBy}\n\nYou made a sale!\n\n` +
+        rows.map(([k, v]) => `${k || ' '}: ${v}`).join('\n') +
+        `\n\nYou get ${formatPrice(o.youGetCents)}\n\nAdd tracking & mark shipped: ${link}` +
+        (replyLine ? `\n\n${replyLine}` : '') +
+        sign,
+      html: renderEmail({
+        preheader: `Ship by ${o.shipBy}. You get ${formatPrice(o.youGetCents)}.`,
+        eyebrow: `Ship by ${o.shipBy}`,
+        heading: 'You made a sale',
+        rows,
+        total: ['You get', formatPrice(o.youGetCents)],
+        button: { label: 'Add tracking & mark shipped', url: link },
+        after: replyLine ? [replyLine] : [],
+        sellerFooter: true,
+      }),
+      replyTo: o.replyTo ?? undefined,
+      related: { type: 'order', id: o.orderId },
+    };
+  },
+
+  makerShipByReminder: (
+    to: string,
+    o: { orderId: string; orderNumber: string; fulfilmentId: string; piece: string; buyer: string },
+  ): EmailMessage => {
+    const link = url(`/studio/orders?order=${o.fulfilmentId}`);
+    return {
+      to,
+      template: 'maker_ship_by_reminder',
+      subject: `Ship today · ${o.piece}`,
+      text: `${o.buyer}’s ${o.piece} (${o.orderNumber}) is due to ship today.\n\nAdd tracking & mark shipped: ${link}\n\nRunning late? Message ${o.buyer} from the order so they know.${sign}`,
+      html: renderEmail({
+        eyebrow: 'Ship by today',
+        heading: `${o.piece} is due out today`,
+        paragraphs: [`${o.buyer}’s order ${o.orderNumber} is due to ship today.`],
+        button: { label: 'Add tracking & mark shipped', url: link },
+        after: [`Running late? Message ${o.buyer} from the order so they know.`],
+        sellerFooter: true,
+      }),
+      related: { type: 'order', id: o.orderId },
+    };
+  },
+
+  trackingReceived: (
+    to: string,
+    o: {
+      orderId: string;
+      orderNumber: string;
+      fulfilmentId: string;
+      carrier: string;
+      tracking: string;
+    },
   ): EmailMessage => ({
     to,
-    template: 'maker_new_order',
-    subject: `New order ${order.orderNumber}`,
-    text:
-      `You have a new order!\n\n` +
-      items.map((i) => `• ${i.title} (${i.variant}) × ${i.quantity}`).join('\n') +
-      `\n\nYour payout for this order: ${formatPrice(netCents)} (after commission, including shipping).\n\n` +
-      `Prepare and ship it from your dashboard: ${url('/studio/orders')}${sign}`,
-    related: { type: 'order', id: order.id },
+    template: 'maker_tracking_received',
+    subject: `Marked shipped · ${o.orderNumber}`,
+    text: `Got it. We’ve added ${o.carrier} tracking ${o.tracking} to ${o.orderNumber}, marked it shipped and let the buyer know.\n\n${url(`/studio/orders?order=${o.fulfilmentId}`)}${sign}`,
+    html: renderEmail({
+      heading: 'Marked shipped',
+      paragraphs: [
+        `Got it. We’ve added ${o.carrier} tracking ${o.tracking} to ${o.orderNumber}, marked it shipped and let the buyer know.`,
+      ],
+      button: { label: 'See the order', url: `/studio/orders?order=${o.fulfilmentId}` },
+      sellerFooter: true,
+    }),
+    related: { type: 'order', id: o.orderId },
   }),
+
+  trackingNotFound: (
+    to: string,
+    o: { orderNumber: string; fulfilmentId: string },
+  ): EmailMessage => ({
+    to,
+    template: 'maker_tracking_not_found',
+    subject: `We couldn’t find a tracking number · ${o.orderNumber}`,
+    text: `We couldn’t find a tracking number in your reply about ${o.orderNumber}. Add it in Studio instead: ${url(`/studio/orders?order=${o.fulfilmentId}`)}${sign}`,
+    html: renderEmail({
+      heading: 'We couldn’t find a tracking number',
+      paragraphs: [`Nothing in your reply about ${o.orderNumber} looked like a tracking number.`],
+      button: { label: 'Add tracking in Studio', url: `/studio/orders?order=${o.fulfilmentId}` },
+      sellerFooter: true,
+    }),
+  }),
+
+  lowStock: (
+    to: string,
+    p: { makerId: string; productId: string; title: string; variant: string },
+  ): EmailMessage => ({
+    to,
+    template: 'maker_low_stock',
+    subject: `Last one left · ${p.title}, ${p.variant}`,
+    text: `You’re down to the last ${p.title} in ${p.variant}. Make more or update stock: ${url(`/studio/listings/${p.productId}`)}${sign}`,
+    html: renderEmail({
+      heading: 'Last one left',
+      paragraphs: [`You’re down to the last ${p.title} in ${p.variant}.`],
+      button: { label: 'Update stock', url: `/studio/listings/${p.productId}` },
+      sellerFooter: true,
+    }),
+    related: { type: 'product', id: p.productId },
+  }),
+
+  weeklySummary: (
+    to: string,
+    w: {
+      makerId: string;
+      shop: string;
+      salesCents: number;
+      orders: number;
+      views: number;
+      saves: number;
+      topPiece: string | null;
+      overdue: number;
+    },
+  ): EmailMessage => {
+    const rows: Array<[string, string]> = [
+      [
+        'Sales',
+        `${formatPrice(w.salesCents)} · ${w.orders} ${w.orders === 1 ? 'order' : 'orders'}`,
+      ],
+      ['Views', String(w.views)],
+      ['Saves', String(w.saves)],
+      ['Top piece', w.topPiece ?? '—'],
+    ];
+    const overdue =
+      w.overdue > 0
+        ? `${w.overdue} ${w.overdue === 1 ? 'order is' : 'orders are'} past the ship-by date.`
+        : null;
+    return {
+      to,
+      template: 'maker_weekly_summary',
+      subject: `Your week at ${w.shop}`,
+      text:
+        `Your last 7 days\n\n` +
+        rows.map(([k, v]) => `${k}: ${v}`).join('\n') +
+        (overdue ? `\n\n${overdue}` : '') +
+        `\n\n${url('/studio')}${sign}`,
+      html: renderEmail({
+        eyebrow: 'Your last 7 days',
+        heading: `Your week at ${w.shop}`,
+        paragraphs: overdue ? [overdue] : [],
+        rows,
+        button: { label: 'Open Studio', url: overdue ? '/studio/orders' : '/studio' },
+        sellerFooter: true,
+      }),
+      related: { type: 'maker', id: w.makerId },
+    };
+  },
 
   orderShipped: (
     to: string,
@@ -259,15 +424,25 @@ export const emails = {
   shopInvite: (
     to: string,
     shop: { makerId: string; shop: string; url: string; pieces: number; bannerUrl: string | null },
-  ): EmailMessage => ({
-    to,
-    template: 'shop_invite',
-    subject: `Your One Off shop is ready, ${shop.shop}`,
-    text:
-      `Hi! It’s Ena from One Off. I’ve set up your shop, listed ${shop.pieces} of your pieces and written your maker page, so it’s ready for you to look over.\n\n` +
-      `See your shop: ${shop.url}\n\nThis link is just for you and works for 7 days.${sign}`,
-    related: { type: 'maker', id: shop.makerId },
-  }),
+  ): EmailMessage => {
+    const note = `Hi! It’s Ena from One Off. I’ve set up your shop, listed ${shop.pieces} of your pieces and written your maker page, so it’s ready for you to look over.`;
+    const after = 'This link is just for you and works for 7 days.';
+    return {
+      to,
+      template: 'shop_invite',
+      subject: `Your One Off shop is ready, ${shop.shop}`,
+      text: `${note}\n\nSee your shop: ${shop.url}\n\n${after}${sign}`,
+      html: renderEmail({
+        preheader: 'Take a look, change anything you like, and go live.',
+        heading: `Your shop is ready, ${shop.shop}`,
+        image: shop.bannerUrl,
+        paragraphs: [note],
+        button: { label: 'See your shop', url: shop.url },
+        after: [after, '— Ena'],
+      }),
+      related: { type: 'maker', id: shop.makerId },
+    };
+  },
 
   shopBack: (
     to: string,
@@ -286,13 +461,22 @@ export const emails = {
     amount: string,
     bankName: string | null,
     last4: string | null,
-  ): EmailMessage => ({
-    to,
-    template: 'payout_sent',
-    subject: `${amount} is on its way to ${bankName ?? 'your bank'}${last4 ? ` ••${last4}` : ''}`,
-    text: `${amount} is on its way to ${bankName ?? 'your bank'}${last4 ? ` ••${last4}` : ''}. It usually arrives in one to two business days.\n\nSee your payouts: ${url('/studio/payouts')}${sign}`,
-    related: { type: 'maker', id: makerId },
-  }),
+  ): EmailMessage => {
+    const line = `${amount} is on its way to ${bankName ?? 'your bank'}${last4 ? ` ••${last4}` : ''}`;
+    return {
+      to,
+      template: 'payout_sent',
+      subject: line,
+      text: `${line}. It usually arrives in one to two business days.\n\nSee your payouts: ${url('/studio/payouts')}${sign}`,
+      html: renderEmail({
+        heading: line,
+        paragraphs: ['It usually arrives in one to two business days.'],
+        button: { label: 'See your payouts', url: '/studio/payouts' },
+        sellerFooter: true,
+      }),
+      related: { type: 'maker', id: makerId },
+    };
+  },
 
   payoutFailed: (to: string, maker: string): EmailMessage => ({
     to,

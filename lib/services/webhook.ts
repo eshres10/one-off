@@ -9,6 +9,7 @@ import { log, reportError } from '@/lib/log';
 import { payments } from '@/lib/payments';
 import { accountInfo } from '@/lib/payments/stripe';
 import { recordProcessingFees, upsertPayout } from './payouts';
+import { notifyLowStock, notifyNewOrder } from './notifications';
 
 export type WebhookOutcome = 'processed' | 'duplicate' | 'ignored';
 
@@ -146,11 +147,12 @@ export async function onCheckoutCompleted(sessionId: string): Promise<void> {
       null,
       db,
     );
-    return { order, oversold, email };
+    const soldVariants = items.filter((i) => !oversold.includes(i)).map((i) => i.variantId);
+    return { order, oversold, email, soldVariants };
   });
   if (!result) return;
 
-  const { order, oversold, email } = result;
+  const { order, oversold, email, soldVariants } = result;
 
   // Oversold pieces (two buyers raced for the last unit) are refunded immediately.
   for (const item of oversold) {
@@ -163,6 +165,7 @@ export async function onCheckoutCompleted(sessionId: string): Promise<void> {
   // record Stripe's processing fee so each maker's net is final.
   await recordProcessingFees(order.id, session.chargeId);
   await sendOrderEmails(order.id, email);
+  await notifyLowStock(soldVariants).catch((err) => reportError(err, { where: 'low stock' }));
 }
 
 async function sendOrderEmails(orderId: string, buyerEmail: string) {
@@ -200,24 +203,10 @@ async function sendOrderEmails(orderId: string, buyerEmail: string) {
       })),
     ),
   );
-  const byFulfilment = new Map<string, Array<(typeof items)[number]>>();
-  for (const i of items)
-    byFulfilment.set(i.fulfilmentId, [...(byFulfilment.get(i.fulfilmentId) ?? []), i]);
-  for (const group of byFulfilment.values()) {
-    const first = group[0]!;
-    await sendEmail(
-      emails.makerNewOrder(
-        first.makerEmail,
-        order,
-        group.map((g) => ({
-          title: g.productTitle,
-          variant: g.variantLabel,
-          quantity: g.quantity,
-        })),
-        first.sellerNetCents,
-      ),
+  for (const fulfilmentId of new Set(items.map((i) => i.fulfilmentId)))
+    await notifyNewOrder(fulfilmentId).catch((err) =>
+      reportError(err, { fulfilmentId, where: 'new order notification' }),
     );
-  }
 }
 
 async function onCheckoutExpired(sessionId: string) {

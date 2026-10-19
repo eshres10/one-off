@@ -39,14 +39,12 @@ export const PHOTO_MAX_EDGE = 2000;
 async function processPhoto(bytes: Uint8Array) {
   try {
     const sharp = (await import('sharp')).default;
-    const base = sharp(bytes, { failOn: 'none' })
-      .rotate()
-      .resize({
-        width: PHOTO_MAX_EDGE,
-        height: PHOTO_MAX_EDGE,
-        fit: 'inside',
-        withoutEnlargement: true,
-      });
+    const base = sharp(bytes, { failOn: 'none' }).rotate().resize({
+      width: PHOTO_MAX_EDGE,
+      height: PHOTO_MAX_EDGE,
+      fit: 'inside',
+      withoutEnlargement: true,
+    });
     const [webp, jpeg] = await Promise.all([
       base.clone().webp({ quality: 82 }).toBuffer({ resolveWithObject: true }),
       base.clone().jpeg({ quality: 84, mozjpeg: true }).toBuffer(),

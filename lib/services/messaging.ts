@@ -3,6 +3,7 @@ import { sql, withUser, type Db } from '@/lib/db';
 import { formatPrice } from '@/lib/domain/money';
 import { blockedMessage, moderateMessage, sanitizeText } from '@/lib/domain/moderation';
 import { emails } from '@/lib/email/templates';
+import { prefsFor } from './notifications';
 import { sendEmail } from '@/lib/email/send';
 import { env } from '@/lib/env';
 import { rateLimit } from '@/lib/rate-limit';
@@ -318,15 +319,21 @@ export async function sendMessage(
 async function notify(sender: Actor, thread: ThreadRow, fromBuyer: boolean) {
   if (fromBuyer) {
     const [maker] = await sql()<
-      { email: string; firstMessage: boolean; digestDue: boolean; unreadThreads: number }[]
+      {
+        email: string;
+        userId: string;
+        firstMessage: boolean;
+        digestDue: boolean;
+        unreadThreads: number;
+      }[]
     >`
-      select u.email,
+      select u.email, u.id as user_id,
         (select count(*) from public.messages m where m.thread_id = ${thread.id} and m.sender_user_id = ${sender.id}
            and not m.is_flagged and m.kind = 'text') = 1 as first_message,
         (mk.message_digest_sent_at is null or mk.message_digest_sent_at < now() - interval '1 hour') as digest_due,
         (select count(*) from public.message_threads t where t.maker_id = mk.id and t.maker_unread > 0)::int as unread_threads
       from public.makers mk join public.users u on u.id = mk.user_id where mk.id = ${thread.makerId}`;
-    if (!maker) return;
+    if (!maker || !(await prefsFor(maker.userId)).message.email) return;
     if (maker.firstMessage) {
       await sendEmail(
         emails.newMessage(
