@@ -127,6 +127,7 @@ export interface StudioOrderDetail extends StudioOrderRow {
     imageUrl: string | null;
     lineTotalCents: number;
     customMeasurements: Record<string, string> | null;
+    noteToMaker: string | null;
   }>;
   claim: { id: string; status: string } | null;
 }
@@ -148,7 +149,7 @@ export async function getStudioOrder(
     if (!row) return null;
     const items = await db<StudioOrderDetail['items']>`
       select oi.id, oi.product_id, p.slug as product_slug, oi.product_title as title, oi.variant_label, oi.product_type,
-        oi.quantity, oi.image_url, oi.line_total_cents, oi.custom_measurements
+        oi.quantity, oi.image_url, oi.line_total_cents, oi.custom_measurements, oi.note_to_maker
       from public.order_items oi left join public.products p on p.id = oi.product_id
       where oi.fulfilment_id = ${fulfilmentId} order by oi.created_at`;
     const [claim] = await db<{ id: string; status: string }[]>`
@@ -198,6 +199,33 @@ async function buyerContact(fulfilmentId: string) {
 
 export const firstName = (name: string | null | undefined) =>
   (name ?? '').trim().split(/\s+/)[0] || 'The buyer';
+
+/**
+ * The shipment's stage, as the maker moves it along: Being made (made to order) → Packed →
+ * Dispatched (the ship form). The buyer's progress line follows.
+ */
+export async function setShipmentStage(
+  seller: Seller,
+  fulfilmentId: string,
+  stage: 'making' | 'packed',
+) {
+  const isMto = await withUser(
+    seller,
+    async (db) => (await lockOwn(db, seller, fulfilmentId)).isMto,
+  );
+  if (isMto) return setMakingStep(seller, fulfilmentId, stage === 'making' ? 1 : 3);
+  if (stage === 'making') throw new UserError('Ready-to-ship pieces go straight to Packed.');
+  await withUser(seller, async (db) => {
+    const f = await lockOwn(db, seller, fulfilmentId);
+    if (!['paid', 'preparing', 'ready'].includes(f.status))
+      throw new UserError('This piece has already been sent.');
+    await db`update public.fulfilments set status = 'ready' where id = ${f.id}`;
+    await db`
+      update public.order_items set fulfilment_status = 'preparing'
+      where fulfilment_id = ${f.id} and fulfilment_status = 'paid'`;
+  });
+  await audit('fulfilment.packed', { type: 'fulfilment', id: fulfilmentId }, {}, seller.id);
+}
 
 /**
  * Made-to-order progress: Ordered → Cutting → Sewing → Ready. The buyer sees it on their order

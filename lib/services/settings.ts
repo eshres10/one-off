@@ -9,6 +9,7 @@ import { isOwnImageUrl } from '@/lib/storage';
 import { TERMS, dispatchDaysFor, leadDaysFor } from '@/lib/studio/terms';
 import { NOTIFY_EVENTS, prefsFor, type Channels, type NotifyEvent } from './notifications';
 import { UserError } from './errors';
+import { MAKER_TIMEZONES } from '@/lib/site/config';
 
 type Seller = Pick<SessionUser, 'id' | 'email' | 'makerId'>;
 
@@ -39,6 +40,7 @@ export interface ShopSettings {
   slugLocked: boolean;
   suburb: string;
   state: string;
+  timezone: string;
   instagram: string;
   tagline: string;
   story: string;
@@ -94,6 +96,7 @@ export async function getSettings(seller: Seller): Promise<ShopSettings> {
       .split(',')[0]!
       .trim(),
     state: String(m.state ?? 'VIC'),
+    timezone: String(m.timezone ?? 'Australia/Melbourne'),
     instagram: String(m.instagram ?? ''),
     tagline: String(m.tagline ?? ''),
     story: String(m.story ?? ''),
@@ -151,8 +154,10 @@ const cents = (n: unknown, max: number) => {
 /** Saves every Settings section in one go (the save bar). Changes show on the live shop. */
 export async function saveSettings(seller: Seller, s: ShopSettings) {
   const makerId = seller.makerId!;
-  const [current] = await sql()<{ slug: string; slugChangedAt: Date | null; shopStatus: string }[]>`
-    select slug, slug_changed_at, shop_status from public.makers where id = ${makerId}`;
+  const [current] = await sql()<
+    { slug: string; slugChangedAt: Date | null; shopStatus: string; timezone: string }[]
+  >`
+    select slug, slug_changed_at, shop_status, timezone from public.makers where id = ${makerId}`;
   if (!current) throw new UserError('Shop not found.');
 
   const name = sanitizeText(s.name).slice(0, 80);
@@ -232,6 +237,7 @@ export async function saveSettings(seller: Seller, s: ShopSettings) {
         slug_changed_at = case when ${slug !== current.slug} then now() else slug_changed_at end,
         location = ${sanitizeText(s.suburb).slice(0, 60) || null},
         state = ${['VIC', 'NSW', 'QLD', 'SA', 'WA', 'TAS', 'ACT', 'NT'].includes(s.state) ? s.state : 'VIC'},
+        timezone = ${MAKER_TIMEZONES.some((z) => z.value === s.timezone) ? s.timezone : current.timezone},
         instagram = ${s.instagram.replace(/^@/, '').trim().slice(0, 60) || null}, tagline = ${tagline || null},
         story = ${sanitizeText(s.story).slice(0, 4000) || null},
         tags = ${s.tags.filter((t) => (SHOP_TAGS as readonly string[]).includes(t)).slice(0, 6)},

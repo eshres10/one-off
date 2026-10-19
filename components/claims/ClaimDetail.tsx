@@ -10,13 +10,15 @@ import { formatPrice } from '@/lib/domain/money';
 import type { ClaimView } from '@/lib/services/claims';
 import { AgreedSpec, type AgreedSpecData } from '@/components/commissions/AgreedSpec';
 
-const fmt = (d: Date) =>
+/** Times on a case read in the maker's own zone, with the zone named ("3:00 pm AWST"). */
+const fmt = (d: Date, timeZone = 'Australia/Melbourne') =>
   d.toLocaleString('en-AU', {
     day: 'numeric',
     month: 'short',
     hour: 'numeric',
     minute: '2-digit',
-    timeZone: 'Australia/Sydney',
+    timeZone,
+    timeZoneName: 'short',
   });
 
 export function ClaimStatusPill({ status }: { status: ClaimStatus }) {
@@ -41,7 +43,7 @@ export function ClaimCountdown({
   claim,
   now = new Date(),
 }: {
-  claim: Pick<ClaimView, 'status' | 'respondBy'>;
+  claim: Pick<ClaimView, 'status' | 'respondBy' | 'makerTimezone'>;
   now?: Date;
 }) {
   if (claim.status !== 'open') return null;
@@ -53,7 +55,7 @@ export function ClaimCountdown({
       className={`text-[12px] ${overdue ? 'text-error' : 'text-ink'}`}
       data-testid="claim-countdown"
     >
-      {responseCountdown(claim.respondBy, now)} · due {fmt(claim.respondBy)}
+      {responseCountdown(claim.respondBy, now)} · due {fmt(claim.respondBy, claim.makerTimezone)}
     </p>
   );
 }
@@ -78,7 +80,7 @@ export function ClaimDetail({
               {claim.caseNumber ? `${claim.caseNumber} · ` : ''}
               {claim.productTitle} · {claim.variantLabel} · order {claim.orderNumber}
               {viewer !== 'buyer' && claim.buyerName ? ` · from ${claim.buyerName}` : ''} · reported{' '}
-              {fmt(claim.createdAt)}
+              {fmt(claim.createdAt, claim.makerTimezone)}
             </p>
           </div>
           <ClaimStatusPill status={claim.status} />
@@ -94,7 +96,9 @@ export function ClaimDetail({
         {viewer === 'admin' && (claim.pausedPayout || claim.platformDueAt) && (
           <p className="mt-1 text-[12px] text-muted" data-testid="case-admin-facts">
             {claim.pausedPayout ? 'Maker payout paused for this case. ' : ''}
-            {claim.platformDueAt ? `One Off decides by ${fmt(claim.platformDueAt)}.` : ''}
+            {claim.platformDueAt
+              ? `One Off decides by ${fmt(claim.platformDueAt, claim.makerTimezone)}.`
+              : ''}
           </p>
         )}
         <ul className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-6" aria-label="Photos">
@@ -158,7 +162,7 @@ export function ClaimDetail({
           <p className="mt-3 text-[14px]">
             {CLAIM_STATUS_LABEL[claim.status]}
             {claim.refundCents ? ` · ${formatPrice(claim.refundCents)} refunded` : ''} ·{' '}
-            {fmt(claim.resolvedAt)}
+            {fmt(claim.resolvedAt, claim.makerTimezone)}
           </p>
           {claim.resolutionNote && (
             <p className="mt-2 whitespace-pre-line text-[14px] text-text2">

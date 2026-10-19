@@ -12,11 +12,12 @@ export interface StudioShop {
   foundingNumber: number | null;
   foundingUntil: Date | null;
   holidayUntil: Date | null;
+  timezone: string;
 }
 
 export async function getStudioShop(makerId: string): Promise<StudioShop> {
   const [shop] = await sql()<StudioShop[]>`
-    select id, slug, display_name, avatar_url, shop_status, founding_number, founding_until, holiday_until
+    select id, slug, display_name, avatar_url, shop_status, founding_number, founding_until, holiday_until, timezone
     from public.makers where id = ${makerId}`;
   return shop!;
 }

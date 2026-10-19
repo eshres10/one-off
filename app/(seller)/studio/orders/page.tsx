@@ -15,6 +15,7 @@ import { OrderPanel, OrderPanelTitle } from '@/components/studio/OrderPanel';
 import { RouteSheet } from '@/components/studio/RouteSheet';
 import { OrderStatusPill } from '@/components/studio/StatusPill';
 import { Img as Image } from '@/components/ui/Img';
+import { countClaimsNeedingAttention } from '@/lib/services/claims';
 
 export const metadata = { title: 'Orders · Studio' };
 
@@ -52,6 +53,7 @@ export default async function StudioOrdersPage({
     ORDER_TABS.some((t) => t.key === searchParams.tab) ? searchParams.tab : 'to-ship'
   ) as OrderTab;
   const orderId = z.string().uuid().safeParse(searchParams.order);
+  const problems = await countClaimsNeedingAttention(seller.makerId);
   const [rows, counts, open] = await Promise.all([
     listStudioOrders(seller, tab),
     countStudioOrders(seller),
@@ -77,6 +79,13 @@ export default async function StudioOrdersPage({
             {t.label} <span className="text-muted-2">({counts[t.key]})</span>
           </Link>
         ))}
+        <Link
+          href="/studio/claims"
+          data-testid="orders-tab-problems"
+          className="-mb-px flex min-h-[44px] shrink-0 items-center gap-1.5 border-b border-transparent text-[11px] uppercase tracking-label text-muted-2 hover:text-ink"
+        >
+          Problems <span className={problems ? 'text-alert' : 'text-muted-2'}>({problems})</span>
+        </Link>
       </nav>
 
       {rows.length === 0 ? (

@@ -5,7 +5,7 @@ import { env } from '@/lib/env';
 import { sendEmail } from '@/lib/email/send';
 import { emails } from '@/lib/email/templates';
 import { sendSms, toE164 } from '@/lib/sms/send';
-import { dayLabel, melbourneToday } from '@/lib/studio/format';
+import { dayLabel, timeIn } from '@/lib/studio/format';
 
 export const NOTIFY_EVENTS = [
   'new_order',
@@ -220,9 +220,15 @@ export async function notifyNewOrder(fulfilmentId: string) {
   }
 }
 
-/** Daily at 8am Melbourne: orders due to ship today that haven't. Idempotent per order. */
+/** Morning messages to makers go out at the first run at or after this local hour. */
+export const MAKER_MORNING_HOUR = 8;
+
+/**
+ * Orders due to ship today, in each maker's own time zone: sent at the first run at or after
+ * 8am local (the cron runs several times a morning to cover every Australian zone). Idempotent
+ * per order through ship_by_reminded_at.
+ */
 export async function shipByReminders(now = new Date()) {
-  const today = melbourneToday(0, now);
   const due = await sql()<
     {
       id: string;
@@ -234,8 +240,11 @@ export async function shipByReminders(now = new Date()) {
     }[]
   >`
     update public.fulfilments f set ship_by_reminded_at = now()
-    from public.orders o
-    where o.id = f.order_id and f.estimated_dispatch_date = ${today}::date and f.ship_by_reminded_at is null
+    from public.orders o, public.makers m
+    where o.id = f.order_id and m.id = f.maker_id
+      and f.estimated_dispatch_date = (${now}::timestamptz at time zone m.timezone)::date
+      and extract(hour from ${now}::timestamptz at time zone m.timezone) >= ${MAKER_MORNING_HOUR}
+      and f.ship_by_reminded_at is null
       and f.status in ('paid', 'preparing', 'making', 'ready')
     returning f.id, f.maker_id, o.id as order_id, o.order_number,
       (select product_title from public.order_items oi where oi.fulfilment_id = f.id order by created_at limit 1) as piece,
@@ -273,7 +282,7 @@ export async function notifyLowStock(variantIds: string[]) {
   }
 }
 
-/** Mondays at 8am Melbourne: the last 7 days for every open shop. Once per shop per week. */
+/** Mondays from 8am in each maker's time zone: the last 7 days. Once per shop per week. */
 export async function weeklySummaries(now = new Date()) {
   const shops = await sql()<
     {
@@ -300,9 +309,11 @@ export async function weeklySummaries(now = new Date()) {
         group by p.id, p.title order by count(*) desc limit 1) as top_piece,
       (select count(*) from public.fulfilments f where f.maker_id = m.id
         and f.status in ('paid', 'preparing', 'making', 'ready')
-        and f.estimated_dispatch_date < ${melbourneToday(0, now)}::date)::int as overdue
+        and f.estimated_dispatch_date < (${now}::timestamptz at time zone m.timezone)::date)::int as overdue
     from public.makers m
     where m.shop_status in ('live', 'holiday') and m.user_id is not null
+      and extract(isodow from ${now}::timestamptz at time zone m.timezone) = 1
+      and extract(hour from ${now}::timestamptz at time zone m.timezone) >= ${MAKER_MORNING_HOUR}
       and not exists (select 1 from public.email_outbox e where e.template = 'maker_weekly_summary'
         and e.related_entity_id = m.id and e.created_at > ${now}::timestamptz - interval '6 days')`;
   let sent = 0;
@@ -313,4 +324,43 @@ export async function weeklySummaries(now = new Date()) {
     sent++;
   }
   return { sent };
+}
+
+/**
+ * Makers with a problem report due today (their time) hear about it from 8am local, once per
+ * case, with the due time in their own zone.
+ */
+export async function caseDueReminders(now = new Date()) {
+  const due = await sql()<
+    {
+      id: string;
+      makerId: string;
+      caseNumber: string | null;
+      productTitle: string;
+      respondBy: Date;
+      timezone: string;
+    }[]
+  >`
+    update public.return_claims c set maker_reminded_at = ${now}
+    from public.makers m, public.order_items oi
+    where m.id = c.seller_id and oi.id = c.order_item_id and c.status = 'open' and c.maker_reminded_at is null
+      and (c.respond_by at time zone m.timezone)::date = (${now}::timestamptz at time zone m.timezone)::date
+      and extract(hour from ${now}::timestamptz at time zone m.timezone) >= ${MAKER_MORNING_HOUR}
+      and c.respond_by > ${now}
+    returning c.id, c.seller_id as maker_id, c.case_number, oi.product_title, c.respond_by, m.timezone`;
+  let sent = 0;
+  for (const c of due) {
+    const shop = await shopContact(c.makerId);
+    if (!shop?.email) continue;
+    await sendEmail(
+      emails.caseDueReminder(shop.email, {
+        id: c.id,
+        caseNumber: c.caseNumber,
+        productTitle: c.productTitle,
+        dueAt: timeIn(c.respondBy, c.timezone),
+      }),
+    );
+    sent++;
+  }
+  return { due: due.length, sent };
 }

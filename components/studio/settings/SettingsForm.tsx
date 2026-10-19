@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState, useTransition } from 'react';
+import { MAKER_TIMEZONES } from '@/lib/site/config';
 import { closeShopAction, saveSettingsAction } from '@/lib/actions/settings';
 import { RETURNS_SUMMARY } from '@/lib/studio/policy';
 import type { ShopSettings } from '@/lib/services/settings';
@@ -299,6 +300,25 @@ export function SettingsForm({
               />
             </Field>
           </div>
+          <Field
+            id="set-timezone"
+            label="Time zone"
+            hint="Reminders, your morning greeting and problem due times use this."
+          >
+            <select
+              id="set-timezone"
+              className="input"
+              value={s.timezone}
+              onChange={(e) => set('timezone', e.target.value)}
+              data-testid="set-timezone"
+            >
+              {MAKER_TIMEZONES.map((z) => (
+                <option key={z.value} value={z.value}>
+                  {z.label}
+                </option>
+              ))}
+            </select>
+          </Field>
           <Field id="set-tagline" label="Short line" hint={`${s.tagline.length}/80`}>
             <input
               id="set-tagline"

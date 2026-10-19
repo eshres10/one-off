@@ -89,6 +89,17 @@ export const STATE_TIMEZONE: Record<MakerRegion, string> = {
   WA: 'Australia/Perth',
 };
 
+/** Time zones a maker can pick in Shop settings. */
+export const MAKER_TIMEZONES = [
+  { value: 'Australia/Melbourne', label: 'Melbourne (VIC)' },
+  { value: 'Australia/Sydney', label: 'Sydney (NSW, ACT)' },
+  { value: 'Australia/Hobart', label: 'Hobart (TAS)' },
+  { value: 'Australia/Brisbane', label: 'Brisbane (QLD)' },
+  { value: 'Australia/Adelaide', label: 'Adelaide (SA)' },
+  { value: 'Australia/Darwin', label: 'Darwin (NT)' },
+  { value: 'Australia/Perth', label: 'Perth (WA)' },
+] as const;
+
 /** The capital of each state: a maker's starting city for "By city" (the admin can change it). */
 export const STATE_CAPITAL: Record<MakerRegion, string> = {
   ACT: 'Canberra',

@@ -749,6 +749,20 @@ export const emails = {
     related: { type: 'return_claim', id: claim.id },
   }),
 
+  caseDueReminder: (
+    to: string,
+    c: { id: string; caseNumber: string | null; productTitle: string; dueAt: string },
+  ): EmailMessage => ({
+    to,
+    template: 'case_due_reminder',
+    subject: `Reply due today: problem with ${c.productTitle}${c.caseNumber ? ` (${c.caseNumber})` : ''}`,
+    text:
+      `A customer is waiting to hear from you about ${c.productTitle}. Please reply by ${c.dueAt} with a repair, replacement or refund.\n\n` +
+      `If there’s no reply by then, ${BRAND.name} steps in.\n\n` +
+      `Reply: ${url(`/studio/claims/${c.id}`)}${sign}`,
+    related: { type: 'return_claim', id: c.id },
+  }),
+
   claimEscalated: (
     to: string,
     claim: { id: string; productTitle: string; makerName: string; orderNumber: string },

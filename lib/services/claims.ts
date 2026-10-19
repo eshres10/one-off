@@ -32,6 +32,7 @@ import { verifyClaimPhotos } from '@/lib/claim-photos';
 import { refundOrderItem } from './webhook';
 import { openOrderThread } from './messaging';
 import { reportError } from '@/lib/log';
+import { timeIn } from '@/lib/studio/format';
 import { UserError } from './errors';
 
 type Actor = Pick<SessionUser, 'id' | 'role' | 'makerId'>;
@@ -154,8 +155,8 @@ export async function createClaim(buyer: Actor, input: ClaimInput, now = new Dat
   }
   await postCaseToThread(claimId, buyer, item, input);
 
-  const [contacts] = await sql()<{ buyerEmail: string; makerEmail: string }[]>`
-    select o.buyer_email, u.email as maker_email
+  const [contacts] = await sql()<{ buyerEmail: string; makerEmail: string; makerTz: string }[]>`
+    select o.buyer_email, u.email as maker_email, m.timezone as maker_tz
     from public.orders o, public.makers m join public.users u on u.id = m.user_id
     where o.id = ${item.orderId} and m.id = ${item.makerId}`;
   const due = fmtDay(respondBy);
@@ -176,7 +177,8 @@ export async function createClaim(buyer: Actor, input: ClaimInput, now = new Dat
         productTitle: item.productTitle,
         orderNumber: item.orderNumber,
         reason,
-        respondBy: due,
+        // The maker reads the due time in their own zone.
+        respondBy: timeIn(respondBy, contacts.makerTz),
         caseNumber,
         outcome: REQUESTED_OUTCOMES.find((o) => o.value === input.outcome)?.label,
       }),
@@ -229,6 +231,7 @@ async function postCaseToThread(
       update public.message_threads set last_message_at = now(), maker_unread = maker_unread + 1,
         maker_needs_reply = true
       where id = ${threadId}`;
+    await sql()`update public.return_claims set thread_id = ${threadId} where id = ${claimId}`;
   } catch (err) {
     reportError(err, { where: 'postCaseToThread', claimId });
   }
@@ -266,6 +269,7 @@ export interface ClaimView {
   requestedOutcome: 'repair' | 'replace' | 'refund' | null;
   pausedPayout: boolean;
   platformDueAt: Date | null;
+  makerTimezone: string;
 }
 
 const CLAIM_COLUMNS = (db: ReturnType<typeof sql>) => db`
@@ -273,7 +277,7 @@ const CLAIM_COLUMNS = (db: ReturnType<typeof sql>) => db`
   oi.line_total_cents, oi.refunded_cents, m.display_name as maker_name, c.seller_id, c.reason, c.details, c.photos,
   c.status, c.proposal, c.seller_response, c.resolution_note, c.refund_cents, c.respond_by, c.created_at,
   c.seller_responded_at, c.resolved_at, c.escalated_at, public.user_first_name(c.buyer_id) as buyer_name, o.agreed_spec,
-  c.case_number, c.requested_outcome, c.paused_payout, c.platform_due_at`;
+  c.case_number, c.requested_outcome, c.paused_payout, c.platform_due_at, m.timezone as maker_timezone`;
 
 const CLAIM_FROM = (db: ReturnType<typeof sql>) => db`
   from public.return_claims c
@@ -331,6 +335,19 @@ export async function respondToClaim(
       seller_responded_at = coalesce(seller_responded_at, now()),
       status = case when status = 'escalated' then status else 'seller_responded'::claim_status end
     where id = ${claimId}`;
+  // The reply also lands in the conversation, under the report.
+  const [t] = await sql()<{ threadId: string | null; makerUserId: string | null }[]>`
+    select c.thread_id, m.user_id as maker_user_id
+    from public.return_claims c join public.makers m on m.id = c.seller_id where c.id = ${claimId}`;
+  if (t?.threadId && t.makerUserId) {
+    await sql()`
+      insert into public.messages (thread_id, sender_user_id, body, kind)
+      values (${t.threadId}, ${t.makerUserId}, ${`${PROPOSAL_LABEL[input.proposal]}: ${message}`.slice(0, 2000)}, 'text')`;
+    await sql()`
+      update public.message_threads set last_message_at = now(), buyer_unread = buyer_unread + 1,
+        maker_needs_reply = false, maker_unread = 0
+      where id = ${t.threadId}`;
+  }
   const [buyer] = await sql()<{ email: string }[]>`
     select o.buyer_email as email from public.orders o where o.id = ${claim.orderId}`;
   if (buyer)

@@ -2,7 +2,11 @@
 
 import { useState, useTransition } from 'react';
 import { useFormState } from 'react-dom';
-import { makingStepAction, shipOrderAction } from '@/lib/actions/studio-orders';
+import {
+  makingStepAction,
+  shipmentStageAction,
+  shipOrderAction,
+} from '@/lib/actions/studio-orders';
 import { showToast } from '@/lib/studio/toast';
 import type { FormState } from '@/lib/validation';
 
@@ -130,6 +134,70 @@ export function MakingSteps({ fulfilmentId, step }: { fulfilmentId: string; step
           </button>
         ))}
       </div>
+      {state?.ok === false && (
+        <p className="mt-2 text-[12px] text-alert" role="alert">
+          {state.message}
+        </p>
+      )}
+    </form>
+  );
+}
+
+/**
+ * Where the shipment is: Being made (made to order only) → Packed → Dispatched. Dispatched is
+ * the ship form below, where the carrier and tracking number go in.
+ */
+export function ShipmentSteps({
+  fulfilmentId,
+  isMto,
+  status,
+  mtoStep,
+}: {
+  fulfilmentId: string;
+  isMto: boolean;
+  status: string;
+  mtoStep: number;
+}) {
+  const [state, action] = useFormState<FormState, FormData>(shipmentStageAction, undefined);
+  const dispatched = ['shipped', 'delivered', 'completed', 'issue'].includes(status);
+  const packed = dispatched || status === 'ready' || (isMto && mtoStep >= 3);
+  const making = packed || (isMto && (status === 'making' || mtoStep >= 1));
+  const steps = [
+    ...(isMto ? [{ key: 'making', label: 'Being made', done: making }] : []),
+    { key: 'packed', label: 'Packed', done: packed },
+    { key: 'dispatched', label: 'Dispatched', done: dispatched },
+  ];
+  return (
+    <form action={action}>
+      <input type="hidden" name="fulfilmentId" value={fulfilmentId} />
+      <ol
+        className={`grid gap-1 ${isMto ? 'grid-cols-3' : 'grid-cols-2'}`}
+        aria-label="Shipment progress"
+      >
+        {steps.map((s) => (
+          <li key={s.key}>
+            {s.key === 'dispatched' ? (
+              <span
+                className={`flex min-h-[44px] items-center justify-center border px-1 text-[11px] uppercase tracking-[0.1em] ${s.done ? 'border-ink bg-ink text-ground' : 'border-dashed border-line-strong text-muted-2'}`}
+              >
+                {s.label}
+              </span>
+            ) : (
+              <button
+                type="submit"
+                name="stage"
+                value={s.key}
+                disabled={dispatched}
+                aria-pressed={s.done}
+                data-testid={`stage-${s.key}`}
+                className={`min-h-[44px] w-full border px-1 text-[11px] uppercase tracking-[0.1em] disabled:cursor-default ${s.done ? 'border-ink bg-ink text-ground' : 'border-line-strong hover:border-ink'}`}
+              >
+                {s.label}
+              </button>
+            )}
+          </li>
+        ))}
+      </ol>
       {state?.ok === false && (
         <p className="mt-2 text-[12px] text-alert" role="alert">
           {state.message}

@@ -45,23 +45,39 @@ export function shortDate(date: Date | string): string {
   });
 }
 
-/** "Good morning" / "Good afternoon" / "Good evening" by Melbourne time. */
-export function greeting(now = new Date()): { long: string; short: string } {
-  const h = Number(
-    new Intl.DateTimeFormat('en-AU', { hour: 'numeric', hourCycle: 'h23', timeZone: TZ }).format(
-      now,
-    ),
-  );
+/** "Good morning" / "Good afternoon" / "Good evening" in the maker's own time zone. */
+export function greeting(now = new Date(), timeZone = TZ): { long: string; short: string } {
+  const h = localHour(now, timeZone);
   const part = h < 12 ? 'morning' : h < 18 ? 'afternoon' : 'evening';
   return { long: `Good ${part}`, short: part[0]!.toUpperCase() + part.slice(1) };
 }
 
-/** "Monday 19 October" in Melbourne. */
-export function longDate(now = new Date()): string {
+/** "Monday 19 October" in the maker's time zone. */
+export function longDate(now = new Date(), timeZone = TZ): string {
   return now.toLocaleDateString('en-AU', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
-    timeZone: TZ,
+    timeZone,
+  });
+}
+
+/** Hour of the day (0–23) in a time zone. */
+export function localHour(at: Date, timeZone: string): number {
+  return Number(
+    new Intl.DateTimeFormat('en-AU', { hour: 'numeric', hourCycle: 'h23', timeZone }).format(at),
+  );
+}
+
+/** "Wednesday 4 November, 3:00 pm AWST": a due time in the maker's own zone. */
+export function timeIn(at: Date, timeZone: string): string {
+  return new Date(at).toLocaleString('en-AU', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone,
+    timeZoneName: 'short',
   });
 }

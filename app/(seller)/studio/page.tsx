@@ -175,7 +175,8 @@ function NeedsList({ rows, testId }: { rows: NeedsRow[]; testId: string }) {
 export default async function StudioOverview() {
   const seller = await requireSeller();
   const [o, shop] = await Promise.all([getOverview(seller), getStudioShop(seller.makerId)]);
-  const g = greeting();
+  // Greeting and date in the maker's own time zone.
+  const g = greeting(new Date(), shop.timezone);
   const change = pct(o.kpi.salesThisMonth, o.kpi.salesLastMonth);
   const shipNow = o.needs.filter((n) => n.kind === 'ship');
   const waiting = o.needs.filter((n) => n.kind !== 'ship');
@@ -185,7 +186,9 @@ export default async function StudioOverview() {
     <div>
       <header className="flex items-end justify-between gap-4">
         <div>
-          <p className="text-[11px] uppercase tracking-label text-muted-2">{longDate()}</p>
+          <p className="text-[11px] uppercase tracking-label text-muted-2">
+            {longDate(new Date(), shop.timezone)}
+          </p>
           <h1 className="mt-2 text-[40px] leading-none md:text-[56px]">
             <span className="md:hidden">
               {g.short}, {firstWord}

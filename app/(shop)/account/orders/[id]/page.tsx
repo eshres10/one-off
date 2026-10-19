@@ -7,6 +7,7 @@ import { AgreedSpec } from '@/components/commissions/AgreedSpec';
 import { formatPrice } from '@/lib/domain/money';
 import { gstIncluded } from '@/lib/services/checkout';
 import { SITE } from '@/lib/site/config';
+import { AutoRefresh } from '@/components/ui/AutoRefresh';
 
 export const metadata = { title: 'Order' };
 
@@ -36,6 +37,7 @@ export default async function OrderPage({ params }: { params: { id: string } }) 
   const to = deliveringTo(order.shippingAddress);
   return (
     <div className="max-w-3xl">
+      <AutoRefresh />
       <Link
         href="/account/orders"
         className="hidden text-[12px] uppercase tracking-label text-muted hover:text-ink md:inline"

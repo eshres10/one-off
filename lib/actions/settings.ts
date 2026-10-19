@@ -19,6 +19,7 @@ const schema = z.object({
   slug: z.string().max(80),
   suburb: z.string().max(80),
   state: z.string().max(3),
+  timezone: z.string().max(40),
   instagram: z.string().max(80),
   tagline: z.string().max(200),
   story: z.string().max(5000),

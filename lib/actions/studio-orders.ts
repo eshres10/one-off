@@ -11,6 +11,7 @@ import {
   markShipped,
   openOrderThread,
   setMakingStep,
+  setShipmentStage,
   type Carrier,
 } from '@/lib/services/studio-orders';
 import type { FormState } from '@/lib/validation';
@@ -55,6 +56,22 @@ export async function makingStepAction(_prev: FormState, form: FormData): Promis
   try {
     await setMakingStep(seller, id.data, Number(form.get('step')));
     refresh();
+    return { ok: true };
+  } catch (err) {
+    return toFormState(err);
+  }
+}
+
+export async function shipmentStageAction(_prev: FormState, form: FormData): Promise<FormState> {
+  const seller = await requireSeller();
+  const id = uuid.safeParse(form.get('fulfilmentId'));
+  const stage = form.get('stage');
+  if (!id.success || (stage !== 'making' && stage !== 'packed'))
+    return { ok: false, message: 'Order not found.' };
+  try {
+    await setShipmentStage(seller, id.data, stage);
+    refresh();
+    revalidatePath('/account/orders/[id]', 'page');
     return { ok: true };
   } catch (err) {
     return toFormState(err);

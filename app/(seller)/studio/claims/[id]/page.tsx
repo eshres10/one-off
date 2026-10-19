@@ -7,7 +7,7 @@ import { getClaim } from '@/lib/services/claims';
 import { ClaimDetail } from '@/components/claims/ClaimDetail';
 import { ResolveForm, RespondForm } from '@/components/claims/ClaimActions';
 
-export const metadata = { title: 'Claim' };
+export const metadata = { title: 'Problem' };
 
 export default async function SellerClaimPage({ params }: { params: { id: string } }) {
   const seller = await requireSeller();
@@ -17,9 +17,9 @@ export default async function SellerClaimPage({ params }: { params: { id: string
   return (
     <div className="max-w-3xl space-y-6">
       <Link href="/studio/claims" className="text-sm text-muted hover:underline">
-        ← All claims
+        ← Problems
       </Link>
-      <h1 className="text-[40px] leading-none md:text-[48px]">Claim</h1>
+      <h1 className="text-[40px] leading-none md:text-[48px]">{claim.caseNumber ?? 'Problem'}</h1>
       <ClaimDetail claim={claim} viewer="seller" />
       {active && (
         <div className="grid gap-8 border-t border-line pt-6">

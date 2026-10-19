@@ -110,6 +110,9 @@ end $$;
 alter table public.return_claims add column if not exists fulfilment_id uuid references public.fulfilments (id) on delete set null;
 alter table public.return_claims add column if not exists platform_due_at timestamptz;
 alter table public.return_claims add column if not exists paused_payout boolean not null default false;
+alter table public.return_claims add column if not exists maker_reminded_at timestamptz;
+-- The buyer–maker conversation the report was posted to; the maker's replies go there too.
+alter table public.return_claims add column if not exists thread_id uuid references public.message_threads (id) on delete set null;
 -- One Off's own notes on a case: admin only, never shown to the buyer or the maker.
 create table if not exists public.case_notes (
   id uuid primary key default gen_random_uuid(),
@@ -185,6 +188,32 @@ update public.makers set timezone = case state
     when 'NT' then 'Australia/Darwin' when 'WA' then 'Australia/Perth'
     when 'TAS' then 'Australia/Hobart' else 'Australia/Melbourne' end
   where timezone = 'Australia/Melbourne' and coalesce(state, 'VIC') <> 'VIC';
+create or replace function public.timezone_for_state(p_state text) returns text
+language sql immutable as $$
+  select case p_state
+    when 'NSW' then 'Australia/Sydney' when 'ACT' then 'Australia/Sydney'
+    when 'QLD' then 'Australia/Brisbane' when 'SA' then 'Australia/Adelaide'
+    when 'NT' then 'Australia/Darwin' when 'WA' then 'Australia/Perth'
+    when 'TAS' then 'Australia/Hobart' else 'Australia/Melbourne' end
+$$;
+-- A new shop takes its state's zone; changing the state moves the zone too, unless the maker
+-- picked a different one in Shop settings.
+create or replace function public.makers_set_timezone() returns trigger
+language plpgsql as $$
+begin
+  if tg_op = 'INSERT' then
+    if new.timezone is null or new.timezone = 'Australia/Melbourne' then
+      new.timezone := public.timezone_for_state(new.state);
+    end if;
+  elsif new.state is distinct from old.state and new.timezone = old.timezone
+    and old.timezone = public.timezone_for_state(old.state) then
+    new.timezone := public.timezone_for_state(new.state);
+  end if;
+  return new;
+end $$;
+drop trigger if exists makers_set_timezone on public.makers;
+create trigger makers_set_timezone before insert or update of state on public.makers
+  for each row execute function public.makers_set_timezone();
 alter table public.notification_log add column if not exists maker_id uuid references public.makers (id) on delete set null;
 
 -- ---------------------------------------------------------------------------

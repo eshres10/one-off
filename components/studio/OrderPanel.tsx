@@ -5,7 +5,7 @@ import { TERMS } from '@/lib/studio/terms';
 import { dayLabel, shipByLabel, daysUntil } from '@/lib/studio/format';
 import { carrierLabel, trackingUrl, type StudioOrderDetail } from '@/lib/services/studio-orders';
 import { Img as Image } from '@/components/ui/Img';
-import { MakingSteps, ShipForm } from './OrderForms';
+import { MakingSteps, ShipForm, ShipmentSteps } from './OrderForms';
 import { OrderStatusPill } from './StatusPill';
 
 const SALE_TYPE: Record<string, string> = {
@@ -78,11 +78,17 @@ export function OrderPanel({ order }: { order: StudioOrderDetail }) {
                   {i.quantity > 1 ? ` × ${i.quantity}` : ''} · {SALE_TYPE[i.productType]}
                 </p>
                 {i.customMeasurements && (
-                  <p className="mt-1 text-[12px] text-muted">
+                  <p className="mt-1 text-[12px] text-muted" data-testid="buyer-measurements">
                     Measurements:{' '}
                     {Object.entries(i.customMeasurements)
-                      .map(([k, v]) => `${k} ${v}`)
+                      .map(([k, v]) => `${k.replace(/_/g, ' ')} ${v}`)
                       .join(' · ')}
+                  </p>
+                )}
+                {i.noteToMaker && (
+                  <p className="mt-1.5 bg-stone px-2.5 py-1.5 text-[12px]" data-testid="buyer-note">
+                    <span className="text-muted-2">Note from the buyer: </span>
+                    {i.noteToMaker}
                   </p>
                 )}
               </div>
@@ -99,11 +105,28 @@ export function OrderPanel({ order }: { order: StudioOrderDetail }) {
         )}
       </Section>
 
-      {order.isMto && !['shipped', 'delivered', 'completed', 'refunded'].includes(order.status) && (
-        <Section title="Making progress">
-          <MakingSteps fulfilmentId={order.id} step={order.mtoStep} />
+      {!['refunded', 'cancelled'].includes(order.status) && (
+        <Section title="Progress">
+          <ShipmentSteps
+            fulfilmentId={order.id}
+            isMto={order.isMto}
+            status={order.status}
+            mtoStep={order.mtoStep}
+          />
+          {order.isMto &&
+            !['shipped', 'delivered', 'completed', 'issue'].includes(order.status) && (
+              <details className="mt-3 text-[12px]">
+                <summary className="min-h-[32px] cursor-pointer text-muted">
+                  Detailed making steps
+                </summary>
+                <div className="mt-2">
+                  <MakingSteps fulfilmentId={order.id} step={order.mtoStep} />
+                </div>
+              </details>
+            )}
           <p className="mt-2 text-[12px] text-muted">
-            The buyer sees each step, and gets an email at Sewing and at Ready.
+            The buyer’s order page follows each step. Dispatch below with the carrier and tracking
+            number.
           </p>
         </Section>
       )}
@@ -166,7 +189,7 @@ export function OrderPanel({ order }: { order: StudioOrderDetail }) {
       </Section>
 
       {canShip && (
-        <Section title="Mark as shipped">
+        <Section title="Dispatch">
           <ShipForm fulfilmentId={order.id} />
         </Section>
       )}
@@ -174,9 +197,9 @@ export function OrderPanel({ order }: { order: StudioOrderDetail }) {
       {order.claim && (
         <Section title="Problem reported">
           <p className="text-[13px] text-alert">
-            The buyer reported a fault. Your payout for this order is held until it’s sorted.{' '}
+            The buyer reported a problem. Reply within 2 business days.{' '}
             <Link href={`/studio/claims/${order.claim.id}`} className="link text-ink">
-              View the claim
+              See the problem
             </Link>
           </p>
         </Section>
