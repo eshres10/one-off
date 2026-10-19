@@ -11,7 +11,7 @@ import { TabBar } from './TabBar';
 export async function AppTabBar() {
   const user = await getSessionUser();
   const [bag, messages] = await Promise.all([
-    checkoutEnabled() ? cartCount(getCartSessionId()) : Promise.resolve(0),
+    checkoutEnabled().then((on) => (on ? cartCount(getCartSessionId()) : 0)),
     user ? unreadCount(user).catch(() => 0) : Promise.resolve(0),
   ]);
   return (

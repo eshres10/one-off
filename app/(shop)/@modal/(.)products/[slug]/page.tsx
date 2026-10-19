@@ -45,7 +45,7 @@ export default async function QuickViewPage({ params }: { params: { slug: string
       qa={qa}
       signedIn={Boolean(user)}
       isMaker={isMaker}
-      checkoutOn={checkoutEnabled()}
+      checkoutOn={await checkoutEnabled()}
       previewOnly={isPreviewOnly(product.tags)}
       nextSlot={nextSlot}
     />

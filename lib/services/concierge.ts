@@ -11,6 +11,7 @@ import { isOwnImageUrl } from '@/lib/storage';
 import { TERMS } from '@/lib/studio/terms';
 import { UserError } from './errors';
 import { nextFoundingNumber } from './founding';
+import { STATE_CAPITAL, type MakerRegion } from '@/lib/site/config';
 
 type Admin = Pick<SessionUser, 'id' | 'role'>;
 
@@ -53,11 +54,12 @@ export async function createShop(admin: Admin, input: NewShopInput): Promise<str
     select id from public.makers where slug = ${slug}
     union all select maker_id from public.maker_slug_redirects where old_slug = ${slug}`;
   if (taken) throw new UserError('That shop link is taken.');
+  const state = (STATES.includes(input.state) ? input.state : 'VIC') as MakerRegion;
   const [row] = await sql()<{ id: string }[]>`
     insert into public.makers (slug, display_name, tagline, story, location, city, state, instagram, avatar_url, cover_url,
       status, shop_status, created_by_admin, invite_email, source)
     values (${slug}, ${name}, ${sanitizeText(input.tagline).slice(0, 80) || null}, ${sanitizeText(input.story) || null},
-      ${sanitizeText(input.suburb).slice(0, 60) || null}, 'Melbourne', ${STATES.includes(input.state) ? input.state : 'VIC'},
+      ${sanitizeText(input.suburb).slice(0, 60) || null}, ${STATE_CAPITAL[state]}, ${state},
       ${input.instagram.replace(/^@/, '').trim() || null}, ${input.avatarUrl || null}, ${input.bannerUrl || null},
       'draft', 'draft', true, ${email}, 'invite')
     returning id`;

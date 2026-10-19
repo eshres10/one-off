@@ -5,6 +5,10 @@
  */
 export const RETURNS = {
   short: "No change-of-mind returns. Faulty or not as described? We'll make it right.",
+  /** Added under the short line on made-to-order pieces. */
+  madeToOrder:
+    "Made to order means it's made after you buy, so please check the size guide or ask the maker before ordering.",
+  /** Commissions (custom requests made to the buyer's measurements). */
   shortCustom:
     "Made to your measurements. No change-of-mind returns — if it doesn't match what was agreed, the maker will alter it.",
   reportWindowDays: 7,
@@ -17,6 +21,9 @@ export const RETURNS = {
   aclNote: "This doesn't affect your rights under Australian Consumer Law.",
   checkoutAck: "I understand One Off pieces can't be returned for change of mind.",
 };
+
+/** Buyer reassurance (trust strip, checkout, FAQ): makers are paid after delivery, not dispatch. */
+export const PAYMENT_HELD = 'Your payment is held until your piece arrives.';
 
 /** Stored on each order with the buyer's acknowledgement. Bump when the policy text changes. */
 export const RETURNS_POLICY_VERSION = '2026-10-19';
@@ -41,8 +48,4 @@ export type ClaimReason = (typeof CLAIM_REASONS)[number]['value'];
 /** Made-to-order pieces (and commissions) are made to the buyer's measurements. */
 export function isCustomType(productType: string) {
   return productType === 'made_to_order';
-}
-
-export function returnsLine(productType: string) {
-  return isCustomType(productType) ? RETURNS.shortCustom : RETURNS.short;
 }

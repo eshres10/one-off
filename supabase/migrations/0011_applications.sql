@@ -267,3 +267,102 @@ insert into public.shop_applications (maker_id, answers, submitted_at)
   select m.id, m.application, m.applied_at from public.makers m
   where m.shop_status = 'applied'
     and not exists (select 1 from public.shop_applications a where a.maker_id = m.id);
+
+-- ---------------------------------------------------------------------------
+-- The old per-shop returns default promised 14-day returns, which contradicts the marketplace
+-- policy (no change-of-mind returns). Replace it wherever it was never edited.
+-- ---------------------------------------------------------------------------
+alter table public.makers alter column return_policy set default
+  'No change-of-mind returns. Faulty or not as described? We''ll make it right.';
+update public.makers set return_policy = 'No change-of-mind returns. Faulty or not as described? We''ll make it right.'
+  where return_policy ilike 'Returns accepted within 14 days%';
+
+-- ---------------------------------------------------------------------------
+-- Discover: the place filter matches a maker's suburb or their city ("By city" in the menu).
+-- Same as 0010 otherwise.
+-- ---------------------------------------------------------------------------
+create or replace function public.discover_feed(
+  p_query text default null,
+  p_cat text default null,
+  p_sizes text[] default null,
+  p_avail text[] default null,
+  p_max_cents integer default null,
+  p_colours text[] default null,
+  p_suburb text default null,
+  p_sort text default 'relevant',
+  p_user_id uuid default null
+)
+returns table (product_id uuid, sort_key numeric)
+language sql stable security definer set search_path = public as $$
+  with prefs as (
+    select cp.taste_tags, cp.sizes,
+      sqrt(coalesce((select sum(power(value::numeric, 2)) from jsonb_each_text(cp.taste_tags)), 0)) as norm
+    from public.customer_prefs cp where cp.user_id = p_user_id
+  ),
+  base as (
+    select p.id, p.price_cents, p.save_count, coalesce(p.approved_at, p.created_at) as listed_at,
+      m.rating, p.style_tags,
+      (select count(*) from public.saved_items s
+        where s.product_id = p.id and s.created_at > now() - interval '14 days') as saves14,
+      case when p_query is null then 0
+        else ts_rank(p.search_vector, to_tsquery('english', p_query)) end as text_rank
+    from public.products p
+    join public.makers m on m.id = p.maker_id
+    where p.status = 'approved' and m.status = 'approved'
+      and (p_query is null or p.search_vector @@ to_tsquery('english', p_query))
+      and (p_cat is null or p_cat = 'all' or case p_cat
+        when 'dresses' then p.category in ('dresses', 'occasionwear') or p.search_vector @@ to_tsquery('english', 'dress:* | gown:* | maxi:*')
+        when 'slips' then p.search_vector @@ to_tsquery('english', 'slip:*')
+        when 'sets' then p.category in ('sets', 'jumpsuits') or p.search_vector @@ to_tsquery('english', 'set:* | co-ord:*')
+        when 'occasion' then cardinality(p.occasions) > 0 or p.category = 'occasionwear'
+        when 'mto' then p.product_type = 'made_to_order'
+        when 'ooo' then p.product_type = 'one_of_one'
+        when 'satin' then coalesce(p.fabric_composition, '') ~* 'satin|silk' or p.title ~* 'satin|silk'
+        when 'linen' then coalesce(p.fabric_composition, '') ~* 'linen|cotton'
+        when 'tailoring' then p.title ~* 'blazer|suit|trouser|tailor|waistcoat|jacket'
+        when 'outerwear' then p.category = 'outerwear' or p.title ~* 'jacket|coat|trench'
+        when 'under-300' then p.price_cents < 30000
+        else true end)
+      and (p_sizes is null or exists (
+        select 1 from public.product_variants v where v.product_id = p.id and v.is_active
+          and v.size = any(p_sizes) and (v.stock_quantity > 0 or p.product_type = 'made_to_order')))
+      and (p_avail is null or p.product_type::text = any(p_avail))
+      and (p_max_cents is null or p.price_cents <= p_max_cents)
+      and (p_colours is null or exists (select 1 from unnest(p.colours) c where lower(c) = any(p_colours)))
+      and (p_suburb is null or lower(trim(split_part(coalesce(m.location, m.city, ''), ',', 1))) = lower(p_suburb)
+        or lower(m.city) = lower(p_suburb))
+  ),
+  scored as (
+    select b.*,
+      coalesce((
+        select case when pr.norm = 0 or cardinality(b.style_tags) = 0 then 0
+          else (select coalesce(sum((pr.taste_tags ->> t)::numeric), 0) from unnest(b.style_tags) t)
+            / pr.norm / sqrt(cardinality(b.style_tags)) end
+        from prefs pr), 0) as taste,
+      coalesce((
+        select case when cardinality(pr.sizes) = 0 then 0
+          when exists (select 1 from public.product_variants v where v.product_id = b.id and v.is_active
+            and v.size = any(pr.sizes) and v.stock_quantity > 0) then 1 else 0 end
+        from prefs pr), 0) as size_match
+    from base b
+  )
+  select s.id,
+    round(case p_sort
+      when 'new' then extract(epoch from s.listed_at)::numeric
+      when 'popular' then (s.saves14 * 5 + s.save_count)::numeric
+      when 'price-asc' then -s.price_cents::numeric
+      when 'price-desc' then s.price_cents::numeric
+      else (
+        100 * s.text_rank
+        + 40 * exp(-extract(epoch from date_trunc('hour', now()) - s.listed_at) / 86400 / 30)
+        + 10 * ln(1 + s.saves14)
+        + 4 * coalesce(s.rating, 0)
+        + 60 * s.taste
+        + 12 * s.size_match
+      )::numeric
+    end, 6) as sort_key
+  from scored s
+$$;
+revoke all on function public.discover_feed(text, text, text[], text[], integer, text[], text, text, uuid) from public;
+grant execute on function public.discover_feed(text, text, text[], text[], integer, text[], text, text, uuid) to anon, authenticated, service_role;
+

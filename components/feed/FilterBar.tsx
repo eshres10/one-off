@@ -3,17 +3,14 @@
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { FilterIcon, CloseIcon } from '@/components/ui/icons';
+import { SITE } from '@/lib/site/config';
 import { Pill } from '@/components/ui/Pill';
 
 type Option = { value: string; label: string };
 type Group = { key: string; label: string; options: Option[] };
 
-const STATES: Option[] = [
-  { value: 'VIC', label: 'Melbourne & VIC' },
-  { value: 'NSW', label: 'Sydney & NSW' },
-  { value: 'QLD', label: 'Brisbane & QLD' },
-  { value: 'SA', label: 'Adelaide & SA' },
-];
+// Makers are Australia-wide: every state and territory.
+const STATES: Option[] = SITE.makerRegions.map((s) => ({ value: s, label: s }));
 const TYPES: Option[] = [
   { value: 'ready_to_ship', label: 'Ready to ship' },
   { value: 'made_to_order', label: 'Made to order' },
@@ -60,7 +57,7 @@ export function FilterBar({
       label: 'Colour',
       options: options.colours.map((c) => ({ value: c, label: c })),
     },
-    { key: 'state', label: 'Maker location', options: STATES },
+    { key: 'state', label: 'Location', options: STATES },
     { key: 'type', label: 'Availability', options: TYPES },
     { key: 'maxLead', label: 'Lead time', options: LEADS },
   ];

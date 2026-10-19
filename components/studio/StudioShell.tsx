@@ -29,8 +29,11 @@ export function StudioShell({
   shop,
   counts,
   setup = null,
+  launch = null,
   children,
 }: {
+  /** Before launch: when One Off opens to buyers (null once it's open). */
+  launch?: { opensOn: string | null } | null;
   shop: StudioShop;
   counts: StudioCounts;
   /** An approved shop that isn't live yet: how much of setup is done. */
@@ -74,6 +77,23 @@ export function StudioShell({
           </div>
         </div>
       </header>
+      {launch && (
+        <p
+          className="bg-ink px-4 py-2 text-center text-[12px] text-ground"
+          role="status"
+          data-testid="launch-banner"
+        >
+          One Off opens to buyers{' '}
+          {launch.opensOn
+            ? `on ${new Date(`${launch.opensOn}T00:00:00Z`).toLocaleDateString('en-AU', {
+                day: 'numeric',
+                month: 'long',
+                timeZone: 'UTC',
+              })}`
+            : 'soon'}
+          . Buyers can check out from then.
+        </p>
+      )}
       {setup && (
         <Link
           href="/studio/setup"

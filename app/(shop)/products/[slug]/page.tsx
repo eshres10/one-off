@@ -11,7 +11,8 @@ import { productBadges } from '@/lib/domain/stock';
 import { checkoutEnabled, PREVIEW_MESSAGE } from '@/lib/features';
 import { shopBuyable } from '@/lib/domain/shop';
 import { log } from '@/lib/log';
-import { isCustomType, returnsLine } from '@/lib/content/returns';
+import { isCustomType } from '@/lib/content/returns';
+import { ReturnsPolicy } from '@/components/ui/ReturnsPolicy';
 import { PREVIEW_ONLY_LABEL, PREVIEW_ONLY_NOTE, isPreviewOnly } from '@/lib/domain/preview';
 import {
   getProduct,
@@ -259,7 +260,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
                   : undefined
               }
               modelLine={modelLine}
-              checkoutEnabled={checkoutEnabled() && !previewOnly && sale.ok}
+              checkoutEnabled={(await checkoutEnabled()) && !previewOnly && sale.ok}
               previewMessage={
                 previewOnly
                   ? PREVIEW_ONLY_NOTE
@@ -279,12 +280,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
 
           <div className="mt-2">
             <Accordion id="returns" title="Returns" open={custom}>
-              <p data-testid="returns-row">
-                {returnsLine(product.productType)}{' '}
-                <Link href="/returns" className="link">
-                  Read more
-                </Link>
-              </p>
+              <ReturnsPolicy productType={product.productType} link testId="returns-row" />
             </Accordion>
             <Accordion title="Description" open>
               <p className="whitespace-pre-line">{product.description}</p>

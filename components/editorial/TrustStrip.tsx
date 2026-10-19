@@ -1,8 +1,16 @@
+import { SITE } from '@/lib/site/config';
 import { LockIcon, NeedleIcon, ShieldIcon, TruckIcon } from '@/components/ui/icons';
 
 const ITEMS = [
   { icon: LockIcon, text: 'Secure checkout' },
-  { icon: NeedleIcon, text: 'Made to order, to your size' },
+  // [DECIDE] Only call it a "Fit promise" once SITE.fitPromise (lib/site/config.ts) defines it;
+  // until then this must not read as a returns promise.
+  {
+    icon: NeedleIcon,
+    text: SITE.fitPromise
+      ? 'Fit promise on made-to-order'
+      : 'Made to your measurements, on request',
+  },
   { icon: TruckIcon, text: 'Shipped from the studio' },
   { icon: ShieldIcon, text: 'Buyer protection on every order' },
 ];

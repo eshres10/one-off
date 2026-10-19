@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { useFormState, useFormStatus } from 'react-dom';
-import { RETURNS } from '@/lib/content/returns';
+import { PAYMENT_HELD, RETURNS } from '@/lib/content/returns';
 import { checkoutAction } from '@/lib/actions/cart';
 import type { FormState } from '@/lib/validation';
 
@@ -148,7 +148,7 @@ export function CheckoutForm({
       )}
       <p className="pt-1 text-center text-[12px] text-muted">
         {signedInEmail ? `Signed in as ${signedInEmail}. ` : 'Guest checkout — no account needed. '}
-        Secure payment by Stripe.
+        Secure payment by Stripe. {PAYMENT_HELD}
       </p>
     </form>
   );

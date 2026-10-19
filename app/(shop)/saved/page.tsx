@@ -10,7 +10,7 @@ export const metadata = { title: 'Saved' };
 
 export default async function SavedPage() {
   const user = await getSessionUser();
-  const checkoutOn = checkoutEnabled();
+  const checkoutOn = await checkoutEnabled();
   const [pieces, makers] = user
     ? await Promise.all([getSavedPieces(user, getCartSessionId()), getFollowedMakers(user)])
     : [null, null];

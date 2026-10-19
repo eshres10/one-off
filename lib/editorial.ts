@@ -27,7 +27,7 @@ export const FEED_EDITORIAL: EditorialTileData[] = [
 
 /** Homepage hero. An editorial placement (slot `home_hero`) can override the image and link. */
 export const HERO = {
-  eyebrow: 'Melbourne-made · Straight from the maker',
+  eyebrow: 'Australian-made · Straight from the maker',
   title: 'Bespoke pieces made just for you',
   imageUrl: '/seed/hero-velvet-sofa.jpg',
   href: '/?tab=new',

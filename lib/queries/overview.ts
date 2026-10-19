@@ -256,7 +256,7 @@ export async function getOverview(seller: Seller): Promise<Overview> {
   const checklist: ChecklistItem[] = [
     {
       key: 'payouts',
-      label: 'Payouts connected',
+      label: 'Connect payouts',
       done: shop!.chargesEnabled,
       href: '/studio/settings#payouts',
     },

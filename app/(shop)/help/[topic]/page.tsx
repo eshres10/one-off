@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { HELP } from '@/lib/help-content';
 import { Accordion } from '@/components/ui/Panels';
+import { publicFoundingOffer } from '@/lib/services/applications';
 import { TERMS } from '@/lib/studio/terms';
 import { BRAND } from '@/lib/brand';
 
@@ -18,8 +19,9 @@ const NAV = [
   ['sell-with-us', 'Sell with us'],
 ] as const;
 
-export default function HelpPage({ params }: { params: { topic: string } }) {
+export default async function HelpPage({ params }: { params: { topic: string } }) {
   const topic = HELP[params.topic];
+  const offer = params.topic === 'sell-with-us' ? await publicFoundingOffer() : null;
   if (!topic) notFound();
   return (
     <article className="container-page pt-12 md:pt-20">
@@ -95,6 +97,11 @@ export default function HelpPage({ params }: { params: { topic: string } }) {
           )}
           {params.topic === 'sell-with-us' && (
             <section className="max-w-2xl border-t border-ink pt-6">
+              {offer && (
+                <p className="mb-5 bg-stone px-4 py-3 text-[14px]" data-testid="founding-offer">
+                  {offer}
+                </p>
+              )}
               <h2 className="text-[34px] leading-none">Ready to apply?</h2>
               <p className="mt-3 text-[14px] text-muted">
                 Tell us about your label and show us your work. We review every application by hand,

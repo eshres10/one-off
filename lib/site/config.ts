@@ -11,18 +11,17 @@ export const SITE = {
    * text, nothing called a fit promise is shown (and it must not read as a returns promise).
    */
   fitPromise: null as string | null,
-  /**
-   * Pre-launch: `waitlist` keeps checkout closed ("Opening soon. Join the waitlist.") while shops
-   * and pieces can be live; `open` makes everything public. The admin switches it in
-   * /admin/launch (stored in site_settings); this is the default until they do.
-   */
-  launchMode: 'waitlist' as LaunchMode,
   /** The admin's time zone, for the daily applications summary. */
   adminTimeZone: 'Australia/Melbourne',
   /** Local hour the daily applications summary goes out. */
   adminDigestHour: 9,
 };
 
+/**
+ * Pre-launch: `waitlist` keeps checkout closed ("Opening soon. Join the waitlist.") while shops
+ * and pieces can be live; `open` makes everything public. The admin switches it in /admin/launch
+ * (site_settings, see lib/site/launch.ts); until then it follows PREVIEW_MODE.
+ */
 export type LaunchMode = 'waitlist' | 'open';
 export type MakerRegion = (typeof SITE.makerRegions)[number];
 

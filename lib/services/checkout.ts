@@ -31,7 +31,7 @@ export async function createCheckout(input: {
   /** Optional note the maker includes with the piece. */
   giftNote?: string | null;
 }): Promise<CheckoutResult> {
-  assertCheckoutEnabled();
+  await assertCheckoutEnabled();
   if (!input.returnsAck)
     throw new CartError('Please confirm you understand the returns policy before checking out.');
   const e = env();

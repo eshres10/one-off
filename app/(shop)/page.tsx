@@ -111,7 +111,7 @@ async function HomeRails() {
       {makers.length > 0 && (
         <Rail
           title="Shop by maker"
-          subtitle="We visit every studio before a label goes live. No resellers, no dropshippers — just people who make clothes in Melbourne."
+          subtitle="We review every maker by hand before a label goes live. No resellers, no dropshippers — just people who make clothes, in studios across Australia."
           viewAllHref="/makers"
           testId="rail-makers"
         >
@@ -123,7 +123,7 @@ async function HomeRails() {
       {under.length > 0 && (
         <Rail
           title="Under A$300"
-          subtitle="Made in Melbourne, without the occasion price tag."
+          subtitle="Made in Australia, without the occasion price tag."
           viewAllHref="/search?filter=under_300"
           testId="rail-under-300"
         >

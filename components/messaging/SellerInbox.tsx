@@ -52,6 +52,7 @@ export async function SellerInbox({
   thread: ThreadDetail | null;
 }) {
   const tab = rawTab === 'needs-reply' || rawTab === 'requests' ? rawTab : 'all';
+  const checkoutOn = await checkoutEnabled();
   const [threads, counts, stats, templates, piece, quote, buyer] = await Promise.all([
     listThreads(seller, 'maker', {
       kind: tab === 'requests' ? 'custom_request' : undefined,
@@ -168,7 +169,7 @@ export async function SellerInbox({
                   }
                   piece={piece}
                   quote={quote}
-                  checkoutOn={checkoutEnabled()}
+                  checkoutOn={checkoutOn}
                   actions={
                     <ThreadActions
                       threadId={thread.id}

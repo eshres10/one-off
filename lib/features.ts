@@ -1,16 +1,20 @@
 import { env } from '@/lib/env';
 import { UserError } from '@/lib/services/errors';
+import { getLaunch } from '@/lib/site/launch';
 
-export const PREVIEW_MESSAGE =
-  'Checkout opens at launch — save pieces you love and we’ll let you know.';
+export const PREVIEW_MESSAGE = 'Opening soon. Join the waitlist.';
 
-/** False in preview mode (browse-only launch): no bag, checkout or payment webhooks. */
-export function checkoutEnabled(): boolean {
-  return !env().PREVIEW_MODE;
+/**
+ * False before launch: in preview mode (a browse-only deployment) or while the admin keeps the
+ * site in waitlist mode. Shops and pieces can be live; buyers just can't check out yet.
+ */
+export async function checkoutEnabled(): Promise<boolean> {
+  if (env().PREVIEW_MODE) return false;
+  return (await getLaunch()).mode === 'open';
 }
 
-export function assertCheckoutEnabled() {
-  if (!checkoutEnabled()) throw new UserError(PREVIEW_MESSAGE);
+export async function assertCheckoutEnabled() {
+  if (!(await checkoutEnabled())) throw new UserError(PREVIEW_MESSAGE);
 }
 
 /** The mock Stripe pages and signed-mock webhooks are only for local/dev and e2e builds. */

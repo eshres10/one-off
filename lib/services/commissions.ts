@@ -229,7 +229,7 @@ export async function decideQuote(
  */
 export async function startDepositCheckout(buyer: Actor, requestId: string): Promise<string> {
   const { assertCheckoutEnabled } = await import('@/lib/features');
-  assertCheckoutEnabled();
+  await assertCheckoutEnabled();
   const [open] = await withUser(
     buyer,
     (db) => db<{ id: string }[]>`

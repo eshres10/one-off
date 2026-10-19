@@ -1,3 +1,4 @@
+import { cached, invalidate } from '@/lib/cache';
 import { audit } from '@/lib/audit';
 import type { SessionUser } from '@/lib/auth/session';
 import { sql } from '@/lib/db';
@@ -149,6 +150,21 @@ export async function foundingSpots() {
   };
 }
 
+/**
+ * The public founding offer ("Founding makers: limited spots, …"), only while spots remain;
+ * otherwise null and pages show the standard terms. Cached for five minutes.
+ */
+export const publicFoundingOffer = cached(
+  async (): Promise<string | null> => {
+    const { left } = await foundingSpots();
+    return left > 0
+      ? `Founding makers: limited spots, ${TERMS.foundingCommissionPct}% commission for ${TERMS.foundingMonths} months.`
+      : null;
+  },
+  ['founding-offer'],
+  { revalidate: 300, tags: ['founding'] },
+);
+
 async function decide(
   makerId: string,
   admin: Admin,
@@ -191,6 +207,7 @@ export async function approveApplication(
     return n;
   });
   await decide(makerId, admin, 'approved', null);
+  if (foundingNumber) invalidate('founding');
   await logShopEvent(makerId, 'application_approved', { founding: foundingNumber });
   await audit(
     'shop.approved',

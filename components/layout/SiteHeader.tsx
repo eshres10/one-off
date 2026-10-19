@@ -27,7 +27,7 @@ export function messagesHref(role: string | undefined) {
 }
 
 export async function SiteHeader({ variant = 'auto' }: { variant?: HeaderVariant } = {}) {
-  const checkoutOn = checkoutEnabled();
+  const checkoutOn = await checkoutEnabled();
   const user = await getSessionUser();
   const [count, unread, saved, menuMakers] = await Promise.all([
     checkoutOn ? cartCount(getCartSessionId()) : Promise.resolve(0),

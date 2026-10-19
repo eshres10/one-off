@@ -8,13 +8,11 @@ import type { QaEntry } from '@/lib/queries/questions';
 import { FollowButton } from '@/components/maker/FollowButton';
 import { AskQuestionForm, Questions } from '@/components/product/Questions';
 import { Img as Image } from '@/components/ui/Img';
+import { ReturnsPolicy } from '@/components/ui/ReturnsPolicy';
 import { DwellTracker } from './DwellTracker';
 import { QuickBuy } from './QuickBuy';
 import { QuickGallery } from './QuickGallery';
 import { MoreMenu } from './MoreMenu';
-
-export const QV_RETURNS =
-  'No change-of-mind returns. Faulty or not as described? We’ll make it right.';
 
 const day = (d: Date) =>
   d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', timeZone: 'UTC' });
@@ -163,7 +161,9 @@ export function QuickViewContent({
             </div>
             <div className="grid grid-cols-[84px_1fr]">
               <dt className="text-muted-2">Returns</dt>
-              <dd>{QV_RETURNS}</dd>
+              <dd>
+                <ReturnsPolicy productType={p.productType} testId="qv-returns" />
+              </dd>
             </div>
           </dl>
 

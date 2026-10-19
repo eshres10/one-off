@@ -203,7 +203,7 @@ export function DiscoverView({
           <div>
             <h1 className="text-[44px] leading-none md:text-[72px]">Discover</h1>
             <p className="mt-2 text-[14px] text-muted md:text-[15px]">
-              Original pieces from Melbourne studios, newest and most-loved first.
+              Original pieces from studios across Australia, newest and most-loved first.
             </p>
           </div>
           <div className="md:hidden">

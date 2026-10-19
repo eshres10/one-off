@@ -29,7 +29,7 @@ const EVENT_LABELS: Record<NotifyEvent, string> = {
   weekly_summary: 'Weekly summary',
 };
 const REGION_LABELS = {
-  same_state: 'Same state',
+  same_state: 'Within your state',
   au: 'Rest of Australia',
   nz: 'New Zealand',
 } as const;

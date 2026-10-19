@@ -22,7 +22,10 @@ const monthName = (offset = 0) => {
 };
 
 function FoundingPanel({ o, shopName }: { o: Overview; shopName: string }) {
-  const founding = o.foundingUntil && new Date(o.foundingUntil).getTime() > Date.now();
+  // Only shops that hold a founding spot see the founding panel (and "0% until…").
+  const founding =
+    o.foundingNumber !== null &&
+    (!o.foundingUntil || new Date(o.foundingUntil).getTime() > Date.now());
   const saved = Math.round(
     (o.kpi.salesThisMonth * TERMS.standardCommissionPct) / 100 - o.kpi.commissionThisMonth,
   );
@@ -30,7 +33,7 @@ function FoundingPanel({ o, shopName }: { o: Overview; shopName: string }) {
     <section
       className="glass-dark relative overflow-hidden p-6 text-ground md:p-8"
       aria-label={founding ? 'Founding maker' : 'This month'}
-      data-testid="founding-panel"
+      data-testid={founding ? 'founding-panel' : 'month-panel'}
     >
       <Monogram className="pointer-events-none absolute -right-10 -top-6 h-[220px] w-[220px] text-ground opacity-[0.07] md:h-[280px] md:w-[280px]" />
       {founding ? (
@@ -40,11 +43,14 @@ function FoundingPanel({ o, shopName }: { o: Overview; shopName: string }) {
             {TERMS.foundingSpotsTotal}
           </p>
           <p className="mt-3 max-w-[16ch] font-display text-[34px] leading-[1.02] md:text-[44px]">
-            {TERMS.foundingCommissionPct}% commission until {shortDate(o.foundingUntil!)}.
+            {o.foundingUntil
+              ? `${TERMS.foundingCommissionPct}% commission until ${shortDate(o.foundingUntil)}.`
+              : `${TERMS.foundingCommissionPct}% commission for ${TERMS.foundingMonths} months.`}
           </p>
           <p className="mt-3 max-w-[46ch] text-[13px] text-ground/75">
-            You keep everything except card processing until then, then it’s{' '}
-            {TERMS.standardCommissionPct}% of each piece (never shipping).
+            {o.foundingUntil
+              ? `You keep everything except card processing until then, then it’s ${TERMS.standardCommissionPct}% of each piece (never shipping).`
+              : 'It starts the day your shop goes live.'}
             {saved > 0 ? ` You’ve kept ${formatPrice(saved)} this month.` : ''}
           </p>
         </>

@@ -1,5 +1,6 @@
-import { RETURNS } from '@/lib/content/returns';
+import { PAYMENT_HELD, RETURNS } from '@/lib/content/returns';
 import { BRAND } from '@/lib/brand';
+import { SITE } from '@/lib/site/config';
 import { TERMS } from '@/lib/studio/terms';
 
 export interface HelpTopic {
@@ -68,7 +69,7 @@ export const HELP: Record<string, HelpTopic> = {
         id: 'buyer-protection',
         heading: 'Buyer protection',
         body: [
-          `Pay through ${BRAND.name} and you’re covered: if a piece doesn’t arrive, arrives damaged, or isn’t as described, contact us within 14 days of the estimated delivery date and we’ll make it right.`,
+          `Pay through ${BRAND.name} and you’re covered. ${PAYMENT_HELD} If a piece doesn’t arrive, arrives damaged, or isn’t as described, tell us within ${RETURNS.reportWindowDays} days of delivery (or of the estimated delivery date, if it hasn’t arrived) and we’ll make it right.`,
           'Makers will never ask you to pay by bank transfer, PayID or any other method. Messages that try are blocked automatically.',
         ],
       },
@@ -82,7 +83,8 @@ export const HELP: Record<string, HelpTopic> = {
       {
         heading: 'What’s covered',
         body: [
-          'If your piece doesn’t arrive, arrives damaged, or is significantly different from its listing, contact us within 14 days of the estimated delivery date. We’ll work with the maker to repair, replace or refund it.',
+          PAYMENT_HELD,
+          `If your piece doesn’t arrive, arrives damaged, or is significantly different from its listing, tell us within ${RETURNS.reportWindowDays} days of delivery (or of the estimated delivery date, if it hasn’t arrived). We’ll work with the maker to repair, replace or refund it.`,
         ],
       },
       {
@@ -132,8 +134,9 @@ export const HELP: Record<string, HelpTopic> = {
         ],
       },
       {
-        heading: 'Our fit promise',
+        heading: SITE.fitPromise ? 'Our fit promise' : 'Getting the fit right',
         body: [
+          ...(SITE.fitPromise ? [SITE.fitPromise] : []),
           'Not sure about a size? Ask the maker before you buy — they know their patterns best and usually reply within hours.',
         ],
       },

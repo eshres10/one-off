@@ -1,12 +1,12 @@
 import Link from 'next/link';
-import { returnsLine } from '@/lib/content/returns';
+import { ReturnsPolicy } from '@/components/ui/ReturnsPolicy';
 import { Img as Image } from '@/components/ui/Img';
 import { getSessionUser } from '@/lib/auth/session';
 import { formatPrice } from '@/lib/domain/money';
 import { updateCartAction } from '@/lib/actions/cart';
 import { getCartSessionId } from '@/lib/actions/util';
 import { getCart } from '@/lib/services/cart';
-import { checkoutEnabled } from '@/lib/features';
+import { PREVIEW_MESSAGE, checkoutEnabled } from '@/lib/features';
 import { CheckoutForm } from '@/components/cart/CheckoutForm';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ButtonLink } from '@/components/ui/Button';
@@ -49,16 +49,19 @@ function Stepper({ itemId, quantity, max }: { itemId: string; quantity: number; 
 }
 
 export default async function BagPage({ searchParams }: { searchParams: { cancelled?: string } }) {
-  if (!checkoutEnabled()) {
+  if (!(await checkoutEnabled())) {
     return (
       <div className="container-page pt-16">
         <h1 className="sr-only">Your bag</h1>
         <EmptyState
-          title="Checkout opens at launch"
+          title={PREVIEW_MESSAGE}
           action={
-            <ButtonLink href="/saved" variant="secondary">
-              View saved pieces
-            </ButtonLink>
+            <div className="flex flex-wrap justify-center gap-3" data-testid="checkout-closed">
+              <ButtonLink href="/waitlist">Join the waitlist</ButtonLink>
+              <ButtonLink href="/saved" variant="secondary">
+                View saved pieces
+              </ButtonLink>
+            </div>
           }
         >
           Save the pieces you love and we’ll let you know as soon as you can buy them.
@@ -147,9 +150,11 @@ export default async function BagPage({ searchParams }: { searchParams: { cancel
                 <p className="mt-0.5 text-muted" data-dynamic>
                   Estimated delivery {line.deliveryEstimate}
                 </p>
-                <p className="mt-1 text-[12px] text-muted-2" data-testid="bag-returns-note">
-                  {returnsLine(line.productType)}
-                </p>
+                <ReturnsPolicy
+                  productType={line.productType}
+                  className="mt-1 text-[12px] text-muted-2"
+                  testId="bag-returns-note"
+                />
                 {line.problem && (
                   <p className="mt-2 bg-error-bg px-2 py-1 text-error" role="alert">
                     {line.problem}

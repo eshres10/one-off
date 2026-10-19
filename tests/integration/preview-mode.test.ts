@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { closeDb } from '@/lib/db';
+import { closeDb, sql } from '@/lib/db';
 import { env, resetEnvCache } from '@/lib/env';
 import { mockStripe } from '@/lib/payments/mock';
 import { addToCart } from '@/lib/services/cart';
@@ -26,6 +26,24 @@ afterEach(() => {
 });
 afterAll(closeDb);
 
+describe('launch mode', () => {
+  it('in waitlist mode, closes checkout while shops stay live; open mode reopens it', async () => {
+    const { product, variantId } = await pickVariant((p) => p.productType === 'ready_to_ship');
+    const sessionId = randomUUID();
+    await sql()`
+      insert into public.site_settings (key, value) values ('launch', '{"mode":"waitlist","opensOn":null}')
+      on conflict (key) do update set value = excluded.value`;
+    try {
+      await expect(
+        addToCart({ sessionId, userId: null, productId: product.id, variantId, quantity: 1 }),
+      ).rejects.toThrow(/Opening soon. Join the waitlist/);
+    } finally {
+      await sql()`delete from public.site_settings where key = 'launch'`;
+    }
+    await addToCart({ sessionId, userId: null, productId: product.id, variantId, quantity: 1 });
+  });
+});
+
 describe('preview mode (browse-only launch)', () => {
   beforeEach(() => setEnv({ PREVIEW_MODE: 'true' }));
 
@@ -34,10 +52,10 @@ describe('preview mode (browse-only launch)', () => {
     const sessionId = randomUUID();
     await expect(
       addToCart({ sessionId, userId: null, productId: product.id, variantId, quantity: 1 }),
-    ).rejects.toThrow(/Checkout opens at launch/);
+    ).rejects.toThrow(/Opening soon. Join the waitlist/);
     await expect(
       createCheckout({ sessionId, userId: null, email: 'x@y.test', returnsAck: true }),
-    ).rejects.toThrow(/Checkout opens at launch/);
+    ).rejects.toThrow(/Opening soon. Join the waitlist/);
   });
 
   it('does not accept mock-signed webhooks', async () => {

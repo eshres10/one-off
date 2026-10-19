@@ -50,7 +50,7 @@ export async function BuyerInbox({
       ? getLatestQuote(thread.commissionRequestId)
       : Promise.resolve(null),
   ]);
-  const checkoutOn = checkoutEnabled();
+  const checkoutOn = await checkoutEnabled();
   const listQs = qs({ tab, unread: unreadOnly });
 
   return (

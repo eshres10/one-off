@@ -126,7 +126,7 @@ async function makerCards(
         order by p.is_featured desc, p.approved_at desc nulls last limit 3) t), '[]'::json) as thumbs
     from public.makers m
     where m.status = 'approved'
-      ${suburb ? sql()`and lower(trim(split_part(coalesce(m.location, m.city, ''), ',', 1))) = lower(${suburb})` : sql()``}
+      ${suburb ? sql()`and (lower(trim(split_part(coalesce(m.location, m.city, ''), ',', 1))) = lower(${suburb}) or lower(m.city) = lower(${suburb}))` : sql()``}
     order by m.is_featured desc, m.rating desc, m.approved_at desc nulls last, m.id
     limit ${limit} offset ${offset}`;
   return rows.map((r) => ({ kind: 'maker' as const, ...r }));

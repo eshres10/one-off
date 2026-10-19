@@ -4,6 +4,8 @@
  * in from the database when the header renders: maker columns (`source`) and maker tiles (`maker`).
  */
 
+import { SITE } from '@/lib/site/config';
+
 export type MegaKey = 'new' | 'occasions' | 'makers';
 
 export interface MegaLink {
@@ -146,10 +148,11 @@ export const MEGA: MegaPanel[] = [
       { title: 'Featured', source: 'featured-makers' },
       { title: 'New makers', source: 'new-makers' },
       {
-        title: 'By suburb',
-        links: ['Collingwood', 'Brunswick', 'Fitzroy', 'Northcote', 'Footscray'].map((s) => ({
-          label: s,
-          href: d(`suburb=${encodeURIComponent(s)}`),
+        // Discover's place filter matches a maker's suburb or city.
+        title: 'By city',
+        links: SITE.cities.map((c) => ({
+          label: c,
+          href: d(`suburb=${encodeURIComponent(c)}`),
         })),
       },
     ],

@@ -179,7 +179,7 @@ export async function addToCart(input: {
   /** Required for a made-to-order "Custom" size: the buyer's measurements in cm. */
   customMeasurements?: Record<string, string> | null;
 }): Promise<void> {
-  assertCheckoutEnabled();
+  await assertCheckoutEnabled();
   await sql().begin(async (tx) => {
     const db = tx as unknown as Db;
     const [variant] = await db<
