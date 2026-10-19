@@ -197,6 +197,12 @@ export function OrderCard({ order, detailed = false }: { order: BuyerOrder; deta
               <dt>Shipping</dt>
               <dd>{formatPrice(order.shippingTotalCents)}</dd>
             </div>
+            {order.shippingSavingCents > 0 && (
+              <div className="flex justify-between">
+                <dt>You saved on shipping</dt>
+                <dd>{formatPrice(order.shippingSavingCents)}</dd>
+              </div>
+            )}
             {order.refundedCents > 0 && (
               <div className="flex justify-between text-alert">
                 <dt>Refunded</dt>

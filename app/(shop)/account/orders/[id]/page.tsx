@@ -88,6 +88,12 @@ export default async function OrderPage({ params }: { params: { id: string } }) 
             <dt className="text-muted">Delivery</dt>
             <dd>{order.shippingTotalCents ? formatPrice(order.shippingTotalCents) : 'Free'}</dd>
           </div>
+          {order.shippingSavingCents > 0 && (
+            <div className="flex justify-between" data-testid="order-shipping-saving">
+              <dt className="text-muted">You saved on shipping</dt>
+              <dd>{formatPrice(order.shippingSavingCents)}</dd>
+            </div>
+          )}
           {order.refundedCents > 0 && (
             <div className="flex justify-between">
               <dt className="text-muted">Refunded</dt>

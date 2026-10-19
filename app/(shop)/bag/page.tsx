@@ -9,6 +9,12 @@ import { getCart } from '@/lib/services/cart';
 import { PREVIEW_MESSAGE, checkoutEnabled } from '@/lib/features';
 import { PAYMENT_HELD } from '@/lib/content/returns';
 import { bagDeliveryEstimate } from '@/lib/services/checkout';
+import {
+  FreeShippingProgress,
+  ShippingPrice,
+  ShippingSaving,
+  savingReason,
+} from '@/components/ui/ShippingPrice';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ButtonLink } from '@/components/ui/Button';
 import { ProductBadgePill } from '@/components/ui/Badge';
@@ -201,9 +207,12 @@ export default async function BagPage({ searchParams }: { searchParams: { cancel
                 </span>
               </dt>
               <dd data-testid="bag-delivery">
-                {delivery.cents
-                  ? `${delivery.from ? 'from ' : ''}${formatPrice(delivery.cents)}`
-                  : 'Free'}
+                <ShippingPrice
+                  paidCents={delivery.cents}
+                  listCents={delivery.listCents}
+                  from={delivery.from}
+                  testId="bag-delivery-price"
+                />
               </dd>
             </div>
             <div className="flex justify-between border-t border-ink pt-3 text-[17px] font-normal">
@@ -211,9 +220,24 @@ export default async function BagPage({ searchParams }: { searchParams: { cancel
               <dd data-testid="bag-total">{formatPrice(total)}</dd>
             </div>
           </dl>
+          <ShippingSaving
+            className="mt-3"
+            savingCents={delivery.listCents - delivery.cents}
+            reason={savingReason(delivery.applied, delivery.offer)}
+            testId="bag-shipping-saving"
+          />
+          <FreeShippingProgress
+            className="mt-3"
+            toFreeCents={delivery.toFreeCents}
+            freeOverCents={delivery.offer.enabled ? delivery.offer.freeOverCents : null}
+            testId="bag-free-progress"
+          />
           <p className="mt-3 text-[13px] text-muted">
             One payment, one order. Each maker ships their piece separately and you’ll get tracking
             for each.
+            {delivery.makers > 1 && delivery.offer.enabled && delivery.offer.capCents !== null
+              ? ` Standard shipping is never more than ${formatPrice(delivery.offer.capCents)} in total, however many makers.`
+              : ''}
           </p>
           {cart.hasProblems ? (
             <p className="mt-5 bg-error-bg px-3 py-2.5 text-[13px] text-error" role="alert">

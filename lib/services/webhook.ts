@@ -232,8 +232,10 @@ async function finalizePaidOrder(orderId: string, paid: PaidDetails): Promise<vo
 }
 
 async function sendOrderEmails(orderId: string, buyerEmail: string) {
-  const [order] = await sql()<{ id: string; orderNumber: string; totalCents: number }[]>`
-    select id, order_number, total_cents from public.orders where id = ${orderId}`;
+  const [order] = await sql()<
+    { id: string; orderNumber: string; totalCents: number; shippingSavingCents: number }[]
+  >`
+    select id, order_number, total_cents, shipping_saving_cents from public.orders where id = ${orderId}`;
   if (!order) return;
   const items = await sql()<
     {

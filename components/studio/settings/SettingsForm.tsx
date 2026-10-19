@@ -133,6 +133,12 @@ function Chips({
   );
 }
 
+const BUNDLE_OPTIONS = [
+  { value: 'none', label: 'No bundle deal' },
+  { value: 'free', label: 'Free shipping' },
+  { value: 'percent', label: '% off shipping' },
+] as const;
+
 const dollars = (c: number | null) => (c === null ? '' : String(c / 100));
 const toCents = (v: string) => (v.trim() === '' ? null : Math.round(Number(v) * 100));
 
@@ -444,6 +450,55 @@ export function SettingsForm({
               />
             </Field>
           )}
+          <fieldset>
+            <legend className="label">Bundle deal</legend>
+            <p className="mb-2 text-[12px] text-muted">
+              When someone buys several of your pieces together, you send one parcel. Pass some of
+              that saving on and they’re more likely to add another piece.
+            </p>
+            <Chips
+              label="Bundle deal"
+              options={BUNDLE_OPTIONS.map((o) => o.label)}
+              value={BUNDLE_OPTIONS.find((o) => o.value === s.bundleShipping)!.label}
+              onChange={(v) =>
+                set('bundleShipping', BUNDLE_OPTIONS.find((o) => o.label === v)!.value)
+              }
+            />
+          </fieldset>
+          {s.bundleShipping !== 'none' && (
+            <div className="flex flex-wrap gap-4">
+              {s.bundleShipping === 'percent' && (
+                <Field id="set-bundle-pct" label="Off standard shipping (%)">
+                  <input
+                    id="set-bundle-pct"
+                    type="number"
+                    min={5}
+                    max={90}
+                    step={5}
+                    className="input max-w-[140px]"
+                    value={s.bundlePercentOff}
+                    onChange={(e) => set('bundlePercentOff', Number(e.target.value) || 0)}
+                  />
+                </Field>
+              )}
+              <Field id="set-bundle-min" label="From this many pieces">
+                <input
+                  id="set-bundle-min"
+                  type="number"
+                  min={2}
+                  max={10}
+                  className="input max-w-[140px]"
+                  value={s.bundleMinPieces}
+                  onChange={(e) => set('bundleMinPieces', Number(e.target.value) || 2)}
+                />
+              </Field>
+            </div>
+          )}
+          <p className="text-[12px] text-muted">
+            One Off also caps what buyers pay for shipping across makers. That part never comes out
+            of your pocket: you’re always paid your full shipping rate (less any bundle deal you
+            choose here).
+          </p>
           <SwitchRow
             id="pickup"
             label="Local pick-up"

@@ -62,6 +62,8 @@ export interface BuyerOrder {
   totalCents: number;
   subtotalCents: number;
   shippingTotalCents: number;
+  /** What the buyer saved on shipping (makers' bundle deals and One Off's shipping offer). */
+  shippingSavingCents: number;
   refundedCents: number;
   createdAt: Date;
   paidAt: Date | null;
@@ -75,7 +77,7 @@ export async function getBuyerOrders(user: Actor, orderRef?: string): Promise<Bu
   const byId = orderRef && /^[0-9a-f-]{36}$/i.test(orderRef);
   return withUser(user, async (db) => {
     const orders = await db<Omit<BuyerOrder, 'fulfilments'>[]>`
-      select id, order_number, status, total_cents, subtotal_cents, shipping_total_cents, refunded_cents, created_at, paid_at,
+      select id, order_number, status, total_cents, subtotal_cents, shipping_total_cents, shipping_saving_cents, refunded_cents, created_at, paid_at,
              shipping_address, agreed_spec
       from public.orders
       where buyer_user_id = ${user.id} and status <> 'pending' and status <> 'failed'
@@ -86,7 +88,7 @@ export async function getBuyerOrders(user: Actor, orderRef?: string): Promise<Bu
     const fulfilments = await db<(Omit<BuyerFulfilment, 'items'> & { orderId: string })[]>`
       select f.id, f.order_id, f.maker_id, m.display_name as maker_name, m.slug as maker_slug,
              concat_ws(' ', m.city, m.state) as maker_place,
-             f.status, f.shipping_cents, f.carrier, f.speed, f.shipped_at, f.delivered_at, f.estimated_dispatch_date,
+             f.status, coalesce(f.buyer_shipping_cents, f.shipping_cents) as shipping_cents, f.carrier, f.speed, f.shipped_at, f.delivered_at, f.estimated_dispatch_date,
              f.tracking_number, f.estimated_delivery_from, f.estimated_delivery_to, f.mto_step,
              (select max(p.lead_time_days) from public.order_items oi join public.products p on p.id = oi.product_id
                where oi.fulfilment_id = f.id and oi.product_type = 'made_to_order')::int as lead_days,

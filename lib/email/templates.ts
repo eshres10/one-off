@@ -22,7 +22,7 @@ export const emails = {
 
   orderConfirmation: (
     to: string,
-    order: { id: string; orderNumber: string; totalCents: number },
+    order: { id: string; orderNumber: string; totalCents: number; shippingSavingCents?: number },
     lines: Array<{
       title: string;
       variant: string;
@@ -45,7 +45,11 @@ export const emails = {
             (l.returns ? `\n  ${l.returns}` : ''),
         )
         .join('\n') +
-      `\n\nTotal paid: ${formatPrice(order.totalCents)}\n\nView your order: ${url(`/orders/${order.id}`)}` +
+      `\n\nTotal paid: ${formatPrice(order.totalCents)}` +
+      (order.shippingSavingCents
+        ? `\nYou saved ${formatPrice(order.shippingSavingCents)} on shipping.`
+        : '') +
+      `\n\nView your order: ${url(`/orders/${order.id}`)}` +
       `\n\nFaulty or not as described? We’ll make it right. ${RETURNS.aclNote}\nReturns & faults: ${url('/returns')}${sign}`,
     related: { type: 'order', id: order.id },
   }),
