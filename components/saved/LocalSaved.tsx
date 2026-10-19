@@ -6,9 +6,16 @@ import { onLocalSavesChange, readLocalSaves } from '@/lib/local-saves';
 import type { SavedPiece } from '@/lib/queries/saved';
 import { ProductGridSkeleton } from '@/components/product/ProductCard';
 import { SavedView } from './SavedView';
+import type { Thumb } from '@/components/states/ThumbRow';
 
 /** Signed-out Saved page: pieces come from this browser's localStorage. */
-export function LocalSaved({ checkoutOn }: { checkoutOn: boolean }) {
+export function LocalSaved({
+  checkoutOn,
+  startWith = [],
+}: {
+  checkoutOn: boolean;
+  startWith?: Thumb[];
+}) {
   const [pieces, setPieces] = useState<SavedPiece[] | null>(null);
   useEffect(() => {
     let live = true;
@@ -31,5 +38,13 @@ export function LocalSaved({ checkoutOn }: { checkoutOn: boolean }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   if (!pieces) return <ProductGridSkeleton count={4} />;
-  return <SavedView pieces={pieces} makers={null} signedIn={false} checkoutOn={checkoutOn} />;
+  return (
+    <SavedView
+      pieces={pieces}
+      makers={null}
+      signedIn={false}
+      checkoutOn={checkoutOn}
+      startWith={startWith}
+    />
+  );
 }

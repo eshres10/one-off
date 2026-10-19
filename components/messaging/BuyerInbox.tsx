@@ -12,6 +12,8 @@ import {
 import { BuyerPanel } from './BuyerPanel';
 import { BUYER_CHIPS, Conversation } from './Conversation';
 import { InboxList, InboxTabs } from './InboxList';
+import { EmptyState } from '@/components/states/EmptyState';
+import { BubbleIcon } from '@/components/states/illustrations';
 import { ThreadTop } from './ThreadTop';
 
 export interface InboxParams {
@@ -90,6 +92,31 @@ export async function BuyerInbox({
             base="/messages"
             activeId={thread?.id}
             viewer="buyer"
+            empty={
+              !unreadOnly && tab === 'chats' && counts.chats === 0 ? (
+                <EmptyState
+                  testId="messages-empty"
+                  icon={<BubbleIcon size={72} />}
+                  title="No messages, yet."
+                  body="Ask a maker anything before you buy: fit, fabric, timing. They usually reply within hours."
+                  actions={[{ label: 'Find a maker', href: '/makers' }]}
+                >
+                  <div
+                    className="flex flex-wrap justify-center gap-2"
+                    aria-label="Things people ask"
+                  >
+                    {['Does this run small?', 'Is it lined?', 'Can I get it in black?'].map((c) => (
+                      <span
+                        key={c}
+                        className="inline-flex min-h-[36px] items-center border border-line-strong px-3 text-[13px]"
+                      >
+                        {c}
+                      </span>
+                    ))}
+                  </div>
+                </EmptyState>
+              ) : undefined
+            }
             emptyText={
               unreadOnly
                 ? 'You’re all caught up.'

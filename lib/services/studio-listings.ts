@@ -1,3 +1,4 @@
+import { sendRestockAlerts } from './restock';
 import { MAX_STYLE_TAGS, isStyleTag } from '@/lib/taste/tags';
 import { audit } from '@/lib/audit';
 import type { SessionUser } from '@/lib/auth/session';
@@ -292,6 +293,7 @@ export async function savePiece(
       { asAdmin },
       actor.id,
     );
+  if (result.status === 'approved') await sendRestockAlerts(result.id);
   const wentLive =
     result.status === 'approved' &&
     shop.shopStatus === 'approved' &&

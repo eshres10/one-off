@@ -2,7 +2,7 @@ import { getSessionUser } from '@/lib/auth/session';
 import { editBySlug } from '@/lib/discover/edits';
 import { parseDiscover } from '@/lib/discover/params';
 import { getSavedProductIds } from '@/lib/queries/catalog';
-import { getDiscoverPage } from '@/lib/queries/discover';
+import { getDiscoverPage, relaxFilters } from '@/lib/queries/discover';
 import { getFollowedMakerIds } from '@/lib/queries/rails';
 import { getSavedCount } from '@/lib/queries/saved';
 import { DiscoverView } from '@/components/discover/DiscoverView';
@@ -31,8 +31,12 @@ export default async function DiscoverPage({
     getFollowedMakerIds(user?.id ?? null),
     user ? getSavedCount(user) : Promise.resolve(0),
   ]);
+  // Nothing found: work out which one filter to take away.
+  const relax =
+    initial.items.length === 0 && params.cat !== 'makers' ? await relaxFilters(params) : null;
   return (
     <DiscoverView
+      relax={relax}
       params={params}
       initial={initial}
       savedIds={[...saved]}

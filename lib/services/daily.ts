@@ -4,6 +4,7 @@ import { applicationsDigest } from './applications';
 import { escalateOverdueClaims } from './claims';
 import { caseDueReminders, shipByReminders, weeklySummaries } from './notifications';
 import { holidayTransitions } from './settings';
+import { sendRestockAlerts } from './restock';
 import { autoMarkDelivered, pollCarrierDeliveries, releaseDueTransfers } from './payouts';
 
 /** Hour of the day in the admin's time zone (SITE.adminTimeZone) for `at`. */
@@ -33,6 +34,7 @@ export async function runDailyJobs(now: Date) {
     ['autoDelivered', () => autoMarkDelivered(now)],
     ['transfers', () => releaseDueTransfers(now)],
     ['holidays', () => holidayTransitions(now)],
+    ['restockAlerts', () => sendRestockAlerts()],
   ];
   if (adminHour(now) === SITE.adminDigestHour)
     jobs.push(['applicationsDigest', () => applicationsDigest(now)]);

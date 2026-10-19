@@ -1,3 +1,4 @@
+import { holidayMessage, shipsFrom } from '@/lib/domain/shop';
 import { randomBytes } from 'node:crypto';
 import { audit } from '@/lib/audit';
 import { sql, type Db } from '@/lib/db';
@@ -68,6 +69,8 @@ export interface CheckoutParcel {
   options: Record<Speed, { cents: number; arrival: string; from: string; to: string }>;
   /** Made to order: "Halde Studio starts once you pay and finishes in about 14 days." */
   mtoNote: string | null;
+  /** The maker is on holiday but taking orders: the banner text. */
+  holidayNote: string | null;
 }
 
 export interface CheckoutView {
@@ -200,13 +203,25 @@ interface MakerRow {
   sameExpress: number | null;
   auStandard: number | null;
   auExpress: number | null;
+  shopStatus: string;
+  holidayUntil: Date | null;
+}
+
+/** Pieces from a shop on holiday ship once it's back: estimates start then, not now. */
+export function holidayStart(
+  m: { shopStatus: string; holidayUntil: Date | string | null },
+  now: Date,
+) {
+  if (m.shopStatus !== 'holiday' || !m.holidayUntil) return now;
+  const back = shipsFrom(m.holidayUntil);
+  return back > now ? back : now;
 }
 
 async function makerRows(makerIds: string[]): Promise<Map<string, MakerRow>> {
   if (!makerIds.length) return new Map();
   const rows = await sql()<MakerRow[]>`
     select m.id as maker_id, m.display_name as maker_name, m.city, m.state, m.dispatch_days, m.free_shipping_over_cents,
-      m.founding_until,
+      m.founding_until, m.shop_status, m.holiday_until,
       (select standard_cents from public.maker_shipping_rates r where r.maker_id = m.id and r.region = 'same_state' and r.enabled) as same_standard,
       (select express_cents from public.maker_shipping_rates r where r.maker_id = m.id and r.region = 'same_state' and r.enabled) as same_express,
       (select standard_cents from public.maker_shipping_rates r where r.maker_id = m.id and r.region = 'au' and r.enabled) as au_standard,
@@ -242,7 +257,7 @@ function parcelQuote(
           zone,
           speed,
         },
-        now,
+        holidayStart(m, now),
       ),
     ),
   );
@@ -511,6 +526,7 @@ export async function checkoutView(owner: Owner, now = new Date()): Promise<Chec
         ({ fulfilmentId: _f, makerId: _m, speed: _s, shippingCents: _c, ...i }) => i,
       ),
       options: { standard: quote('standard'), express: quote('express') },
+      holidayNote: m.shopStatus === 'holiday' ? holidayMessage(m.holidayUntil) : null,
       mtoNote: mto
         ? `Made to order. ${m.makerName} starts once you pay and finishes in about ${mto.leadTimeDays ?? 14} days.${hasSizes ? ' Your measurements from Sizes & fit go with the order.' : ''}`
         : null,

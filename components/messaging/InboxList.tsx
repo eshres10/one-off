@@ -33,15 +33,18 @@ export function InboxList({
   activeId,
   viewer,
   emptyText,
+  empty,
 }: {
   threads: ThreadSummary[];
   base: '/messages' | '/studio/messages';
   activeId?: string;
   viewer: 'buyer' | 'maker';
   emptyText: string;
+  /** A full empty state, used instead of emptyText when nothing has ever been sent. */
+  empty?: React.ReactNode;
 }) {
   if (!threads.length)
-    return <p className="px-4 py-12 text-center text-[13px] text-muted">{emptyText}</p>;
+    return empty ?? <p className="px-4 py-12 text-center text-[13px] text-muted">{emptyText}</p>;
   return (
     <ul role="list" className="divide-y divide-line" data-testid="inbox-list">
       {threads.map((t) => {

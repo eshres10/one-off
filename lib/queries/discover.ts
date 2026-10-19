@@ -1,5 +1,12 @@
 import { sql } from '@/lib/db';
-import { AVAILABILITY, isNarrowed, type DiscoverParams } from '@/lib/discover/params';
+import {
+  AVAILABILITY,
+  describeFilters,
+  discoverHref,
+  isNarrowed,
+  narrowingFilters,
+  type DiscoverParams,
+} from '@/lib/discover/params';
 import { EDITS, editBySlug } from '@/lib/discover/edits';
 import type { ProductType } from '@/lib/domain/types';
 import { toPrefixQuery } from './catalog';
@@ -208,4 +215,36 @@ export async function getDiscoverPage(
 
   const total = cursor ? null : await countDiscover(p);
   return { items, nextCursor, total };
+}
+
+export interface Relaxation {
+  /** How many filters are on now. */
+  active: number;
+  /** The one filter to take away, and what that shows. */
+  remove: { key: string; label: string; count: number; href: string; rest: string } | null;
+}
+
+/**
+ * When the filters find nothing: which single filter, taken away, shows the most pieces.
+ */
+export async function relaxFilters(p: DiscoverParams): Promise<Relaxation> {
+  const candidates = narrowingFilters(p);
+  if (!candidates.length) return { active: 0, remove: null };
+  const counts = await Promise.all(candidates.map((c) => countDiscover(c.without)));
+  let best = -1;
+  counts.forEach((n, i) => {
+    if (n > 0 && (best < 0 || n > counts[best]!)) best = i;
+  });
+  if (best < 0) return { active: candidates.length, remove: null };
+  const c = candidates[best]!;
+  return {
+    active: candidates.length,
+    remove: {
+      key: c.key,
+      label: c.label,
+      count: counts[best]!,
+      href: discoverHref(c.without),
+      rest: describeFilters(c.without),
+    },
+  };
 }

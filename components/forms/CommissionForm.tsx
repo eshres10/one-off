@@ -42,10 +42,13 @@ export function CommissionForm({
   makerId,
   sourceProductId,
   saved,
+  prefill,
 }: {
   makerId?: string;
   sourceProductId?: string;
   saved?: SavedMeasurements | null;
+  /** Starting text for "Anything else" (a search that found nothing, or a sold piece). */
+  prefill?: string;
 }) {
   const [state, action] = useFormState<FormState, FormData>(createCommissionAction, undefined);
   const [garment, setGarment] = useState('Dress');
@@ -301,6 +304,8 @@ export function CommissionForm({
           name="notes"
           className="input min-h-[96px]"
           placeholder="Like the slip, but with sleeves and a lower back"
+          defaultValue={prefill}
+          data-testid="commission-notes"
           maxLength={2000}
         />
       </div>

@@ -1,5 +1,6 @@
 'use server';
 
+import { sendRestockAlerts } from '@/lib/services/restock';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { withUser } from '@/lib/db';
@@ -55,9 +56,10 @@ export async function setStockAction(variantId: string, stock: number): Promise<
       update public.product_variants v set stock_quantity = ${stock}, updated_at = now()
       from public.products p
       where v.id = ${variantId} and p.id = v.product_id and p.maker_id = ${seller.makerId}
-      returning v.id`,
+      returning v.id, v.product_id`,
     );
     if (!rows.length) return { ok: false, message: 'That size isn’t yours to change.' };
+    if (stock > 0) await sendRestockAlerts((rows[0] as unknown as { productId: string }).productId);
     revalidatePath('/studio', 'layout');
     return { ok: true };
   } catch (err) {

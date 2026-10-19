@@ -17,11 +17,15 @@ export default async function CommissionPage({
   searchParams,
 }: {
   params: { slug: string };
-  searchParams: { product?: string };
+  searchParams: { product?: string; size?: string };
 }) {
   const data = await getMaker(params.slug);
   if (!data || !data.maker.customCommissionsEnabled) notFound();
   const user = await getSessionUser();
+  const size =
+    typeof searchParams.size === 'string' && /^[A-Za-z0-9 ]{1,12}$/.test(searchParams.size)
+      ? searchParams.size
+      : null;
   const qs = searchParams.product ? `?product=${encodeURIComponent(searchParams.product)}` : '';
   if (!user)
     redirect(`/login?next=${encodeURIComponent(`/makers/${params.slug}/commission${qs}`)}`);
@@ -88,7 +92,18 @@ export default async function CommissionPage({
           </div>
         )}
         <div className="mt-8">
-          <CommissionForm makerId={maker.id} sourceProductId={source?.id} saved={saved} />
+          <CommissionForm
+            makerId={maker.id}
+            sourceProductId={source?.id}
+            saved={saved}
+            prefill={
+              source && size
+                ? `${source.title}, made in size ${size}.`
+                : source
+                  ? `Something in the spirit of ${source.title}.`
+                  : undefined
+            }
+          />
         </div>
       </div>
     </div>

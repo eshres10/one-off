@@ -206,3 +206,33 @@ export function activePills(p: DiscoverParams): Pill[] {
 export function clearFilters(p: DiscoverParams): DiscoverParams {
   return { ...EMPTY, q: p.q, cat: p.cat };
 }
+
+/**
+ * Every single thing narrowing the feed that could be taken away (not the sort), for "A little
+ * too specific": the page counts each one's results and suggests the best.
+ */
+export function narrowingFilters(p: DiscoverParams): Pill[] {
+  const out = activePills(p).filter((x) => x.key !== 'sort');
+  if (p.cat !== 'all' && p.cat !== 'makers')
+    out.push({
+      key: 'cat',
+      label: CATEGORIES.find((c) => c.value === p.cat)?.label ?? p.cat,
+      without: { ...p, cat: 'all' },
+    });
+  if (p.q) out.push({ key: 'q', label: `“${p.q}”`, without: { ...p, q: '' } });
+  return out;
+}
+
+/** "navy dresses", "size 10 made to order": what's left once one filter is taken away. */
+export function describeFilters(p: DiscoverParams): string {
+  const parts = [
+    ...p.colour.map((c) => COLOURS.find((x) => x.value === c)?.label.toLowerCase() ?? c),
+    ...p.size.map((s) => `size ${s}`),
+    ...p.avail.map((a) => AVAILABILITY.find((x) => x.value === a)?.label.toLowerCase() ?? a),
+    p.cat !== 'all' && p.cat !== 'makers'
+      ? (CATEGORIES.find((c) => c.value === p.cat)?.label.toLowerCase() ?? p.cat)
+      : '',
+    p.max !== null ? `under A$${p.max}` : '',
+  ].filter(Boolean);
+  return parts.slice(0, 3).join(' ');
+}

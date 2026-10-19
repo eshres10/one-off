@@ -6,6 +6,9 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getSessionUser } from '@/lib/auth/session';
 import { getMeasurements } from '@/lib/queries/account';
+import { RememberPiece } from '@/components/states/RememberPiece';
+import { HolidayBanner } from '@/components/states/HolidayBanner';
+import { SoldPanel, SoldStamp } from '@/components/product/SoldPanel';
 import { estimateDelivery, formatDateRange } from '@/lib/domain/leadTime';
 import { formatPrice } from '@/lib/domain/money';
 import { productBadges } from '@/lib/domain/stock';
@@ -118,6 +121,11 @@ export default async function ProductPage({ params }: { params: { slug: string }
   const totalStock = product.variants.reduce((s, v) => s + Math.max(0, v.stockQuantity), 0);
   const shippingText = `Shipping ${m.freeShippingOverCents ? `free over ${formatPrice(m.freeShippingOverCents)}, otherwise ` : ''}${formatPrice(m.shippingStandardCents)} [placeholder], shown before you pay.`;
   const custom = isCustomType(product.productType);
+  // A sold one-of-one keeps its page (links and search still work), shown greyed with a stamp.
+  const soldOne = product.productType === 'one_of_one' && totalStock === 0;
+  const similarHref = m.customCommissionsEnabled
+    ? `/makers/${m.slug}/commission?product=${product.id}`
+    : `/custom?q=${encodeURIComponent(`Something like ${product.title}`)}`;
   const previewOnly = isPreviewOnly(product.tags);
   const saved = savedIds.has(product.id);
   const sale = shopBuyable(m);
@@ -168,6 +176,11 @@ export default async function ProductPage({ params }: { params: { slug: string }
     // the content card slides up over them. Desktop: the gallery stays pinned while the details
     // column scrolls, then releases when it ends.
     <div className="pb-28 max-md:-mt-[var(--header-h)] md:pb-0" data-immersive>
+      <RememberPiece
+        slug={product.slug}
+        title={product.title}
+        imageUrl={product.images[0]?.url ?? null}
+      />
       {preview && (
         <p
           className="relative z-[1] bg-stone-light px-4 py-2 text-center text-[11px] uppercase tracking-label"
@@ -197,15 +210,20 @@ export default async function ProductPage({ params }: { params: { slug: string }
           className="follow-header sticky top-0 z-0 h-[max(480px,66vh)] md:top-[var(--header-offset)] md:h-auto md:self-start lg:w-[59%] lg:shrink-0"
           data-testid="product-gallery"
         >
-          <Gallery
-            images={product.images}
-            title={product.title}
-            overlay={
-              <div className="absolute right-3 top-3 hidden md:flex">
-                <SaveButton productId={product.id} saved={saved} title={product.title} boxed />
-              </div>
-            }
-          />
+          <div className={soldOne ? 'contents [&_img]:grayscale' : 'contents'}>
+            <Gallery
+              images={product.images}
+              title={product.title}
+              overlay={
+                <>
+                  {soldOne && <SoldStamp />}
+                  <div className="absolute right-3 top-3 hidden md:flex">
+                    <SaveButton productId={product.id} saved={saved} title={product.title} boxed />
+                  </div>
+                </>
+              }
+            />
+          </div>
         </div>
 
         <div
@@ -245,48 +263,78 @@ export default async function ProductPage({ params }: { params: { slug: string }
           <h1 className="mt-3 text-[40px] leading-[0.95] md:text-[clamp(44px,4vw,58px)]">
             {product.title}
           </h1>
-          <p className="mt-3 text-[15px]">{formatPrice(product.priceCents)}</p>
+          {!soldOne && <p className="mt-3 text-[15px]">{formatPrice(product.priceCents)}</p>}
 
-          <InfoPanel className="mt-5">
-            <span data-testid="availability" className="block">
-              <span className="block font-normal text-ink">{typeLine}</span>
-              <span className="block text-muted">{dateLine}</span>
-              {product.madeToOrderOptions && (
-                <span className="mt-1 block text-muted">{product.madeToOrderOptions}</span>
-              )}
-            </span>
-          </InfoPanel>
+          {sale.ok && sale.holiday && (
+            <div className="mt-5">
+              <HolidayBanner message={sale.holiday.message} note={m.holidayNote} />
+            </div>
+          )}
+          {soldOne ? (
+            <div className="mt-6">
+              <SoldPanel
+                title={product.title}
+                makerName={m.displayName}
+                similarHref={similarHref}
+              />
+            </div>
+          ) : (
+            <>
+              <InfoPanel className="mt-5">
+                <span data-testid="availability" className="block">
+                  <span className="block font-normal text-ink">{typeLine}</span>
+                  <span className="block text-muted">{dateLine}</span>
+                  {product.madeToOrderOptions && (
+                    <span className="mt-1 block text-muted">{product.madeToOrderOptions}</span>
+                  )}
+                </span>
+              </InfoPanel>
 
-          <div className="mt-6">
-            <PurchasePanel
-              productId={product.id}
-              productSlug={product.slug}
-              productType={product.productType}
-              priceCents={product.priceCents}
-              colours={product.colours}
-              variants={product.variants}
-              askHref={`/products/${product.slug}`}
-              requestHref={
-                m.customCommissionsEnabled
-                  ? `/makers/${m.slug}/commission?product=${product.id}`
-                  : undefined
-              }
-              modelLine={modelLine}
-              savedSizes={fit}
-              checkoutEnabled={(await checkoutEnabled()) && !previewOnly && sale.ok}
-              previewMessage={
-                previewOnly
-                  ? PREVIEW_ONLY_NOTE
-                  : !sale.ok
-                    ? [sale.message, sale.kind === 'away' ? m.holidayNote : null]
-                        .filter(Boolean)
-                        .join(' ')
-                    : PREVIEW_MESSAGE
-              }
-              disabledLabel={previewOnly ? 'Preview only' : sale.ok ? 'Launching soon' : sale.label}
-            />
-          </div>
-
+              <div className="mt-6">
+                <PurchasePanel
+                  productId={product.id}
+                  productSlug={product.slug}
+                  productType={product.productType}
+                  priceCents={product.priceCents}
+                  colours={product.colours}
+                  variants={product.variants}
+                  askHref={`/products/${product.slug}`}
+                  requestHref={
+                    m.customCommissionsEnabled
+                      ? `/makers/${m.slug}/commission?product=${product.id}`
+                      : undefined
+                  }
+                  modelLine={modelLine}
+                  savedSizes={fit}
+                  signedIn={!!user}
+                  makeToOrder={
+                    product.productType === 'ready_to_ship' &&
+                    product.madeToOrderOptions &&
+                    m.customCommissionsEnabled
+                      ? {
+                          makerName: m.displayName,
+                          leadDays: product.leadTimeDays ?? 14,
+                          href: `/makers/${m.slug}/commission?product=${product.id}`,
+                        }
+                      : null
+                  }
+                  checkoutEnabled={(await checkoutEnabled()) && !previewOnly && sale.ok}
+                  previewMessage={
+                    previewOnly
+                      ? PREVIEW_ONLY_NOTE
+                      : !sale.ok
+                        ? [sale.message, sale.kind === 'away' ? m.holidayNote : null]
+                            .filter(Boolean)
+                            .join(' ')
+                        : PREVIEW_MESSAGE
+                  }
+                  disabledLabel={
+                    previewOnly ? 'Preview only' : sale.ok ? 'Launching soon' : sale.label
+                  }
+                />
+              </div>
+            </>
+          )}
           <div className="mt-6">
             <TrustList shipsFrom={`${m.displayName}, ${m.city}`} shipping={shippingText} />
           </div>

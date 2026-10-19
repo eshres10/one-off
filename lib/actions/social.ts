@@ -6,6 +6,8 @@ import { z } from 'zod';
 import { getSessionUser } from '@/lib/auth/session';
 import { sql, withUser } from '@/lib/db';
 import { addToCart } from '@/lib/services/cart';
+import { requestRestockAlert } from '@/lib/services/restock';
+import { rateLimit } from '@/lib/rate-limit';
 import { getPiecesByIds, type SavedPiece } from '@/lib/queries/saved';
 import { ensureCartSessionId, getCartSessionId, toFormState } from './util';
 
@@ -144,4 +146,26 @@ export async function quickViewDwellAction(productId: string): Promise<void> {
   const user = await getSessionUser();
   if (!user) return;
   await bumpTaste(user.id, id.parse(productId), 0.25);
+}
+
+/** "Notify me if {size} comes back": the signed-in buyer's email, or the one they type. */
+export async function restockAlertAction(
+  variantId: string,
+  email?: string,
+): Promise<{ ok: boolean; message: string }> {
+  const user = await getSessionUser();
+  if (!z.string().uuid().safeParse(variantId).success)
+    return { ok: false, message: 'That size isn’t available.' };
+  try {
+    await rateLimit('waitlist', user?.id ?? `restock:${(email ?? '').toLowerCase()}`);
+    await requestRestockAlert({
+      variantId,
+      userId: user?.id ?? null,
+      email: user?.email ?? email ?? null,
+    });
+    return { ok: true, message: 'We’ll email you if it comes back.' };
+  } catch (err) {
+    const f = toFormState(err);
+    return { ok: false, message: f?.message ?? 'Please try again.' };
+  }
 }

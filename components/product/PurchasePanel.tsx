@@ -1,5 +1,6 @@
 'use client';
 
+import { SoldOutSize } from '@/components/product/SoldOutSize';
 import { CustomMeasurements, type SavedFit } from '@/components/product/CustomMeasurements';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
@@ -59,6 +60,8 @@ export function PurchasePanel({
   previewMessage,
   disabledLabel = 'Launching soon',
   savedSizes = null,
+  signedIn = false,
+  makeToOrder = null,
 }: {
   productId: string;
   productSlug: string;
@@ -76,6 +79,9 @@ export function PurchasePanel({
   disabledLabel?: string;
   /** The buyer's Sizes & fit: pre-selects their usual size and pre-fills custom measurements. */
   savedSizes?: SavedFit | null;
+  signedIn?: boolean;
+  /** The maker can make a sold-out size to order: who, how long, and where to ask. */
+  makeToOrder?: { makerName: string; leadDays: number; href: string } | null;
 }) {
   const [colour, setColour] = useState<string | null>(colours[0] ?? null);
   const visible = useMemo(
@@ -103,14 +109,17 @@ export function PurchasePanel({
   }, [colour, selected, colours.length]);
 
   const allSoldOut = variants.every((v) => v.stockQuantity <= 0);
+  const selectedSoldOut = !!selected && selected.stockQuantity <= 0;
   const label = !checkoutEnabled
     ? disabledLabel
     : allSoldOut
       ? 'Sold out'
       : !selected
         ? 'Select a size'
-        : `Add to bag · ${formatPrice(priceCents)}`;
-  const disabled = !checkoutEnabled || allSoldOut || !selected;
+        : selectedSoldOut
+          ? `Size ${selected.size} sold out`
+          : `Add to bag · ${formatPrice(priceCents)}`;
+  const disabled = !checkoutEnabled || allSoldOut || !selected || selectedSoldOut;
   const variantText = [
     colours.length > 1 ? colour : null,
     selected ? `Size ${selected.size}` : null,
@@ -166,6 +175,7 @@ export function PurchasePanel({
               key={v.id}
               pressed={v.id === variantId}
               soldOut={v.stockQuantity <= 0}
+              selectable={productType === 'ready_to_ship'}
               onClick={() => setVariantId(v.id)}
               aria-label={`Size ${v.size}${v.stockQuantity <= 0 ? ', sold out' : ''}`}
               className="px-2"
@@ -184,6 +194,22 @@ export function PurchasePanel({
           )}
       </fieldset>
       {selected?.size === 'Custom' && <CustomMeasurements saved={savedSizes} />}
+      {selected && selectedSoldOut && (
+        <SoldOutSize
+          variantId={selected.id}
+          size={selected.size}
+          signedIn={signedIn}
+          makeToOrder={
+            makeToOrder
+              ? {
+                  ...makeToOrder,
+                  price: formatPrice(priceCents),
+                  href: `${makeToOrder.href}&size=${encodeURIComponent(selected.size)}`,
+                }
+              : null
+          }
+        />
+      )}
 
       <div className="mt-6 hidden md:block">
         <AddButton disabled={disabled} label={label} className="w-full" />

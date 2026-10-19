@@ -647,6 +647,19 @@ export const emails = {
     related: { type: 'maker', id: shop.id },
   }),
 
+  restockAlert: (
+    to: string,
+    a: { productId: string; slug: string; title: string; size: string; makerName: string },
+  ): EmailMessage => ({
+    to,
+    template: 'restock_alert',
+    subject: `Size ${a.size} is back: ${a.title}`,
+    text:
+      `Good news: ${a.title} by ${a.makerName} is back in size ${a.size}. It may not last long.\n\n` +
+      `${url(`/products/${a.slug}`)}\n\nYou asked us to tell you when it came back. We won’t email about this size again unless you ask.${sign}`,
+    related: { type: 'product', id: a.productId },
+  }),
+
   payoutSent: (
     to: string,
     makerId: string,

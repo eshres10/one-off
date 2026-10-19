@@ -1,3 +1,6 @@
+import { EmptyState } from '@/components/states/EmptyState';
+import { TapeIcon } from '@/components/states/illustrations';
+import { SITE } from '@/lib/site/config';
 import Link from 'next/link';
 import { getSessionUser } from '@/lib/auth/session';
 import {
@@ -8,7 +11,6 @@ import {
 } from '@/lib/queries/catalog';
 import { SearchShell } from '@/components/search/SearchShell';
 import { ProductCard } from '@/components/product/ProductCard';
-import { ButtonLink } from '@/components/ui/Button';
 import { Img as Image } from '@/components/ui/Img';
 
 export const metadata = { title: 'Search' };
@@ -102,6 +104,67 @@ async function Idle() {
   );
 }
 
+/** "Nothing for …, yet.": fewer words, each word on its own, or have it made. */
+function NoResults({ q }: { q: string }) {
+  const words = q.split(/\s+/).filter((w) => w.length > 1);
+  return (
+    <div data-testid="search-empty">
+      <EmptyState
+        icon={<TapeIcon size={80} />}
+        title={q ? <>Nothing for “{q}”, yet.</> : 'Nothing here, yet.'}
+        body={
+          words.length > 1
+            ? 'Try fewer words, or search each one on its own.'
+            : 'Try a broader word, or a colour or fabric instead.'
+        }
+      >
+        {words.length > 1 && (
+          <div className="flex flex-wrap justify-center gap-2" data-testid="search-words">
+            {words.slice(0, 4).map((w) => (
+              <Link
+                key={w}
+                href={`/search?q=${encodeURIComponent(w)}`}
+                className="inline-flex min-h-[40px] items-center border border-line-strong px-4 text-[13px] hover:border-ink"
+              >
+                {w}
+              </Link>
+            ))}
+          </div>
+        )}
+        <Link
+          href={`/custom${q ? `?q=${encodeURIComponent(q)}` : ''}`}
+          className="mt-8 block bg-ink px-6 py-6 text-left text-ground"
+          data-testid="have-it-made"
+        >
+          <span className="block font-display text-[26px] leading-tight">
+            Can’t find it? Have it made.
+          </span>
+          <span className="mt-1 block text-[13px] text-ground/75">
+            Tell us what you’re after and we’ll match you with a maker who can make it.
+          </span>
+          <span className="mt-4 inline-block text-[11px] uppercase tracking-label underline underline-offset-[6px]">
+            Start a custom request
+          </span>
+        </Link>
+        <div className="mt-10 text-left">
+          <p className="text-[11px] uppercase tracking-label text-muted-2">Popular right now</p>
+          <div className="mt-3 flex flex-wrap gap-2" data-testid="popular-searches">
+            {SITE.popularSearches.map((p) => (
+              <Link
+                key={p}
+                href={`/search?q=${encodeURIComponent(p)}`}
+                className="inline-flex min-h-[40px] items-center bg-stone px-4 text-[13px] hover:bg-stone-light"
+              >
+                {p}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </EmptyState>
+    </div>
+  );
+}
+
 export default async function SearchPage({
   searchParams,
 }: {
@@ -142,15 +205,7 @@ export default async function SearchPage({
           </ul>
         </>
       ) : (
-        <div className="px-4 py-16 text-center" data-testid="search-empty">
-          <p className="font-display text-[36px] leading-tight">
-            Nothing yet for “{q || 'these filters'}”
-          </p>
-          <p className="mt-2 text-[14px] text-muted">Can’t find it? A maker can make it for you.</p>
-          <div className="mt-6 flex justify-center">
-            <ButtonLink href="/custom">Request a custom piece</ButtonLink>
-          </div>
-        </div>
+        <NoResults q={q} />
       )}
     </SearchShell>
   );

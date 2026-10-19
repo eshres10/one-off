@@ -1,3 +1,6 @@
+import { HolidayBanner } from '@/components/states/HolidayBanner';
+import { holidayMessage, shipsFrom } from '@/lib/domain/shop';
+import { SITE } from '@/lib/site/config';
 import { openMakerThreadAction } from '@/lib/actions/messages';
 import { DEFAULT_MAKER_BANNER } from '@/lib/editorial';
 import type { Metadata } from 'next';
@@ -152,6 +155,18 @@ export default async function MakerPage({
           </div>
         </div>
       </section>
+      {maker.shopStatus === 'holiday' && (
+        <div className="container-page mt-6">
+          <HolidayBanner
+            message={
+              SITE.holidayMode === 'accept_orders'
+                ? holidayMessage(maker.holidayUntil)
+                : `Back ${maker.holidayUntil ? new Date(shipsFrom(maker.holidayUntil)).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', timeZone: 'UTC' }) : 'soon'}. Follow to hear when they’re open.`
+            }
+            note={maker.holidayNote}
+          />
+        </div>
+      )}
 
       <dl className="grid grid-cols-2 border-b border-line md:grid-cols-4">
         {stats.map((s, i) => (

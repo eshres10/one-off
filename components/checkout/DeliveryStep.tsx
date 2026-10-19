@@ -400,6 +400,11 @@ export function DeliveryStep({
                   </label>
                 ))}
               </fieldset>
+              {p.holidayNote && (
+                <p className="mt-3 bg-stone p-3 text-[13px]" data-testid="checkout-holiday">
+                  {p.makerName}: {p.holidayNote}
+                </p>
+              )}
               {p.mtoNote && <p className="mt-3 bg-stone p-3 text-[13px]">{p.mtoNote}</p>}
             </li>
           ))}

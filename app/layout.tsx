@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Instrument_Serif, Jost } from 'next/font/google';
 import { BRAND } from '@/lib/brand';
 import './globals.css';
+import { OfflineGate } from '@/components/states/OfflineGate';
 
 const display = Instrument_Serif({
   subsets: ['latin'],
@@ -31,7 +32,10 @@ export const viewport: Viewport = { themeColor: '#F6F4F0', width: 'device-width'
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en-AU" className={`${display.variable} ${sans.variable}`}>
-      <body className="min-h-screen">{children}</body>
+      <body className="min-h-screen">
+        {children}
+        <OfflineGate />
+      </body>
     </html>
   );
 }

@@ -1,8 +1,8 @@
 import Link from 'next/link';
 import { requireUser } from '@/lib/auth/session';
 import { getBuyerOrders } from '@/lib/queries/account';
-import { EmptyState } from '@/components/ui/EmptyState';
-import { ButtonLink } from '@/components/ui/Button';
+import { EmptyState as StateEmpty } from '@/components/states/EmptyState';
+import { ParcelIcon } from '@/components/states/illustrations';
 import { Img as Image } from '@/components/ui/Img';
 import { StatusDot } from '@/components/account/Parcel';
 import { stageOf } from '@/lib/account/progress';
@@ -27,13 +27,13 @@ export default async function OrdersPage() {
       <h1 className="font-display text-[40px] leading-none md:text-[44px]">Orders</h1>
       {orders.length === 0 ? (
         <div className="mt-6">
-          <EmptyState
-            title="No orders yet"
-            action={<ButtonLink href="/">Start exploring</ButtonLink>}
-          >
-            Checked out as a guest? Sign in with a link sent to the same email and your orders will
-            appear here.
-          </EmptyState>
+          <StateEmpty
+            testId="orders-empty"
+            icon={<ParcelIcon size={80} />}
+            title="Your first order will live here."
+            body="Track every piece from the maker’s studio to your door. Checked out as a guest? Sign in with the same email and your orders appear here."
+            actions={[{ label: 'Discover pieces', href: '/discover' }]}
+          />
         </div>
       ) : (
         <div className="mt-6">

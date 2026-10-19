@@ -1,5 +1,8 @@
 'use client';
 
+import { EmptyState } from '@/components/states/EmptyState';
+import { HeartIcon as HeartLine } from '@/components/states/illustrations';
+import { ThumbRow, type Thumb } from '@/components/states/ThumbRow';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
@@ -172,11 +175,14 @@ export function SavedView({
   makers,
   signedIn,
   checkoutOn,
+  startWith = [],
 }: {
   pieces: SavedPiece[];
   makers: FollowedMaker[] | null;
   signedIn: boolean;
   checkoutOn: boolean;
+  /** New arrivals shown when nothing is saved. */
+  startWith?: Thumb[];
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<'pieces' | 'makers'>('pieces');
@@ -301,17 +307,15 @@ export function SavedView({
               ))}
             </ul>
           ) : (
-            <div className="py-16 text-center" data-testid="saved-empty">
-              <p className="font-display text-[36px] leading-tight">Nothing saved yet</p>
-              <p className="mx-auto mt-2 max-w-sm text-[14px] text-muted">
-                Tap the heart on any piece to keep it here. We’ll tell you about price drops and low
-                stock.
-              </p>
-              <div className="mt-6 flex justify-center">
-                <ButtonLink href="/" variant="secondary">
-                  Start browsing
-                </ButtonLink>
-              </div>
+            <div data-testid="saved-empty">
+              <EmptyState
+                icon={<HeartLine size={72} />}
+                title="Nothing saved, yet."
+                body="Tap the heart on any piece to keep it here. We’ll let you know if a saved one-of-one is about to go."
+                actions={[{ label: 'Discover pieces', href: '/discover' }]}
+              >
+                <ThumbRow items={startWith} label="Start with these" />
+              </EmptyState>
             </div>
           )}
         </div>

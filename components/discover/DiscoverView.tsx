@@ -15,8 +15,9 @@ import {
   type DiscoverParams,
 } from '@/lib/discover/params';
 import { placeInColumns } from '@/lib/discover/masonry';
-import type { DiscoverItem, DiscoverPage } from '@/lib/queries/discover';
-import { ButtonLink, buttonClass } from '@/components/ui/Button';
+import type { DiscoverItem, DiscoverPage, Relaxation } from '@/lib/queries/discover';
+import { EmptyState } from '@/components/states/EmptyState';
+import { HangerIcon, TapeIcon } from '@/components/states/illustrations';
 import { CameraIcon, CloseIcon, FilterIcon, SearchIcon } from '@/components/ui/icons';
 import { SavedHeart } from '@/components/layout/SavedHeart';
 import { EditCard, MakerCard, PIECE_TEXT, PieceCard, pieceRatio } from './DiscoverCards';
@@ -60,12 +61,15 @@ export function DiscoverView({
   savedIds,
   followingIds,
   savedCount,
+  relax = null,
 }: {
   params: DiscoverParams;
   initial: DiscoverPage;
   savedIds: string[];
   followingIds: string[];
   savedCount: number;
+  /** When nothing matches: the best single filter to take away. */
+  relax?: Relaxation | null;
 }) {
   const router = useRouter();
   const query = toQuery(params);
@@ -299,7 +303,7 @@ export function DiscoverView({
                 href={discoverHref(p.without)}
                 scroll={false}
                 data-testid="filter-pill"
-                className="flex min-h-[36px] items-center gap-1.5 rounded-circle bg-stone-light px-3 text-[12px] hover:bg-line"
+                className="flex min-h-[36px] items-center gap-1.5 bg-ink px-3 text-[12px] text-ground hover:bg-text2"
                 aria-label={`Remove ${p.label}`}
               >
                 {p.label} <CloseIcon width={10} height={10} />
@@ -332,17 +336,44 @@ export function DiscoverView({
         )}
 
         {items.length === 0 ? (
-          <div className="py-20 text-center" data-testid="discover-empty">
-            <p className="font-display text-[40px] leading-tight">Nothing matches that yet</p>
-            <p className="mt-2 text-[14px] text-muted">
-              Try fewer filters, or ask a maker to make it for you.
-            </p>
-            <div className="mt-6 flex flex-wrap justify-center gap-3">
-              <Link href={discoverHref({ ...EMPTY })} className={buttonClass('secondary')}>
-                Clear filters
-              </Link>
-              <ButtonLink href="/custom">Request a custom piece</ButtonLink>
-            </div>
+          <div data-testid="discover-empty">
+            {relax && relax.active > 0 ? (
+              <EmptyState
+                icon={<TapeIcon size={80} />}
+                title="A little too specific."
+                body={
+                  relax.remove
+                    ? `No pieces match all ${relax.active === 1 ? 'of that' : relax.active}. Removing ${relax.remove.label} shows ${relax.remove.count} ${relax.remove.count === 1 ? 'piece' : 'pieces'}.`
+                    : `No pieces match ${relax.active === 1 ? 'that' : `all ${relax.active}`} yet. A maker can make it for you.`
+                }
+                actions={[
+                  ...(relax.remove
+                    ? [
+                        {
+                          label: `Show ${relax.remove.count}${relax.remove.rest ? ` ${relax.remove.rest}` : ''} ${relax.remove.count === 1 ? 'piece' : 'pieces'}`,
+                          href: relax.remove.href,
+                          testId: 'relax-filter',
+                        },
+                      ]
+                    : [{ label: 'Request a custom piece', href: '/custom' }]),
+                  {
+                    label: 'Clear all filters',
+                    href: discoverHref(clearFilters(params)),
+                    testId: 'clear-filters',
+                  },
+                ]}
+              />
+            ) : (
+              <EmptyState
+                icon={<HangerIcon size={80} />}
+                title="Nothing here, yet."
+                body="New pieces arrive every week. Ask a maker to make it for you in the meantime."
+                actions={[
+                  { label: 'Request a custom piece', href: '/custom' },
+                  { label: 'See all pieces', href: discoverHref({ ...EMPTY }) },
+                ]}
+              />
+            )}
           </div>
         ) : (
           <div onClickCapture={remember} data-qv-list data-feed-more={nextCursor ? '' : undefined}>

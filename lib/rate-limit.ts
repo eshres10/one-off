@@ -18,6 +18,7 @@ export const LIMITS = {
   claim: { windowSeconds: 86_400, max: 10 },
   question: { windowSeconds: 3600, max: 10 },
   waitlist: { windowSeconds: 3600, max: 10 },
+  clientError: { windowSeconds: 300, max: 20 },
 } as const;
 
 /** Throws RateLimitError when `key` has exceeded the limit for the current window. */

@@ -376,6 +376,10 @@ export async function getReviews(
 }
 
 export interface MakerProfile {
+  shopStatus: string;
+  holidayUntil: Date | null;
+  holidayNote: string | null;
+  tags: string[];
   id: string;
   slug: string;
   displayName: string;
@@ -410,6 +414,7 @@ export async function getMaker(
     select m.id, m.slug, m.display_name, m.tagline, m.story, m.location, m.city, m.state, m.process, m.materials, m.sizing_notes,
            m.avatar_url, m.cover_url, m.lead_time_days, m.response_time_hours, m.rating::float as rating, m.review_count,
            m.completed_orders, m.custom_commissions_enabled, m.return_policy, m.user_id, m.approved_at,
+           m.shop_status, m.holiday_until, m.holiday_note, m.tags,
            (select count(*) from public.maker_follows f where f.maker_id = m.id)::int as follower_count
     from public.makers m where m.slug = ${slug} ${opts.preview ? sql()`` : sql()`and m.status = 'approved'`}`;
   if (!maker) return null;

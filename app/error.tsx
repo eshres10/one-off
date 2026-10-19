@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
-import { SystemMessage } from '@/components/ui/SystemMessage';
+import { ErrorState, useReportError } from '@/components/states/ErrorState';
 
 export default function ErrorBoundary({
   error,
@@ -10,22 +9,10 @@ export default function ErrorBoundary({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  useEffect(() => {
-    console.error(error);
-  }, [error]);
+  useReportError(error);
   return (
-    <SystemMessage
-      code="500"
-      title="Something went wrong"
-      body={`Please try again. If it keeps happening, contact us${error.digest ? ` and quote ${error.digest}` : ''}.`}
-      action={
-        <button
-          onClick={reset}
-          className="text-[11px] uppercase tracking-label underline underline-offset-[6px]"
-        >
-          Try again
-        </button>
-      }
-    />
+    <main id="main" className="flex min-h-[70vh] items-center justify-center">
+      <ErrorState reset={reset} />
+    </main>
   );
 }

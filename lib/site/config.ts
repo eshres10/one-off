@@ -11,6 +11,21 @@ export const SITE = {
    * text, nothing called a fit promise is shown (and it must not read as a returns promise).
    */
   fitPromise: null as string | null,
+  /**
+   * [DECIDE] What a shop on holiday does. 'accept_orders' (default): buyers can still order; a
+   * banner says when pieces ship and checkout dates move past the holiday. 'pause_orders': "Add to
+   * bag" is hidden until they're back.
+   */
+  holidayMode: 'accept_orders' as 'accept_orders' | 'pause_orders',
+  /** "Popular right now" chips on a search with no results. Edit freely. */
+  popularSearches: [
+    'Satin slip',
+    'Linen set',
+    'Made to order',
+    'Halter',
+    'Wedding guest',
+    'Under $200',
+  ],
   /** The admin's time zone, for the daily applications summary. */
   adminTimeZone: 'Australia/Melbourne',
   /** Local hour the daily applications summary goes out. */

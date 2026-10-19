@@ -27,7 +27,10 @@ import {
   getShopByMaker,
   getUnder,
 } from '@/lib/queries/rails';
-import { EmptyState } from '@/components/ui/EmptyState';
+import { EmptyState as StateEmpty } from '@/components/states/EmptyState';
+import { SpoolIcon, TapeIcon } from '@/components/states/illustrations';
+import { SuggestedMakers } from '@/components/states/SuggestedMakers';
+import { suggestedMakers } from '@/lib/queries/states';
 import { BoxButtonGroup, ButtonLink, boxButtonClass } from '@/components/ui/Button';
 import { Img as Image } from '@/components/ui/Img';
 
@@ -153,16 +156,17 @@ async function Feed({ filters }: { filters: FeedFilters }) {
   if (filters.tab === 'following' && !user) {
     return (
       <div className="container-page py-10">
-        <EmptyState
-          title="Follow makers you love"
-          action={
-            <ButtonLink href="/login?next=/?tab=following" variant="secondary">
-              Log in
-            </ButtonLink>
-          }
+        <StateEmpty
+          icon={<SpoolIcon size={72} />}
+          title="Follow a maker or two."
+          body="Their new pieces, restocks and studio news show up here first. Log in to follow."
+          actions={[
+            { label: 'Log in', href: '/login?next=/?tab=following' },
+            { label: 'Find makers', href: '/makers' },
+          ]}
         >
-          Log in and follow makers to see their newest pieces here.
-        </EmptyState>
+          <SuggestedMakers makers={await suggestedMakers(null, 4)} />
+        </StateEmpty>
       </div>
     );
   }
@@ -174,27 +178,26 @@ async function Feed({ filters }: { filters: FeedFilters }) {
     return (
       <div className="container-page py-10">
         {filters.tab === 'following' && activeFilterCount(filters) === 0 ? (
-          <EmptyState
-            title="Nothing from your makers yet"
-            action={
-              <ButtonLink href="/makers" variant="secondary">
-                Find makers to follow
-              </ButtonLink>
-            }
-          >
-            Follow makers to fill this feed with their newest pieces.
-          </EmptyState>
+          <div data-testid="following-empty">
+            <StateEmpty
+              icon={<SpoolIcon size={72} />}
+              title="Follow a maker or two."
+              body="Their new pieces, restocks and studio news show up here first."
+              actions={[{ label: 'Find makers', href: '/makers' }]}
+            >
+              <SuggestedMakers makers={await suggestedMakers(user?.id ?? null, 4)} />
+            </StateEmpty>
+          </div>
         ) : (
-          <EmptyState
-            title="No pieces match those filters yet."
-            action={
-              <ButtonLink href="/?tab=new" variant="secondary">
-                Explore new arrivals
-              </ButtonLink>
-            }
-          >
-            Try removing a filter or explore new arrivals.
-          </EmptyState>
+          <StateEmpty
+            icon={<TapeIcon size={72} />}
+            title="A little too specific."
+            body="No pieces match those filters yet. Try removing one, or see what’s new."
+            actions={[
+              { label: 'Explore new arrivals', href: '/?tab=new' },
+              { label: 'Clear all filters', href: '/' },
+            ]}
+          />
         )}
       </div>
     );
