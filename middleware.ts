@@ -14,6 +14,10 @@ export async function middleware(request: NextRequest) {
   ) {
     return NextResponse.rewrite(new URL('/maintenance', request.url), { status: 503 });
   }
+  // Pre-launch: the homepage shows the waitlist. Everything else (admin, login) still works.
+  if (process.env.WAITLIST_MODE === 'true' && request.nextUrl.pathname === '/') {
+    return NextResponse.rewrite(new URL('/waitlist', request.url));
+  }
   const response = NextResponse.next({ request });
   if (process.env.AUTH_DRIVER !== 'supabase') return response;
   const supabase = createServerClient(

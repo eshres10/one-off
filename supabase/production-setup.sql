@@ -1,6 +1,6 @@
 -- One Off: full database setup for a new Supabase project.
 -- Paste into Supabase Dashboard > SQL Editor and click Run. Runs as one transaction.
--- Generated from supabase/migrations/0001-0005 by scripts/build-production-sql.sh; do not edit by hand.
+-- Generated from supabase/migrations/0001-0006 by scripts/build-production-sql.sh; do not edit by hand.
 
 begin;
 
@@ -1012,5 +1012,26 @@ revoke all on public.mock_stripe_objects from anon, authenticated;
 -- ===== 0005_dispute_deadline.sql =====
 -- Evidence deadline for payment disputes (from Stripe dispute.evidence_details.due_by).
 alter table public.disputes add column if not exists evidence_due_by timestamptz;
+
+-- ===== 0006_waitlist.sql =====
+-- Pre-launch waitlist: shoppers who want to hear when we open, and makers who want to sell.
+create table if not exists public.waitlist_signups (
+  id uuid primary key default gen_random_uuid(),
+  email citext not null unique,
+  kind text not null check (kind in ('shopper', 'maker')),
+  name text,
+  instagram text,
+  source text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists waitlist_signups_created_idx on public.waitlist_signups (created_at desc);
+create index if not exists waitlist_signups_kind_idx on public.waitlist_signups (kind);
+
+-- Sign-ups are written by the server (service connection) only; admins can read them.
+alter table public.waitlist_signups enable row level security;
+drop policy if exists waitlist_admin on public.waitlist_signups;
+create policy waitlist_admin on public.waitlist_signups for select using (public.is_admin());
 
 commit;

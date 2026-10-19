@@ -15,6 +15,7 @@ export const LIMITS = {
   auth: { windowSeconds: 300, max: 10 },
   checkout: { windowSeconds: 60, max: 10 },
   upload: { windowSeconds: 300, max: 30 },
+  waitlist: { windowSeconds: 3600, max: 10 },
 } as const;
 
 /** Throws RateLimitError when `key` has exceeded the limit for the current window. */
