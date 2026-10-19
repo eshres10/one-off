@@ -1,3 +1,6 @@
+import { Suspense } from 'react';
+import { InstallProvider } from '@/components/install/InstallProvider';
+import { RestoreFromLink } from '@/components/install/RestoreFromLink';
 import { ServiceWorker } from '@/components/install/ServiceWorker';
 import type { Metadata, Viewport } from 'next';
 import { Instrument_Serif, Jost } from 'next/font/google';
@@ -52,10 +55,23 @@ export const viewport: Viewport = { themeColor: '#F6F4F0', width: 'device-width'
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en-AU" className={`${display.variable} ${sans.variable}`}>
+      <head>
+        {/* Android's install prompt can fire before the app hydrates: keep it for InstallProvider. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__ooInstallPrompt=e;window.dispatchEvent(new Event('oo:installprompt'))});",
+          }}
+        />
+      </head>
       <body className="min-h-screen">
         {children}
         <OfflineGate />
         <ServiceWorker />
+        <Suspense fallback={null}>
+          <InstallProvider />
+          <RestoreFromLink />
+        </Suspense>
       </body>
     </html>
   );

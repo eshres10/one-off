@@ -17,6 +17,8 @@ export const LIMITS = {
   upload: { windowSeconds: 300, max: 30 },
   claim: { windowSeconds: 86_400, max: 10 },
   supportRequest: { windowSeconds: 3600, max: 5 },
+  clientEvent: { windowSeconds: 3600, max: 300 },
+  restoreLink: { windowSeconds: 3600, max: 20 },
   returnStart: { windowSeconds: 86_400, max: 10 },
   question: { windowSeconds: 3600, max: 10 },
   waitlist: { windowSeconds: 3600, max: 10 },

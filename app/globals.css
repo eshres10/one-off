@@ -462,3 +462,47 @@ html {
     animation: none;
   }
 }
+
+/* "Add to home screen" sheet: slides up over a dimmed page; just fades with reduced motion. */
+@keyframes install-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes install-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes install-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(6px);
+  }
+}
+.install-sheet {
+  animation: install-up 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.install-dim {
+  animation: install-fade 300ms ease both;
+}
+.install-bob {
+  animation: install-bob 1.2s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .install-sheet {
+    animation: install-fade 200ms ease both;
+  }
+  .install-bob {
+    animation: none;
+  }
+}

@@ -8,6 +8,7 @@ import { getReturnPolicy } from '@/lib/returns/policy';
 import { onPaymentIntentSucceeded } from '@/lib/services/webhook';
 import { Img as Image } from '@/components/ui/Img';
 import { Monogram } from '@/components/ui/Monogram';
+import { InstallTriggerOnMount } from '@/components/install/InstallTriggerOnMount';
 
 export const metadata = { title: 'Thank you', robots: { index: false } };
 export const dynamic = 'force-dynamic';
@@ -106,6 +107,7 @@ export default async function ConfirmedPage({ params }: { params: { number: stri
 
   return (
     <div className="mx-auto max-w-[640px] px-5 pb-20 pt-10 md:pt-16" data-testid="order-confirmed">
+      <InstallTriggerOnMount trigger="order_placed" />
       <Monogram className="h-12 w-12 text-ink" />
       <h1 className="mt-6 text-[48px] leading-[1] md:text-[56px]">
         Thank you{first ? `, ${first}` : ''}.

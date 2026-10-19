@@ -8,6 +8,24 @@ export const SITE = {
   supportEmail: 'hello@shoponeoff.com.au',
   /** The footer shows "ABN to come" while this is null. */
   abn: null as string | null,
+  /**
+   * "Add to home screen" sheet (phones only). Shows on the first trigger that happens, never on
+   * the paths below, and backs off after "Not now".
+   */
+  install: {
+    enabled: true,
+    triggers: ['saved_piece', 'third_product_view', 'second_visit', 'order_placed'] as const,
+    cooldownDays: 14,
+    maxDismissals: 3,
+    neverOnPaths: ['/checkout', '/signup', '/login', '/sell/apply', '/studio', '/admin'],
+    /** A new session this long after the last activity counts as a second visit. */
+    secondVisitAfterMinutes: 30,
+  },
+  /**
+   * [DECIDE] Drop alerts (web push). Off until VAPID keys are set and you're happy with the
+   * wording; at most one alert per device a day either way.
+   */
+  pushAlerts: { enabled: false, maxPerDay: 1 },
   /** One Off's Instagram, linked from the footer. */
   instagram: 'https://www.instagram.com/shoponeoff',
   /** Makers from anywhere in Australia can apply; buyers can order from anywhere in Australia. */

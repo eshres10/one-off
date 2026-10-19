@@ -5,6 +5,7 @@ import { useEffect, useState, useTransition } from 'react';
 import { toggleSaveAction } from '@/lib/actions/social';
 import { onLocalSavesChange, readLocalSaves, toggleLocalSave } from '@/lib/local-saves';
 import { HeartIcon } from '@/components/ui/icons';
+import { requestInstallSheet } from '@/lib/install/trigger';
 
 /**
  * Heart toggle. Signed in, it saves to the account; signed out, it keeps the piece in this
@@ -48,6 +49,8 @@ export function SaveButton({
         e.stopPropagation();
         const next = !on;
         setOn(next);
+        // Saved (not unsaved): after the heart has had its moment, maybe offer the home screen.
+        if (next) requestInstallSheet('saved_piece', 1500);
         start(async () => {
           const res = await toggleSaveAction(productId);
           if (res.needsLogin) setOn(toggleLocalSave(productId));
