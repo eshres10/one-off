@@ -1,4 +1,4 @@
-import { CLAIM_REASONS } from '@/lib/content/returns';
+import { CLAIM_REASONS, REQUESTED_OUTCOMES } from '@/lib/content/returns';
 import {
   CLAIM_STATUS_LABEL,
   PROPOSAL_LABEL,
@@ -75,6 +75,7 @@ export function ClaimDetail({
               {reason}
             </h2>
             <p className="mt-1 text-[12px] text-muted-2">
+              {claim.caseNumber ? `${claim.caseNumber} · ` : ''}
               {claim.productTitle} · {claim.variantLabel} · order {claim.orderNumber}
               {viewer !== 'buyer' && claim.buyerName ? ` · from ${claim.buyerName}` : ''} · reported{' '}
               {fmt(claim.createdAt)}
@@ -83,6 +84,19 @@ export function ClaimDetail({
           <ClaimStatusPill status={claim.status} />
         </div>
         <p className="mt-4 whitespace-pre-line text-[14px] leading-relaxed">{claim.details}</p>
+        {claim.requestedOutcome && (
+          <p className="mt-3 text-[13px]" data-testid="requested-outcome">
+            Asked for:{' '}
+            {REQUESTED_OUTCOMES.find((o) => o.value === claim.requestedOutcome)?.label ??
+              claim.requestedOutcome}
+          </p>
+        )}
+        {viewer === 'admin' && (claim.pausedPayout || claim.platformDueAt) && (
+          <p className="mt-1 text-[12px] text-muted" data-testid="case-admin-facts">
+            {claim.pausedPayout ? 'Maker payout paused for this case. ' : ''}
+            {claim.platformDueAt ? `One Off decides by ${fmt(claim.platformDueAt)}.` : ''}
+          </p>
+        )}
         <ul className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-6" aria-label="Photos">
           {claim.photos.map((_, i) => (
             <li key={i}>

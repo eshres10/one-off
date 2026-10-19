@@ -156,6 +156,20 @@ export function ResolveForm({
         />
         <FieldError id="note-error" message={e.note} />
       </div>
+      {admin && (
+        <div>
+          <label htmlFor="resolve-internal" className="label">
+            Internal note (only One Off sees this)
+          </label>
+          <textarea
+            id="resolve-internal"
+            name="internalNote"
+            rows={2}
+            maxLength={2000}
+            className="input min-h-[64px]"
+          />
+        </div>
+      )}
       <FormAlert message={state?.message} tone={state?.ok ? 'success' : 'error'} />
       <SubmitButton size="md" variant="secondary">
         Resolve claim

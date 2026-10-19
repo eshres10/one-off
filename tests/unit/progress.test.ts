@@ -47,3 +47,13 @@ describe('parcel progress', () => {
     expect(makingDay(new Date('2026-11-02'), 14, new Date('2026-12-30'))).toBe('Day 14 of 14');
   });
 });
+
+describe('reported problems', () => {
+  it('keeps a reported parcel at Delivered with its own note', async () => {
+    const { humanNote } = await import('@/lib/account/progress');
+    const f = { ...base, status: 'issue', deliveredAt: new Date('2026-11-09T00:00:00Z') };
+    expect(stageOf('issue', false)).toBe('delivered');
+    expect(progressSteps(f).find((s) => s.current)?.key).toBe('delivered');
+    expect(humanNote(f)).toMatch(/reported a problem/);
+  });
+});

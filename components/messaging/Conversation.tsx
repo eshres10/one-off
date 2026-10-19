@@ -492,9 +492,31 @@ export function Conversation({
                   </p>
                 )}
                 {m.kind === 'system' ? (
-                  <p className="mx-auto max-w-[90%] whitespace-pre-line bg-stone-light px-4 py-3 text-center text-[12px] text-muted">
-                    {m.body}
-                  </p>
+                  <div className="mx-auto max-w-[90%]" data-testid="system-message">
+                    <p className="whitespace-pre-line bg-stone-light px-4 py-3 text-center text-[12px] text-muted">
+                      {m.body}
+                    </p>
+                    {m.imageUrls.length > 0 && (
+                      <div className="mt-1 flex flex-wrap justify-center gap-1">
+                        {m.imageUrls.map((u) => (
+                          <a
+                            key={u}
+                            href={u}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="block h-[120px] w-[96px] overflow-hidden bg-stone-light"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={u}
+                              alt="Photo from the report"
+                              className="h-full w-full object-cover"
+                            />
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <div className={`flex flex-col ${mine ? 'items-end' : 'items-start'}`}>
                     {m.kind === 'quote' && m.quote ? (

@@ -52,6 +52,7 @@ describe('fault claims', () => {
         {
           orderItemId,
           reason: 'faulty',
+          outcome: 'refund',
           details: 'The side seam split on first wear.',
           photos: [await photoFor(b.id)],
         },
@@ -65,6 +66,7 @@ describe('fault claims', () => {
       createClaim(b, {
         orderItemId,
         reason: 'faulty',
+        outcome: 'refund',
         details: 'The side seam split on first wear.',
         photos: [await photoFor(other.id)],
       }),
@@ -79,6 +81,7 @@ describe('fault claims', () => {
     ({ claimId } = await createClaim(b, {
       orderItemId,
       reason: 'faulty',
+      outcome: 'refund',
       details: 'The side seam split on first wear, about 5cm.',
       photos: [await photoFor(b.id), await photoFor(b.id)],
     }));
@@ -99,6 +102,7 @@ describe('fault claims', () => {
       createClaim(b, {
         orderItemId,
         reason: 'damaged',
+        outcome: 'repair',
         details: 'Also a mark on the hem near the back.',
         photos: [await photoFor(b.id)],
       }),

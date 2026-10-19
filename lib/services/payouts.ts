@@ -53,7 +53,9 @@ export async function markDelivered(
   at = new Date(),
 ): Promise<boolean> {
   const updated = await sql()<{ id: string; makerId: string }[]>`
-    update public.fulfilments set status = 'delivered', delivered_at = ${at}, delivery_source = ${source}
+    update public.fulfilments set status = 'delivered', delivered_at = ${at}, delivery_source = ${source},
+      payout_due_at = ${new Date(at.getTime() + TERMS.releaseDaysAfterDelivery * DAY)},
+      payout_status = case when payout_status = 'held' then 'scheduled' else payout_status end
     where id = ${fulfilmentId} and status = 'shipped' returning id, maker_id`;
   if (!updated.length) return false;
   await sql()`
@@ -105,7 +107,6 @@ export interface ReleaseResult {
  * out. Idempotent: each transfer uses the fulfilment id as its idempotency key.
  */
 export async function releaseDueTransfers(now = new Date()): Promise<ReleaseResult> {
-  const cutoff = new Date(now.getTime() - TERMS.releaseDaysAfterDelivery * DAY);
   const rows = await sql()<
     {
       id: string;
@@ -128,7 +129,8 @@ export async function releaseDueTransfers(now = new Date()): Promise<ReleaseResu
     from public.fulfilments f
     join public.makers m on m.id = f.maker_id
     join public.orders o on o.id = f.order_id
-    where f.status = 'delivered' and f.delivered_at <= ${cutoff}
+    where f.status = 'delivered' and coalesce(f.payout_due_at, f.delivered_at + interval '1 day' * ${TERMS.releaseDaysAfterDelivery}) <= ${now}
+      and f.payout_status <> 'paused'
       and f.stripe_transfer_id is null and f.transfer_status in ('pending', 'failed')
       and o.status in ('paid', 'partially_refunded')`;
 
@@ -142,7 +144,17 @@ export async function releaseDueTransfers(now = new Date()): Promise<ReleaseResu
       result.waiting++;
       continue;
     }
-    const amount = f.sellerNetCents - f.refundedShare;
+    // Anything this maker owes from an earlier refund that couldn't be reversed comes off first.
+    const owed = await sql()<{ id: string; amountCents: number }[]>`
+      select id, amount_cents from public.maker_adjustments
+      where maker_id = ${f.makerId} and applied_at is null order by created_at`;
+    let amount = f.sellerNetCents - f.refundedShare;
+    const applied: string[] = [];
+    for (const a of owed) {
+      if (a.amountCents > amount) break;
+      amount -= a.amountCents;
+      applied.push(a.id);
+    }
     try {
       let transferId: string | null = null;
       if (amount > 0) {
@@ -158,12 +170,21 @@ export async function releaseDueTransfers(now = new Date()): Promise<ReleaseResu
       }
       await sql()`
         update public.fulfilments set status = 'completed', stripe_transfer_id = ${transferId},
-          transfer_status = ${transferId ? 'created' : 'skipped'}, transfer_released_at = ${now}
+          transfer_status = ${transferId ? 'created' : 'skipped'}, transfer_released_at = ${now},
+          payout_status = 'paid'
         where id = ${f.id}`;
+      if (applied.length)
+        await sql()`
+          update public.maker_adjustments set applied_at = ${now}, applied_to_fulfilment_id = ${f.id}
+          where id in ${sql()(applied)}`;
       await sql()`
         update public.order_items set fulfilment_status = 'completed'
         where fulfilment_id = ${f.id} and fulfilment_status = 'delivered'`;
-      await audit('transfer.created', { type: 'fulfilment', id: f.id }, { amount, transferId });
+      await audit(
+        'transfer.created',
+        { type: 'fulfilment', id: f.id },
+        { amount, transferId, adjustments: applied },
+      );
       result.released++;
     } catch (err) {
       reportError(err, { fulfilmentId: f.id, where: 'releaseDueTransfers' });

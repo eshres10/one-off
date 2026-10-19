@@ -110,6 +110,20 @@ end $$;
 alter table public.return_claims add column if not exists fulfilment_id uuid references public.fulfilments (id) on delete set null;
 alter table public.return_claims add column if not exists platform_due_at timestamptz;
 alter table public.return_claims add column if not exists paused_payout boolean not null default false;
+-- One Off's own notes on a case: admin only, never shown to the buyer or the maker.
+create table if not exists public.case_notes (
+  id uuid primary key default gen_random_uuid(),
+  claim_id uuid not null references public.return_claims (id) on delete cascade,
+  author_id uuid references public.users (id) on delete set null,
+  body text not null check (char_length(body) between 1 and 2000),
+  created_at timestamptz not null default now()
+);
+create index if not exists case_notes_claim_idx on public.case_notes (claim_id, created_at);
+alter table public.case_notes enable row level security;
+drop policy if exists case_notes_admin on public.case_notes;
+create policy case_notes_admin on public.case_notes for all using (public.is_admin()) with check (public.is_admin());
+grant select, insert on public.case_notes to authenticated;
+grant all on public.case_notes to service_role;
 -- Photos are required for faulty / not as described (checked in the app); "something else" can
 -- be reported without one.
 alter table public.return_claims drop constraint if exists return_claims_photos_check;

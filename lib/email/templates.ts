@@ -681,11 +681,17 @@ export const emails = {
 
   claimReceivedBuyer: (
     to: string,
-    claim: { id: string; productTitle: string; makerName: string; respondBy: string },
+    claim: {
+      id: string;
+      productTitle: string;
+      makerName: string;
+      respondBy: string;
+      caseNumber?: string;
+    },
   ): EmailMessage => ({
     to,
     template: 'claim_received',
-    subject: `We’ve received your report about ${claim.productTitle}`,
+    subject: `We’re on it: your report about ${claim.productTitle}${claim.caseNumber ? ` (${claim.caseNumber})` : ''}`,
     text:
       `Thanks for letting us know. We’ve passed your report and photos to ${claim.makerName}, who will reply by ${claim.respondBy}.\n\n` +
       `They’ll repair, replace or refund it — and if you can’t agree, ${BRAND.name} will step in.\n\n` +
@@ -701,13 +707,15 @@ export const emails = {
       orderNumber: string;
       reason: string;
       respondBy: string;
+      caseNumber?: string;
+      outcome?: string;
     },
   ): EmailMessage => ({
     to,
     template: 'claim_new_seller',
-    subject: `Problem reported: ${claim.productTitle} (order ${claim.orderNumber})`,
+    subject: `A customer has reported a problem${claim.caseNumber ? ` (${claim.caseNumber})` : ''}`,
     text:
-      `A buyer has reported a problem with ${claim.productTitle}: ${claim.reason}.\n\n` +
+      `A customer has reported a problem with ${claim.productTitle} (order ${claim.orderNumber}): ${claim.reason}.${claim.outcome ? ` They’ve asked you to ${claim.outcome.toLowerCase()}.` : ''}\n\n` +
       `Please reply by ${claim.respondBy} and propose a repair, replacement or refund. If there’s no reply by then, the claim is escalated to ${BRAND.name}.\n\n` +
       `See the photos and reply: ${url(`/studio/claims/${claim.id}`)}${sign}`,
     related: { type: 'return_claim', id: claim.id },

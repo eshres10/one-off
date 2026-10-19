@@ -7,11 +7,20 @@ import { emails } from '@/lib/email/templates';
 import { sendEmail } from '@/lib/email/send';
 import { sanitizeText } from '@/lib/domain/moderation';
 import type { SessionUser } from '@/lib/auth/session';
-import { CLAIM_REASONS, RETURNS, isCustomType, type ClaimReason } from '@/lib/content/returns';
+import {
+  CLAIM_REASONS,
+  PHOTO_REQUIRED_REASONS,
+  REQUESTED_OUTCOMES,
+  RETURNS,
+  isCustomType,
+  type ClaimReason,
+} from '@/lib/content/returns';
+import { SITE } from '@/lib/site/config';
 import {
   CLAIM_STATUS_LABEL,
   PROPOSAL_LABEL,
   canReportProblem,
+  addBusinessDays,
   claimRespondBy,
   isClaimActive,
   resolutionStatus,
@@ -21,6 +30,8 @@ import {
 } from '@/lib/domain/claims';
 import { verifyClaimPhotos } from '@/lib/claim-photos';
 import { refundOrderItem } from './webhook';
+import { openOrderThread } from './messaging';
+import { reportError } from '@/lib/log';
 import { UserError } from './errors';
 
 type Actor = Pick<SessionUser, 'id' | 'role' | 'makerId'>;
@@ -37,18 +48,26 @@ const fmtDay = (d: Date) =>
 
 const reasonLabel = (r: ClaimReason) => CLAIM_REASONS.find((x) => x.value === r)?.label ?? r;
 
-export const claimInputSchema = z.object({
-  orderItemId: z.string().uuid(),
-  reason: z.enum(CLAIM_REASONS.map((r) => r.value) as [ClaimReason, ...ClaimReason[]], {
-    errorMap: () => ({ message: 'Choose what’s wrong' }),
-  }),
-  details: z
-    .string()
-    .trim()
-    .min(20, 'Tell us a little more (at least 20 characters)')
-    .max(4000, 'Keep it under 4,000 characters'),
-  photos: z.array(z.string()).min(1, 'Add at least one photo').max(6, 'Add up to 6 photos'),
-});
+export const claimInputSchema = z
+  .object({
+    orderItemId: z.string().uuid(),
+    reason: z.enum(CLAIM_REASONS.map((r) => r.value) as [ClaimReason, ...ClaimReason[]], {
+      errorMap: () => ({ message: 'Choose what’s wrong' }),
+    }),
+    details: z
+      .string()
+      .trim()
+      .min(20, 'Tell us a little more (at least 20 characters)')
+      .max(1000, 'Keep it under 1,000 characters'),
+    photos: z.array(z.string()).max(6, 'Add up to 6 photos'),
+    outcome: z.enum(['repair', 'replace', 'refund'], {
+      errorMap: () => ({ message: 'Choose what would make it right' }),
+    }),
+  })
+  .refine((v) => !PHOTO_REQUIRED_REASONS.includes(v.reason) || v.photos.length > 0, {
+    path: ['photos'],
+    message: 'Add at least one photo',
+  });
 export type ClaimInput = z.infer<typeof claimInputSchema>;
 
 export interface ReportableItem {
@@ -62,6 +81,7 @@ export interface ReportableItem {
   variantLabel: string;
   imageUrl: string | null;
   deliveredAt: Date | null;
+  fulfilmentId: string;
 }
 
 /** The buyer's own order item, read through RLS. */
@@ -70,7 +90,7 @@ export async function getReportableItem(buyer: Actor, orderItemId: string) {
     buyer,
     (db) => db<ReportableItem[]>`
     select oi.id, oi.order_id, o.order_number, oi.maker_id, m.display_name as maker_name, oi.product_title,
-           oi.product_type, oi.variant_label, oi.image_url, coalesce(oi.delivered_at, f.delivered_at) as delivered_at
+           oi.product_type, oi.variant_label, oi.image_url, coalesce(oi.delivered_at, f.delivered_at) as delivered_at, oi.fulfilment_id
     from public.order_items oi
     join public.orders o on o.id = oi.order_id
     join public.fulfilments f on f.id = oi.fulfilment_id
@@ -93,13 +113,24 @@ export async function createClaim(buyer: Actor, input: ClaimInput, now = new Dat
   await verifyClaimPhotos(buyer.id, input.photos);
 
   const respondBy = claimRespondBy(now);
+  const platformDue = addBusinessDays(respondBy, SITE.cases.platformDecisionBusinessDays);
+  // [DECIDE] Reported soon after delivery: the maker's payout for this parcel waits for the case.
+  const pause =
+    !!item.deliveredAt &&
+    now.getTime() - new Date(item.deliveredAt).getTime() <=
+      SITE.cases.pausePayoutIfReportedWithinDays * 86_400_000;
+  const [numbered] = await sql()<{ caseNumber: string }[]>`
+    select public.next_case_number() as case_number`;
+  const caseNumber = numbered!.caseNumber;
   let claimId: string;
   try {
     claimId = await withUser(buyer, async (db) => {
       const [row] = await db<{ id: string }[]>`
-        insert into public.return_claims (order_id, order_item_id, buyer_id, seller_id, reason, details, photos, respond_by, created_at)
+        insert into public.return_claims (order_id, order_item_id, buyer_id, seller_id, reason, details, photos, respond_by,
+          created_at, case_number, requested_outcome, fulfilment_id, platform_due_at)
         values (${item.orderId}, ${item.id}, ${buyer.id}, ${item.makerId}, ${input.reason}::claim_reason,
-                ${sanitizeText(input.details)}, ${input.photos}, ${respondBy}, ${now})
+                ${sanitizeText(input.details)}, ${input.photos}, ${respondBy}, ${now}, ${caseNumber},
+                ${input.outcome}, ${item.fulfilmentId}, ${platformDue})
         returning id`;
       return row!.id;
     });
@@ -109,11 +140,19 @@ export async function createClaim(buyer: Actor, input: ClaimInput, now = new Dat
     throw err;
   }
 
-  // The order is now an issue: the maker's money is held until the claim is resolved.
+  // The order is now an issue; reported early, the maker's payout for it is paused too.
   await sql()`
     update public.fulfilments set status = 'issue'
-    where id = (select fulfilment_id from public.order_items where id = ${item.id})
-      and status in ('shipped', 'delivered')`;
+    where id = ${item.fulfilmentId} and status in ('shipped', 'delivered')`;
+  if (pause) {
+    const paused = await sql()`
+      update public.fulfilments set payout_status = 'paused'
+      where id = ${item.fulfilmentId} and stripe_transfer_id is null and payout_status in ('held', 'scheduled')
+      returning id`;
+    if (paused.length)
+      await sql()`update public.return_claims set paused_payout = true where id = ${claimId}`;
+  }
+  await postCaseToThread(claimId, buyer, item, input);
 
   const [contacts] = await sql()<{ buyerEmail: string; makerEmail: string }[]>`
     select o.buyer_email, u.email as maker_email
@@ -128,6 +167,7 @@ export async function createClaim(buyer: Actor, input: ClaimInput, now = new Dat
         productTitle: item.productTitle,
         makerName: item.makerName,
         respondBy: due,
+        caseNumber,
       }),
     );
     await sendEmail(
@@ -137,6 +177,8 @@ export async function createClaim(buyer: Actor, input: ClaimInput, now = new Dat
         orderNumber: item.orderNumber,
         reason,
         respondBy: due,
+        caseNumber,
+        outcome: REQUESTED_OUTCOMES.find((o) => o.value === input.outcome)?.label,
       }),
     );
   }
@@ -155,7 +197,41 @@ export async function createClaim(buyer: Actor, input: ClaimInput, now = new Dat
     { reason: input.reason },
     buyer.id,
   );
-  return { claimId };
+  return { claimId, caseNumber };
+}
+
+/**
+ * The report as a system message in the buyer–maker conversation about the piece, with the
+ * photos (served through the access-checked claim photo route).
+ */
+async function postCaseToThread(
+  claimId: string,
+  buyer: Actor,
+  item: ReportableItem,
+  input: ClaimInput,
+) {
+  try {
+    const threadId = await openOrderThread(buyer, item.fulfilmentId);
+    const [c] = await sql()<{ caseNumber: string }[]>`
+      select case_number from public.return_claims where id = ${claimId}`;
+    const outcome = REQUESTED_OUTCOMES.find((o) => o.value === input.outcome)?.label ?? '';
+    const body = [
+      `Problem reported · ${c?.caseNumber ?? ''}`,
+      `${item.productTitle}: ${reasonLabel(input.reason)}`,
+      `“${sanitizeText(input.details).slice(0, 1000)}”`,
+      `Asked for: ${outcome}`,
+    ].join('\n');
+    const photos = input.photos.map((_, i) => `/api/claims/${claimId}/photos/${i}`);
+    await sql()`
+      insert into public.messages (thread_id, sender_user_id, body, kind, image_urls)
+      values (${threadId}, ${buyer.id}, ${body}, 'system', ${photos})`;
+    await sql()`
+      update public.message_threads set last_message_at = now(), maker_unread = maker_unread + 1,
+        maker_needs_reply = true
+      where id = ${threadId}`;
+  } catch (err) {
+    reportError(err, { where: 'postCaseToThread', claimId });
+  }
 }
 
 export interface ClaimView {
@@ -186,13 +262,18 @@ export interface ClaimView {
   escalatedAt: Date | null;
   buyerName: string | null;
   agreedSpec: Record<string, unknown> | null;
+  caseNumber: string | null;
+  requestedOutcome: 'repair' | 'replace' | 'refund' | null;
+  pausedPayout: boolean;
+  platformDueAt: Date | null;
 }
 
 const CLAIM_COLUMNS = (db: ReturnType<typeof sql>) => db`
   c.id, c.order_id, o.order_number, c.order_item_id, oi.product_title, oi.product_type, oi.variant_label, oi.image_url,
   oi.line_total_cents, oi.refunded_cents, m.display_name as maker_name, c.seller_id, c.reason, c.details, c.photos,
   c.status, c.proposal, c.seller_response, c.resolution_note, c.refund_cents, c.respond_by, c.created_at,
-  c.seller_responded_at, c.resolved_at, c.escalated_at, public.user_first_name(c.buyer_id) as buyer_name, o.agreed_spec`;
+  c.seller_responded_at, c.resolved_at, c.escalated_at, public.user_first_name(c.buyer_id) as buyer_name, o.agreed_spec,
+  c.case_number, c.requested_outcome, c.paused_payout, c.platform_due_at`;
 
 const CLAIM_FROM = (db: ReturnType<typeof sql>) => db`
   from public.return_claims c
@@ -277,7 +358,13 @@ export async function respondToClaim(
 export async function resolveClaim(
   actor: Actor,
   claimId: string,
-  input: { resolution: ClaimResolution; note?: string; refundCents?: number | null },
+  input: {
+    resolution: ClaimResolution;
+    note?: string;
+    refundCents?: number | null;
+    /** Admin only, never shown to the buyer or maker. */
+    internalNote?: string;
+  },
 ) {
   const claim = await getClaim(actor, claimId);
   const isAdmin = actor.role === 'admin';
@@ -301,6 +388,7 @@ export async function resolveClaim(
       amountCents: amount,
       reason: `claim:${claimId}`,
       actorUserId: actor.id,
+      claimId,
     });
     refundCents = res.amountCents;
   }
@@ -318,6 +406,14 @@ export async function resolveClaim(
     where f.id = (select fulfilment_id from public.order_items where id = ${claim.orderItemId}) and f.status = 'issue'
       and not exists (select 1 from public.return_claims c join public.order_items oi on oi.id = c.order_item_id
         where oi.fulfilment_id = f.id and c.status in ('open', 'seller_responded', 'escalated'))`;
+  // A payout paused for this case goes back on schedule once nothing else holds it.
+  await sql()`
+    update public.fulfilments f set payout_status = 'scheduled'
+    where f.id = (select fulfilment_id from public.order_items where id = ${claim.orderItemId})
+      and f.payout_status = 'paused'
+      and not exists (select 1 from public.return_claims c
+        where c.fulfilment_id = f.id and c.paused_payout and c.status in ('open', 'seller_responded', 'escalated'))`;
+  if (input.internalNote && isAdmin) await addCaseNote(actor, claimId, input.internalNote);
   const [buyer] = await sql()<{ email: string }[]>`
     select o.buyer_email as email from public.orders o where o.id = ${claim.orderId}`;
   if (buyer)
@@ -363,4 +459,25 @@ export async function countClaimsNeedingAttention(makerId?: string | null): Prom
     select count(*)::int as count from public.return_claims
     where status in ('open', 'escalated') ${makerId ? sql()`and seller_id = ${makerId}` : sql()``}`;
   return row?.count ?? 0;
+}
+
+/** An internal note on a case (admin only; RLS refuses anyone else). */
+export async function addCaseNote(admin: Actor, claimId: string, body: string) {
+  const text = sanitizeText(body).trim().slice(0, 2000);
+  if (!text) throw new UserError('Write a note first.');
+  await withUser(
+    admin,
+    (db) =>
+      db`insert into public.case_notes (claim_id, author_id, body) values (${claimId}, ${admin.id}, ${text})`,
+  );
+}
+
+export async function listCaseNotes(admin: Actor, claimId: string) {
+  return withUser(
+    admin,
+    (db) => db<{ id: string; body: string; createdAt: Date; author: string | null }[]>`
+      select n.id, n.body, n.created_at, u.display_name as author
+      from public.case_notes n left join public.users u on u.id = n.author_id
+      where n.claim_id = ${claimId} order by n.created_at`,
+  );
 }

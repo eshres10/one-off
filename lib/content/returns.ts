@@ -36,12 +36,27 @@ export const RETURNS_STRIPE_SUBMIT =
 export const CLAIM_RESPONSE_BUSINESS_DAYS = 2;
 
 export const CLAIM_REASONS = [
-  { value: 'faulty', label: 'Faulty' },
+  { value: 'faulty', label: 'It’s faulty or damaged' },
+  { value: 'not_as_described', label: 'It’s not as described' },
+  { value: 'custom_fit', label: 'It wasn’t made to my measurements' },
+  { value: 'other', label: 'Something else' },
+  // Older reports may carry these.
   { value: 'damaged', label: 'Damaged on arrival' },
-  { value: 'not_as_described', label: 'Not as described' },
   { value: 'wrong_item', label: 'Wrong item, size or colour sent' },
-  { value: 'custom_fit', label: "Custom piece doesn't match the agreed measurements" },
 ] as const;
+
+/** What "Report a problem" offers, in order. "Wasn't made to my measurements" is made to order only. */
+export const REPORT_REASONS = ['faulty', 'not_as_described', 'custom_fit', 'other'] as const;
+
+/** Reasons that need at least one photo. */
+export const PHOTO_REQUIRED_REASONS: readonly string[] = ['faulty', 'not_as_described', 'damaged'];
+
+export const REQUESTED_OUTCOMES = [
+  { value: 'repair', label: 'Repair it', detail: 'The maker fixes it and sends it back.' },
+  { value: 'replace', label: 'Replace it', detail: 'The maker makes or sends you another one.' },
+  { value: 'refund', label: 'Refund me', detail: 'Your money back to how you paid.' },
+] as const;
+export type RequestedOutcome = (typeof REQUESTED_OUTCOMES)[number]['value'];
 
 export type ClaimReason = (typeof CLAIM_REASONS)[number]['value'];
 

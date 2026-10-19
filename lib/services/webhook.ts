@@ -392,6 +392,8 @@ export async function refundOrderItem(input: {
   amountCents?: number;
   reason: string;
   actorUserId: string | null;
+  /** The case this refund settles, for the maker adjustment if the reversal fails. */
+  claimId?: string;
 }): Promise<{ refundId: string; amountCents: number }> {
   const [item] = await sql()<
     {
@@ -427,11 +429,23 @@ export async function refundOrderItem(input: {
   if (item.transferId) {
     const reversal = Math.round((amount * item.sellerNetCents) / item.lineTotalCents);
     if (reversal > 0) {
-      await payments()
-        .reverseTransfer(item.transferId, reversal, `reversal:${refund.id}`)
-        .catch((err) =>
-          reportError(err, { where: 'reverseTransfer', transferId: item.transferId }),
+      try {
+        await payments().reverseTransfer(item.transferId, reversal, `reversal:${refund.id}`);
+        await sql()`update public.fulfilments set payout_status = 'reversed' where id = ${item.fulfilmentId}`;
+      } catch (err) {
+        // Usually not enough balance on the connected account: take it from the next payouts.
+        reportError(err, { where: 'reverseTransfer', transferId: item.transferId });
+        await sql()`
+          insert into public.maker_adjustments (maker_id, amount_cents, reason, claim_id, fulfilment_id)
+          select f.maker_id, ${reversal}, ${`Refund ${refund.id} couldn’t be reversed from the transfer`},
+            ${input.claimId ?? null}, f.id
+          from public.fulfilments f where f.id = ${item.fulfilmentId}`;
+        await audit(
+          'transfer.reversal_deferred',
+          { type: 'fulfilment', id: item.fulfilmentId },
+          { amount: reversal, refundId: refund.id },
         );
+      }
     }
   }
 

@@ -143,7 +143,10 @@ export async function startProductThread(
  * "Message {maker}" on an order: the conversation about the first piece in that parcel, with the
  * order attached so the maker knows which purchase it's about.
  */
-export async function openOrderThread(buyer: Actor, fulfilmentId: string): Promise<string> {
+export async function openOrderThread(
+  buyer: Pick<SessionUser, 'id' | 'role'>,
+  fulfilmentId: string,
+): Promise<string> {
   return withUser(buyer, async (db) => {
     const [f] = await db<
       {

@@ -34,7 +34,8 @@ export function ClaimList({
                 </span>
               </p>
               <p className="text-[12px] text-muted-2">
-                Order {c.orderNumber}
+                {c.caseNumber ? `${c.caseNumber} · ` : ''}Order {c.orderNumber}
+                {c.pausedPayout ? ' · payout paused' : ''}
                 {showMaker ? ` · ${c.makerName}` : ''} ·{' '}
                 {c.createdAt.toLocaleDateString('en-AU', { dateStyle: 'medium' })}
               </p>
