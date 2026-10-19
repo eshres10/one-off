@@ -68,16 +68,15 @@ export async function SiteHeader({ variant = 'auto' }: { variant?: HeaderVariant
       </a>
       {/* Fixed over the page; <main> and full-bleed heroes offset themselves by --header-h. */}
       <HeaderFrame variant={variant}>
-        {!checkoutOn && (
-          <p className={strip} data-preview-strip data-testid="preview-banner">
-            <span className="line-clamp-2">
-              Launching soon — explore the makers and save your favourites. Checkout opens at
-              launch.
-            </span>
-          </p>
-        )}
-        <p className={`${strip} uppercase tracking-label`}>
-          <span className="line-clamp-2">{BRAND.announcement}</span>
+        <p
+          className={`${strip} uppercase tracking-label`}
+          data-long-strip={checkoutOn ? undefined : ''}
+        >
+          <span className={checkoutOn ? 'line-clamp-2' : 'line-clamp-3 sm:line-clamp-2'}>
+            {checkoutOn
+              ? BRAND.announcement
+              : `${BRAND.announcement}. Launching Soon. Checkouts open at launch.`}
+          </span>
         </p>
         <div className="container-page relative grid h-[var(--nav-h)] grid-cols-[1fr_auto_1fr] items-center">
           <div className="flex items-center">

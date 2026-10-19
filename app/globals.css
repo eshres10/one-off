@@ -266,8 +266,11 @@
     --nav-h: 76px;
   }
 }
-:root:has([data-preview-strip]) {
-  --header-h: calc(var(--strip-h) * 2 + var(--nav-h) + 1px);
+/* Before launch the strip carries a longer line: three lines on phones. */
+@media (max-width: 639px) {
+  :root:has([data-long-strip]) {
+    --strip-h: 56px;
+  }
 }
 html {
   scroll-padding-top: var(--header-h);
