@@ -1,10 +1,12 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { requireAdmin, requireUser } from '@/lib/auth/session';
+import { getSessionUser, requireAdmin, requireUser } from '@/lib/auth/session';
+import { rateLimit } from '@/lib/rate-limit';
+import { createSupportRequest, supportRequestSchema } from '@/lib/services/support-requests';
 import { adminReply, sendSupportMessage } from '@/lib/services/support';
 import type { FormState } from '@/lib/validation';
-import { toFormState } from './util';
+import { clientIp, toFormState } from './util';
 
 export async function sendSupportAction(_prev: FormState, form: FormData): Promise<FormState> {
   const user = await requireUser('/studio/support');
@@ -28,4 +30,25 @@ export async function adminReplyAction(_prev: FormState, form: FormData): Promis
   }
   revalidatePath(`/admin/support/${userId}`);
   return { ok: true, message: 'Reply sent.' };
+}
+
+/** Help & FAQ "Message us": anyone can send one, signed in or not. */
+export async function supportRequestAction(input: {
+  name: string;
+  email: string;
+  topic: string;
+  orderNumber?: string;
+  message: string;
+}): Promise<{ ok: true } | { ok: false; message: string }> {
+  const parsed = supportRequestSchema.safeParse(input);
+  if (!parsed.success)
+    return { ok: false, message: parsed.error.issues[0]?.message ?? 'Please check the form.' };
+  try {
+    const user = await getSessionUser();
+    await rateLimit('supportRequest', user?.id ?? clientIp());
+    await createSupportRequest(parsed.data, user?.id ?? null);
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, message: toFormState(err)?.message ?? 'Please try again.' };
+  }
 }
