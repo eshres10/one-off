@@ -187,6 +187,13 @@ describe('One Off’s shipping offer', () => {
     }
   });
 
+  it('is off until the admin switches it on', () => {
+    expect(DEFAULT_SHIPPING_OFFER.enabled).toBe(false);
+    const r = applyShippingOffer([std('a', 1200), std('b', 1200)], 40000, DEFAULT_SHIPPING_OFFER);
+    expect(r.buyerTotalCents).toBe(2400);
+    expect(r.subsidyCents).toBe(0);
+  });
+
   it('reads stored settings defensively', () => {
     expect(parseShippingOffer(null)).toEqual(DEFAULT_SHIPPING_OFFER);
     expect(parseShippingOffer({ enabled: false, capCents: null, extraMakerCents: -5 })).toEqual({

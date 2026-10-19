@@ -49,10 +49,11 @@ do $$ begin
     check (shipping_saving_cents >= 0 and (shipping_offer is null or shipping_offer in ('cap', 'free_over')));
 exception when duplicate_object then null; end $$;
 
--- Default offer (admins change it at /admin/shipping): first maker's rate, +A$5 for each extra
--- maker, never more than A$20, free over A$300, with an A$500 monthly budget for what One Off covers.
+-- Default offer, switched off until One Off can afford it (admins turn it on at /admin/shipping):
+-- first maker's rate, +A$5 for each extra maker, never more than A$20, free over A$300, with an
+-- A$500 monthly budget for what One Off covers. Makers' bundle deals work either way.
 insert into public.site_settings (key, value)
-values ('shipping_offer', '{"enabled": true, "extraMakerCents": 500, "capCents": 2000, "freeOverCents": 30000, "monthlyBudgetCents": 50000}'::jsonb)
+values ('shipping_offer', '{"enabled": false, "extraMakerCents": 500, "capCents": 2000, "freeOverCents": 30000, "monthlyBudgetCents": 50000}'::jsonb)
 on conflict (key) do nothing;
 
 -- Payouts with a subsidy: the main transfer (from the buyer's charge) and the covered shipping

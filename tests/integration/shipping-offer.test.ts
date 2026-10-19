@@ -22,7 +22,7 @@ import { MAKERS, TEST_ADDRESS, buyAndPay, pickVariant, seller } from './helpers'
 const DAY = 86_400_000;
 
 async function setOffer(offer: Partial<ShippingOffer>) {
-  const value = { ...DEFAULT_SHIPPING_OFFER, monthlyBudgetCents: null, ...offer };
+  const value = { ...DEFAULT_SHIPPING_OFFER, enabled: true, monthlyBudgetCents: null, ...offer };
   await sql()`
     insert into public.site_settings (key, value) values ('shipping_offer', ${sql().json(value as never)})
     on conflict (key) do update set value = excluded.value`;

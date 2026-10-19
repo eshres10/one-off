@@ -495,9 +495,8 @@ export function SettingsForm({
             </div>
           )}
           <p className="text-[12px] text-muted">
-            One Off also caps what buyers pay for shipping across makers. That part never comes out
-            of your pocket: you’re always paid your full shipping rate (less any bundle deal you
-            choose here).
+            When One Off runs a shipping offer for buyers, it never comes out of your pocket: you’re
+            always paid your full shipping rate (less any bundle deal you choose here).
           </p>
           <SwitchRow
             id="pickup"

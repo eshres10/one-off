@@ -32,8 +32,12 @@ export interface ShippingOffer {
   monthlyBudgetCents: number | null;
 }
 
+/**
+ * Off until One Off can afford it: the cap and free-shipping threshold are ready to switch on at
+ * Admin → Shipping offer. Makers' own bundle deals work either way (they fund those).
+ */
 export const DEFAULT_SHIPPING_OFFER: ShippingOffer = {
-  enabled: true,
+  enabled: false,
   extraMakerCents: 500,
   capCents: 2000,
   freeOverCents: 30000,
