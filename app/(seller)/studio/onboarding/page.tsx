@@ -38,7 +38,7 @@ export default async function OnboardingPage() {
           {(!maker.story || !maker.stripeOnboardingComplete) && (
             <p className="w-full text-xs text-ink-muted">
               Add your story and{' '}
-              <Link href="/seller/payouts" className="link">
+              <Link href="/studio/payouts" className="link">
                 set up payouts
               </Link>{' '}
               first.

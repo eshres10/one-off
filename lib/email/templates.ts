@@ -58,7 +58,7 @@ export const emails = {
       `You have a new order!\n\n` +
       items.map((i) => `• ${i.title} (${i.variant}) × ${i.quantity}`).join('\n') +
       `\n\nYour payout for this order: ${formatPrice(netCents)} (after commission, including shipping).\n\n` +
-      `Prepare and ship it from your dashboard: ${url('/seller/orders')}${sign}`,
+      `Prepare and ship it from your dashboard: ${url('/studio/orders')}${sign}`,
     related: { type: 'order', id: order.id },
   }),
 
@@ -99,7 +99,7 @@ export const emails = {
     template: 'new_message',
     subject: `New message from ${fromName}${productTitle ? ` about ${productTitle}` : ''}`,
     text: `${fromName} sent you a message${productTitle ? ` about “${productTitle}”` : ''}.\n\nReply here: ${url(
-      forMaker ? `/seller/messages/${threadId}` : `/messages/${threadId}`,
+      forMaker ? `/studio/messages/${threadId}` : `/messages/${threadId}`,
     )}\n\nFor buyer protection, keep all purchases on ${BRAND.name}.${sign}`,
     related: { type: 'message_thread', id: threadId },
   }),
@@ -109,7 +109,7 @@ export const emails = {
     to,
     template: 'message_digest',
     subject: `${unreadThreads} ${unreadThreads === 1 ? 'conversation needs' : 'conversations need'} a reply`,
-    text: `Shoppers are waiting to hear from you in ${unreadThreads} ${unreadThreads === 1 ? 'conversation' : 'conversations'}. Replying within 6 hours keeps your shop's reply badge.\n\nOpen your inbox: ${url('/seller/messages')}${sign}`,
+    text: `Shoppers are waiting to hear from you in ${unreadThreads} ${unreadThreads === 1 ? 'conversation' : 'conversations'}. Replying within 6 hours keeps your shop's reply badge.\n\nOpen your inbox: ${url('/studio/messages')}${sign}`,
     related: { type: 'maker', id: makerId },
   }),
 
@@ -152,7 +152,7 @@ export const emails = {
     template: 'commission_request_maker',
     subject: `New custom commission request: ${garment}`,
     text: `A buyer has requested a custom ${garment.toLowerCase()} (budget ${budget}).\n\nReview the brief and accept, decline or send a quote: ${url(
-      `/seller/commissions/${requestId}`,
+      `/studio/commissions/${requestId}`,
     )}\n\nCommissions are a concierge pilot — our team coordinates payment once you and the buyer agree.${sign}`,
     related: { type: 'commission_request', id: requestId },
   }),
@@ -203,7 +203,7 @@ export const emails = {
     to,
     template: 'maker_approved',
     subject: `Welcome to ${BRAND.name}, ${maker}`,
-    text: `Your maker profile has been approved. You can now submit listings for review: ${url('/seller/listings')}${sign}`,
+    text: `Your maker profile has been approved. You can now submit listings for review: ${url('/studio/listings')}${sign}`,
   }),
 
   listingDecision: (
@@ -217,7 +217,7 @@ export const emails = {
     subject: approved ? `“${title}” is live` : `“${title}” needs changes`,
     text: approved
       ? `Your listing “${title}” has been approved and is now visible to shoppers.${sign}`
-      : `Your listing “${title}” wasn’t approved yet.${reason ? `\n\nNotes from our team: ${reason}` : ''}\n\nEdit and resubmit: ${url('/seller/listings')}${sign}`,
+      : `Your listing “${title}” wasn’t approved yet.${reason ? `\n\nNotes from our team: ${reason}` : ''}\n\nEdit and resubmit: ${url('/studio/listings')}${sign}`,
   }),
 
   disputeAdmin: (
@@ -251,7 +251,7 @@ export const emails = {
     template: 'payout_failed',
     subject: 'Action needed: a payout to your bank failed',
     text: `Hi ${maker}, Stripe couldn’t complete a payout to your bank account. Please check your bank details in your Stripe Express dashboard: ${url(
-      '/seller/payouts',
+      '/studio/payouts',
     )}${sign}`,
   }),
 
@@ -285,7 +285,7 @@ export const emails = {
     text:
       `A buyer has reported a problem with ${claim.productTitle}: ${claim.reason}.\n\n` +
       `Please reply by ${claim.respondBy} and propose a repair, replacement or refund. If there’s no reply by then, the claim is escalated to ${BRAND.name}.\n\n` +
-      `See the photos and reply: ${url(`/seller/claims/${claim.id}`)}${sign}`,
+      `See the photos and reply: ${url(`/studio/claims/${claim.id}`)}${sign}`,
     related: { type: 'return_claim', id: claim.id },
   }),
 

@@ -22,7 +22,7 @@ export default async function SellerOrdersPage({
       <h1 className="text-[40px] leading-none md:text-[48px]">Orders</h1>
       <nav className="flex flex-wrap gap-2" aria-label="Filter orders">
         <Link
-          href="/seller/orders"
+          href="/studio/orders"
           className={`inline-flex min-h-[44px] items-center px-4 text-[11px] uppercase tracking-label ${!filter ? 'glass-dark' : 'border border-line-strong'}`}
         >
           All ({all.length})
@@ -30,7 +30,7 @@ export default async function SellerOrdersPage({
         {tabs.map((t) => (
           <Link
             key={t}
-            href={`/seller/orders?status=${t}`}
+            href={`/studio/orders?status=${t}`}
             className={`inline-flex min-h-[44px] items-center px-4 text-[11px] uppercase capitalize tracking-label ${filter === t ? 'glass-dark' : 'border border-line-strong'}`}
           >
             {t === 'paid' ? 'New' : t} ({all.filter((o) => o.status === t).length})
@@ -59,7 +59,7 @@ export default async function SellerOrdersPage({
                 <tr key={o.id} className="hover:bg-stone-light/40">
                   <td className="px-4 py-3">
                     <Link
-                      href={`/seller/orders/${o.id}`}
+                      href={`/studio/orders/${o.id}`}
                       className="font-medium underline-offset-4 hover:underline"
                     >
                       {o.orderNumber}

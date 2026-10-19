@@ -105,14 +105,14 @@ export async function SellerInbox({
           <h1 className="px-4 pb-3 pt-5 text-[34px] leading-none">Messages</h1>
           <InboxTabs
             tabs={[
-              { href: `/seller/messages${qs('all')}`, label: 'All', active: tab === 'all' },
+              { href: `/studio/messages${qs('all')}`, label: 'All', active: tab === 'all' },
               {
-                href: `/seller/messages${qs('needs-reply')}`,
+                href: `/studio/messages${qs('needs-reply')}`,
                 label: `Needs reply (${counts.needsReply})`,
                 active: tab === 'needs-reply',
               },
               {
-                href: `/seller/messages${qs('requests')}`,
+                href: `/studio/messages${qs('requests')}`,
                 label: `Requests (${counts.requests})`,
                 active: tab === 'requests',
               },
@@ -121,7 +121,7 @@ export async function SellerInbox({
           <div className="min-h-0 flex-1 overflow-y-auto pb-20 md:pb-0">
             <InboxList
               threads={threads}
-              base="/seller/messages"
+              base="/studio/messages"
               activeId={thread?.id}
               viewer="maker"
               emptyText={
@@ -159,7 +159,7 @@ export async function SellerInbox({
                 <ThreadTop
                   thread={thread}
                   viewer="maker"
-                  backHref={`/seller/messages${qs(tab)}`}
+                  backHref={`/studio/messages${qs(tab)}`}
                   title={thread.buyerName}
                   subtitle={
                     thread.context.productTitle ??

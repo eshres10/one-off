@@ -69,13 +69,13 @@ export async function saveListingAction(_prev: FormState, form: FormData): Promi
     if (productId.success) await updateListing(seller, productId.data, input, submit);
     else {
       const id = await createListing(seller, input, submit);
-      revalidatePath('/seller/listings');
-      redirect(`/seller/listings/${id}?saved=1`);
+      revalidatePath('/studio/listings');
+      redirect(`/studio/listings/${id}?saved=1`);
     }
   } catch (err) {
     return toFormState(err);
   }
-  revalidatePath('/seller/listings');
+  revalidatePath('/studio/listings');
   return { ok: true, message: submit ? 'Saved and submitted for review.' : 'Saved.' };
 }
 
@@ -87,9 +87,9 @@ export async function listingCommandAction(form: FormData) {
   if (command === 'archive') await archiveListing(seller, productId);
   else {
     const id = await duplicateListing(seller, productId);
-    redirect(`/seller/listings/${id}`);
+    redirect(`/studio/listings/${id}`);
   }
-  revalidatePath('/seller/listings');
+  revalidatePath('/studio/listings');
 }
 
 export async function fulfilmentAction(_prev: FormState, form: FormData): Promise<FormState> {
@@ -101,8 +101,8 @@ export async function fulfilmentAction(_prev: FormState, form: FormData): Promis
   } catch (err) {
     return toFormState(err);
   }
-  revalidatePath('/seller/orders');
-  revalidatePath(`/seller/orders/${parsed.data.fulfilmentId}`);
+  revalidatePath('/studio/orders');
+  revalidatePath(`/studio/orders/${parsed.data.fulfilmentId}`);
   return { ok: true, message: 'Order updated — the buyer has been notified.' };
 }
 
@@ -135,7 +135,7 @@ export async function saveProfileAction(_prev: FormState, form: FormData): Promi
   } catch (err) {
     return toFormState(err);
   }
-  revalidatePath('/seller', 'layout');
+  revalidatePath('/studio', 'layout');
   return { ok: true, message: 'Profile saved.' };
 }
 
@@ -147,14 +147,14 @@ export async function submitProfileForReviewAction() {
       db`update public.makers set status = 'pending' where id = ${seller.makerId} and status = 'draft'`,
   );
   await audit('maker.submitted_for_review', { type: 'maker', id: seller.makerId }, {}, seller.id);
-  revalidatePath('/seller', 'layout');
+  revalidatePath('/studio', 'layout');
 }
 
 /** Creates (once) the maker's Stripe Connect Express account and sends them to onboarding. */
 export async function startPayoutOnboardingAction() {
   const seller = await requireSeller();
   if (env().PAYMENTS_DRIVER === 'mock' && !mockPaymentsReachable())
-    redirect('/seller/payouts?unavailable=1');
+    redirect('/studio/payouts?unavailable=1');
   const [m] = await sql()<{ stripeAccountId: string | null; displayName: string; email: string }[]>`
     select m.stripe_account_id, m.display_name, u.email from public.makers m join public.users u on u.id = m.user_id
     where m.id = ${seller.makerId}`;
@@ -189,7 +189,7 @@ export async function openStripeDashboardAction() {
   const [m] = await sql()<
     { stripeAccountId: string | null }[]
   >`select stripe_account_id from public.makers where id = ${seller.makerId}`;
-  if (!m?.stripeAccountId) redirect('/seller/payouts');
+  if (!m?.stripeAccountId) redirect('/studio/payouts');
   const link = await payments().createLoginLink(m.stripeAccountId);
   redirect(link.url);
 }
@@ -211,7 +211,7 @@ export async function commissionResponseAction(form: FormData) {
     .object({ requestId: z.string().uuid(), decision: z.enum(['accept', 'decline']) })
     .parse(Object.fromEntries(form));
   await respondToCommission(seller, requestId, decision);
-  revalidatePath(`/seller/commissions/${requestId}`);
+  revalidatePath(`/studio/commissions/${requestId}`);
 }
 
 export async function quoteAction(_prev: FormState, form: FormData): Promise<FormState> {
@@ -223,7 +223,7 @@ export async function quoteAction(_prev: FormState, form: FormData): Promise<For
   } catch (err) {
     return toFormState(err);
   }
-  revalidatePath(`/seller/commissions/${parsed.data.requestId}`);
+  revalidatePath(`/studio/commissions/${parsed.data.requestId}`);
   return { ok: true, message: 'Quote sent — the buyer has been emailed.' };
 }
 
@@ -237,12 +237,12 @@ export async function saveTemplateAction(form: FormData) {
     (db) => db`
     insert into public.reply_templates (maker_id, title, body) values (${seller.makerId}, ${sanitizeText(input.title)}, ${sanitizeText(input.body)})`,
   );
-  revalidatePath('/seller/messages');
+  revalidatePath('/studio/messages');
 }
 
 export async function deleteTemplateAction(form: FormData) {
   const seller = await requireSeller();
   const id = z.string().uuid().parse(form.get('id'));
   await withUser(seller, (db) => db`delete from public.reply_templates where id = ${id}`);
-  revalidatePath('/seller/messages');
+  revalidatePath('/studio/messages');
 }

@@ -35,7 +35,7 @@ export function InboxList({
   emptyText,
 }: {
   threads: ThreadSummary[];
-  base: '/messages' | '/seller/messages';
+  base: '/messages' | '/studio/messages';
   activeId?: string;
   viewer: 'buyer' | 'maker';
   emptyText: string;

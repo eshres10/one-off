@@ -24,14 +24,14 @@ export default async function SellerClaimsPage() {
         <h2 id="active-claims" className="mb-3 text-[11px] uppercase tracking-label">
           Needs attention
         </h2>
-        <ClaimList claims={active} hrefBase="/seller/claims" empty="No open claims. Nice work." />
+        <ClaimList claims={active} hrefBase="/studio/claims" empty="No open claims. Nice work." />
       </section>
       {closed.length > 0 && (
         <section aria-labelledby="closed-claims">
           <h2 id="closed-claims" className="mb-3 text-[11px] uppercase tracking-label">
             Resolved
           </h2>
-          <ClaimList claims={closed} hrefBase="/seller/claims" empty="" />
+          <ClaimList claims={closed} hrefBase="/studio/claims" empty="" />
         </section>
       )}
     </div>

@@ -88,5 +88,5 @@ export async function mockCompleteOnboardingAction(form: FormData) {
       accountId,
     ),
   );
-  redirect('/seller/payouts?onboarded=1');
+  redirect('/studio/payouts?onboarded=1');
 }

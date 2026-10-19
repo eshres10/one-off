@@ -41,8 +41,8 @@ function images(form: FormData, userId: string) {
 function revalidateThread(threadId: string) {
   revalidatePath('/messages');
   revalidatePath(`/messages/${threadId}`);
-  revalidatePath('/seller/messages');
-  revalidatePath(`/seller/messages/${threadId}`);
+  revalidatePath('/studio/messages');
+  revalidatePath(`/studio/messages/${threadId}`);
 }
 
 /** "Ask the maker": opens (or creates) the conversation for this piece and goes straight in. */
@@ -205,6 +205,6 @@ export async function createSavedReplyAction(_prev: FormState, form: FormData): 
       insert into public.reply_templates (maker_id, title, body)
       values (${seller.makerId}, ${sanitizeText(parsed.data.title)}, ${sanitizeText(parsed.data.body)})`,
   );
-  revalidatePath('/seller/messages', 'layout');
+  revalidatePath('/studio/messages', 'layout');
   return { ok: true };
 }

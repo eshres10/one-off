@@ -16,7 +16,7 @@ export default async function SellerClaimPage({ params }: { params: { id: string
   const active = isClaimActive(claim.status);
   return (
     <div className="max-w-3xl space-y-6">
-      <Link href="/seller/claims" className="text-sm text-muted hover:underline">
+      <Link href="/studio/claims" className="text-sm text-muted hover:underline">
         ← All claims
       </Link>
       <h1 className="text-[40px] leading-none md:text-[48px]">Claim</h1>

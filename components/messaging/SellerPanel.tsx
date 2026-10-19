@@ -125,7 +125,7 @@ export function SellerPanel({
             </div>
           </dl>
           <div className="mt-4 grid grid-cols-2 gap-2">
-            <Link href={`/seller/listings/${piece.id}`} className={buttonClass('secondary', 'sm')}>
+            <Link href={`/studio/listings/${piece.id}`} className={buttonClass('secondary', 'sm')}>
               Edit listing
             </Link>
             <Link href={`/products/${piece.slug}`} className={buttonClass('secondary', 'sm')}>

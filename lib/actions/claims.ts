@@ -62,8 +62,8 @@ export async function respondClaimAction(_prev: FormState, form: FormData): Prom
   } catch (err) {
     return toFormState(err);
   }
-  revalidatePath(`/seller/claims/${parsed.data.claimId}`);
-  revalidatePath('/seller/claims');
+  revalidatePath(`/studio/claims/${parsed.data.claimId}`);
+  revalidatePath('/studio/claims');
   return { ok: true, message: 'Reply sent. The buyer has been emailed.' };
 }
 
@@ -94,9 +94,9 @@ export async function resolveClaimAction(_prev: FormState, form: FormData): Prom
   } catch (err) {
     return toFormState(err);
   }
-  revalidatePath('/seller/claims');
+  revalidatePath('/studio/claims');
   revalidatePath('/admin/claims');
-  revalidatePath(`/seller/claims/${parsed.data.claimId}`);
+  revalidatePath(`/studio/claims/${parsed.data.claimId}`);
   revalidatePath(`/admin/claims/${parsed.data.claimId}`);
   return { ok: true, message: 'Claim resolved. The buyer has been emailed.' };
 }

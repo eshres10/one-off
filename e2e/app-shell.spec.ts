@@ -111,8 +111,9 @@ test.describe.serial('app shell', () => {
     await expect(buyer.getByTestId('bubble-mine').last()).toContainText('Is this lined?');
 
     const seller = await signedIn(browser, enquiryPiece.maker.email);
-    await seller.goto('/studio/messages?tab=needs-reply');
-    await expect(seller).toHaveURL(/\/seller\/messages\?tab=needs-reply/);
+    await seller.goto('/seller/messages?tab=needs-reply');
+    // Old /seller links redirect to Studio.
+    await expect(seller).toHaveURL(/\/studio\/messages\?tab=needs-reply/);
     const row = seller.getByTestId('inbox-row').filter({ hasText: firstName(4) });
     await expect(row).toContainText(enquiryPiece.title, { ignoreCase: true });
     await expect(row.getByTestId('needs-reply-tag')).toContainText(/Reply · \d h left/);
@@ -129,7 +130,7 @@ test.describe.serial('app shell', () => {
     await expect(buyer.getByTestId('send-message')).toBeDisabled();
 
     const seller = await signedIn(browser, enquiryPiece.maker.email);
-    await seller.goto('/seller/messages');
+    await seller.goto('/studio/messages');
     await seller
       .getByTestId('inbox-row')
       .filter({ hasText: firstName(4) })
@@ -144,7 +145,7 @@ test.describe.serial('app shell', () => {
   test('the maker sends a quote and the buyer sees Accept quote', async ({ browser }) => {
     const mara = MAKERS.find((m) => m.slug === 'mara-kovac')!;
     const seller = await signedIn(browser, mara.email);
-    await seller.goto('/seller/messages?tab=requests');
+    await seller.goto('/studio/messages?tab=requests');
     await seller
       .getByTestId('inbox-row')
       .filter({ hasText: firstName(0) })
@@ -176,7 +177,7 @@ test.describe.serial('app shell', () => {
     await expect(buyer.getByTestId('header-messages')).toHaveText('Messages (0)');
 
     const seller = await signedIn(browser, enquiryPiece.maker.email);
-    await seller.goto('/seller/messages?tab=needs-reply');
+    await seller.goto('/studio/messages?tab=needs-reply');
     await seller
       .getByTestId('inbox-row')
       .filter({ hasText: firstName(5) })

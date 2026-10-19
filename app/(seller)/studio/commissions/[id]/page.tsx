@@ -24,7 +24,7 @@ export default async function SellerCommissionPage({ params }: { params: { id: s
   return (
     <div className="grid gap-8 lg:grid-cols-[1fr_1fr]">
       <div className="space-y-5">
-        <Link href="/seller/commissions" className="text-sm text-ink-muted hover:underline">
+        <Link href="/studio/commissions" className="text-sm text-ink-muted hover:underline">
           ← All requests
         </Link>
         <div className="flex items-start justify-between gap-3">

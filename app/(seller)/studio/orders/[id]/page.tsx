@@ -20,7 +20,7 @@ export default async function SellerOrderPage({ params }: { params: { id: string
   return (
     <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
       <div className="space-y-6">
-        <Link href="/seller/orders" className="text-sm text-ink-muted hover:underline">
+        <Link href="/studio/orders" className="text-sm text-ink-muted hover:underline">
           ← All orders
         </Link>
         <div className="flex flex-wrap items-center justify-between gap-3">

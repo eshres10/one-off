@@ -17,7 +17,7 @@ export default async function ListingsPage() {
     <div className="space-y-6">
       <div className="flex items-end justify-between">
         <h1 className="text-[40px] leading-none md:text-[48px]">Listings</h1>
-        <ButtonLink href="/seller/listings/new">New listing</ButtonLink>
+        <ButtonLink href="/studio/listings/new">New listing</ButtonLink>
       </div>
       <p className="text-sm text-ink-muted">
         New listings are reviewed by our team before they appear in the shop — usually within one
@@ -26,7 +26,7 @@ export default async function ListingsPage() {
       {listings.length === 0 ? (
         <EmptyState
           title="No listings yet"
-          action={<ButtonLink href="/seller/listings/new">Create your first listing</ButtonLink>}
+          action={<ButtonLink href="/studio/listings/new">Create your first listing</ButtonLink>}
         />
       ) : (
         <ul
@@ -41,7 +41,7 @@ export default async function ListingsPage() {
                 )}
               </span>
               <div className="min-w-0 flex-1">
-                <Link href={`/seller/listings/${l.id}`} className="font-medium hover:underline">
+                <Link href={`/studio/listings/${l.id}`} className="font-medium hover:underline">
                   {l.title}
                 </Link>
                 <p className="flex flex-wrap items-center gap-2 text-sm text-ink-muted">

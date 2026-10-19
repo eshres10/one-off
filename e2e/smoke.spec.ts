@@ -94,7 +94,7 @@ test.describe.serial('marketplace smoke', () => {
 
   test('seller logs in and sees the order', async ({ page }) => {
     expect(orderNumber).not.toBe('');
-    await login(page, product.maker.email, '/seller/orders');
+    await login(page, product.maker.email, '/studio/orders');
     await expect(page.getByTestId('seller-orders')).toContainText(orderNumber);
     await page.getByRole('link', { name: orderNumber }).click();
     await page.getByLabel('Tracking number').fill('AP998877AU');

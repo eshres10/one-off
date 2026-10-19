@@ -166,3 +166,37 @@ export const GridIcon = ({ filled, ...p }: P & { filled?: boolean }) => (
     ))}
   </svg>
 );
+export const BoxIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M4 7.5 12 4l8 3.5v9L12 20l-8-3.5v-9Z" />
+    <path d="M4 7.5 12 11l8-3.5M12 11v9" />
+  </svg>
+);
+export const PlusSquareIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <rect x="4" y="4" width="16" height="16" />
+    <path d="M12 8.5v7M8.5 12h7" />
+  </svg>
+);
+export const WalletIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M4 7h14.5a1.5 1.5 0 0 1 1.5 1.5V19H4V7Z" />
+    <path d="M4 7l11-3v3M15.5 13h2" />
+  </svg>
+);
+export const SunIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <circle cx="12" cy="12" r="4" />
+    <path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4" />
+  </svg>
+);
+export const ArrowLeftIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M19 12H5M11 6l-6 6 6 6" />
+  </svg>
+);
+export const ExternalIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M14 5h5v5M19 5l-8 8M17 14v5H5V7h5" />
+  </svg>
+);

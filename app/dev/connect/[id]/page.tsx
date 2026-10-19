@@ -25,7 +25,7 @@ export default function MockConnectPage({
             Account {params.id}. In production this opens Stripe’s Express dashboard with balances
             and payouts.
           </p>
-          <a href="/seller/payouts" className="mt-6 inline-block underline">
+          <a href="/studio/payouts" className="mt-6 inline-block underline">
             Back to payouts
           </a>
         </>

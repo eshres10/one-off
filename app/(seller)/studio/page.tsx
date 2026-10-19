@@ -19,18 +19,18 @@ export default async function SellerHome() {
     {
       done: Boolean(maker.story && maker.city),
       label: 'Complete your maker profile',
-      href: '/seller/onboarding',
+      href: '/studio/onboarding',
     },
     {
       done: maker.stripeOnboardingComplete,
       label: 'Set up payouts with Stripe',
-      href: '/seller/payouts',
+      href: '/studio/payouts',
     },
     {
       done: maker.status === 'approved',
       label:
         maker.status === 'pending' ? 'Profile in review by our team' : 'Get your profile approved',
-      href: '/seller/onboarding',
+      href: '/studio/onboarding',
     },
   ];
   const open = orders.filter((o) => o.status === 'paid' || o.status === 'preparing');
@@ -76,7 +76,7 @@ export default async function SellerHome() {
           <h2 id="recent" className="text-[28px] leading-none">
             Orders to prepare
           </h2>
-          <Link href="/seller/orders" className="text-sm underline underline-offset-4">
+          <Link href="/studio/orders" className="text-sm underline underline-offset-4">
             All orders
           </Link>
         </div>
@@ -90,7 +90,7 @@ export default async function SellerHome() {
             {open.slice(0, 5).map((o) => (
               <li key={o.id}>
                 <Link
-                  href={`/seller/orders/${o.id}`}
+                  href={`/studio/orders/${o.id}`}
                   className="flex items-center justify-between gap-3 p-4 hover:bg-stone-light/40"
                 >
                   <div className="text-sm">

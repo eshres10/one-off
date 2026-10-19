@@ -24,7 +24,7 @@ export default async function EditListingPage({
   const activeVariants = data.variants.filter((v) => v.isActive);
   return (
     <div className="max-w-3xl">
-      <Link href="/seller/listings" className="text-sm text-ink-muted hover:underline">
+      <Link href="/studio/listings" className="text-sm text-ink-muted hover:underline">
         ← All listings
       </Link>
       <div className="mb-6 mt-2 flex items-center justify-between gap-3">

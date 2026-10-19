@@ -23,7 +23,7 @@ const strip =
 
 /** Where the signed-in user's inbox lives (makers answer from the studio). */
 export function messagesHref(role: string | undefined) {
-  return role === 'seller' ? '/seller/messages' : '/messages';
+  return role === 'seller' ? '/studio/messages' : '/messages';
 }
 
 export async function SiteHeader({ variant = 'auto' }: { variant?: HeaderVariant } = {}) {
@@ -38,7 +38,7 @@ export async function SiteHeader({ variant = 'auto' }: { variant?: HeaderVariant
   const mega = resolveMega(menuMakers.featured, menuMakers.newest);
   const accountHref = user
     ? user.role === 'seller'
-      ? '/seller'
+      ? '/studio'
       : user.role === 'admin'
         ? '/admin'
         : '/account'

@@ -27,7 +27,7 @@ export default async function SellerCommissionsPage() {
           {requests.map((r) => (
             <li key={r.id}>
               <Link
-                href={`/seller/commissions/${r.id}`}
+                href={`/studio/commissions/${r.id}`}
                 className="flex items-center justify-between gap-3 p-4 hover:bg-stone-light/40"
               >
                 <div>
