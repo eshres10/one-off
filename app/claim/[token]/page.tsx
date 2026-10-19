@@ -269,7 +269,6 @@ export default async function ClaimPage({
     const records = await Promise.all(pieces.map((p) => getPiece(user, p.id)));
     const editable: Record<string, EditorPiece> = {};
     for (const r of records) if (r) editable[r.id] = { ...r, slug: r.slug, id: r.id };
-    const kept = pieces.filter((p) => p.keepOnClaim).length;
     return (
       <Frame step={1}>
         <p className="mb-4 text-[14px] text-muted">

@@ -87,10 +87,12 @@ export function ClaimPieces({
           </li>
         ))}
       </ul>
-      <input type="hidden" name="kept" value={kept} />
       <p className="mt-2 text-[12px] text-muted">
         Hidden pieces stay in your Studio. You can show them any time.
       </p>
+      <form action={piecesReviewedAction} className="mt-6">
+        <LooksGoodButton count={kept} />
+      </form>
       {editing && editable[editing] && (
         <Sheet
           testId="claim-edit-sheet"
