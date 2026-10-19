@@ -12,6 +12,9 @@ import { PrimaryNavLinks } from './PrimaryNav';
 import { PRIMARY_NAV } from '@/lib/nav/primary';
 import { SavedHeart } from './SavedHeart';
 import { NavLink } from './NavLink';
+import { MegaMenu } from './MegaMenu';
+import { getMenuMakers } from '@/lib/queries/nav';
+import { resolveMega } from '@/lib/nav/mega';
 import { getSavedCount } from '@/lib/queries/saved';
 
 // Each strip is a fixed height (see --strip-h in globals.css) so pages can offset exactly.
@@ -26,11 +29,13 @@ export function messagesHref(role: string | undefined) {
 export async function SiteHeader({ variant = 'auto' }: { variant?: HeaderVariant } = {}) {
   const checkoutOn = checkoutEnabled();
   const user = await getSessionUser();
-  const [count, unread, saved] = await Promise.all([
+  const [count, unread, saved, menuMakers] = await Promise.all([
     checkoutOn ? cartCount(getCartSessionId()) : Promise.resolve(0),
     user ? unreadCount(user).catch(() => 0) : Promise.resolve(0),
     user ? getSavedCount(user).catch(() => 0) : Promise.resolve(0),
+    getMenuMakers().catch(() => ({ featured: [], newest: [] })),
   ]);
+  const mega = resolveMega(menuMakers.featured, menuMakers.newest);
   const accountHref = user
     ? user.role === 'seller'
       ? '/seller'
@@ -77,10 +82,15 @@ export async function SiteHeader({ variant = 'auto' }: { variant?: HeaderVariant
         <div className="container-page relative grid h-[var(--nav-h)] grid-cols-[1fr_auto_1fr] items-center">
           <div className="flex items-center">
             <div className="md:hidden">
-              <MobileMenu links={menuLinks} />
+              <MobileMenu links={menuLinks} groups={mega} />
             </div>
-            <nav aria-label="Primary" className="hidden items-center gap-7 md:flex">
-              <PrimaryNavLinks />
+            <nav aria-label="Primary" className="hidden items-center md:flex">
+              <div className="flex items-center gap-7 lg:hidden">
+                <PrimaryNavLinks />
+              </div>
+              <div className="hidden lg:flex">
+                <MegaMenu panels={mega} />
+              </div>
             </nav>
           </div>
           <Link href="/" aria-label={`${BRAND.name} home`} className="justify-self-center">

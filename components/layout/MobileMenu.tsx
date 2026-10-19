@@ -4,10 +4,18 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { CloseIcon, MenuIcon } from '@/components/ui/icons';
+import type { MegaPanel } from '@/lib/nav/mega';
+import { ChevronIcon, CloseIcon, MenuIcon } from '@/components/ui/icons';
 import { Wordmark } from '@/components/ui/Wordmark';
 
-export function MobileMenu({ links }: { links: Array<{ href: string; label: string }> }) {
+export function MobileMenu({
+  links,
+  groups = [],
+}: {
+  links: Array<{ href: string; label: string }>;
+  /** Mega-menu groups, shown as accordions in place of the matching link. */
+  groups?: MegaPanel[];
+}) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   useEffect(() => setOpen(false), [pathname]);
@@ -50,16 +58,51 @@ export function MobileMenu({ links }: { links: Array<{ href: string; label: stri
               <Wordmark size="mobile" />
               <span className="w-11" />
             </div>
-            <nav aria-label="Menu" className="bleed mt-6 flex flex-col">
-              {links.map((l) => (
-                <Link
-                  key={l.href}
-                  href={l.href}
-                  className="border-b border-line py-4 font-display text-[34px] leading-none"
-                >
-                  {l.label}
-                </Link>
-              ))}
+            <nav aria-label="Menu" className="bleed mt-6 flex flex-col overflow-y-auto pb-10">
+              {links.map((l) => {
+                const group = groups.find((g) => g.label === l.label);
+                if (!group)
+                  return (
+                    <Link
+                      key={l.href}
+                      href={l.href}
+                      className="border-b border-line py-4 font-display text-[34px] leading-none"
+                    >
+                      {l.label}
+                    </Link>
+                  );
+                return (
+                  <details key={l.href} className="group border-b border-line">
+                    <summary className="flex cursor-pointer list-none items-center justify-between py-4 font-display text-[34px] leading-none [&::-webkit-details-marker]:hidden">
+                      {l.label}
+                      <ChevronIcon
+                        dir="down"
+                        width={18}
+                        height={18}
+                        className="transition-transform group-open:rotate-180"
+                      />
+                    </summary>
+                    <div className="space-y-5 pb-5">
+                      {group.columns.map((col) => (
+                        <div key={col.title}>
+                          <p className="text-[11px] uppercase tracking-[0.14em] text-muted-2">
+                            {col.title}
+                          </p>
+                          <ul className="mt-2 space-y-1" role="list">
+                            {(col.links ?? []).map((link) => (
+                              <li key={link.href + link.label}>
+                                <Link href={link.href} className="block py-1.5 text-[16px]">
+                                  {link.label}
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                );
+              })}
             </nav>
           </div>,
           document.body,

@@ -297,6 +297,21 @@ html {
     0 -8px 24px rgb(var(--ink-rgb) / 0.06);
 }
 
+/* Mega menu panel: fades in and settles down 8px (instant with reduced motion). */
+@keyframes mega-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.mega-panel {
+  animation: mega-in 220ms ease both;
+}
+
 @media (prefers-reduced-transparency: reduce) {
   .glass-nav,
   .glass-chip {

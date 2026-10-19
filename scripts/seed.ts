@@ -586,6 +586,8 @@ export async function seed(databaseUrl: string) {
               then excluded.stripe_payouts_enabled else public.makers.stripe_payouts_enabled end,
             free_shipping_over_cents = excluded.free_shipping_over_cents, dispatch_days = excluded.dispatch_days,
             approved_at = excluded.approved_at`;
+        // The established studios are the featured makers in the Makers menu.
+        await tx`update public.makers set is_featured = ${m.joinedDaysAgo >= 60} where id = ${m.id}`;
         await tx`
           insert into public.reply_templates (id, maker_id, title, body) values
             (${seedId(`tpl:${m.slug}:size`)}, ${m.id}, 'Sizing help', ${'Thanks for asking! Based on your measurements I’d recommend '}),

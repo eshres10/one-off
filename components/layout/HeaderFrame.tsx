@@ -1,15 +1,23 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { createContext, useContext, useState, type ReactNode } from 'react';
 import { useScrolled } from '@/lib/hooks/useScrolled';
 
 export type HeaderVariant = 'auto' | 'overlay' | 'solid';
 
+const MenuState = createContext<{ open: boolean; setOpen: (open: boolean) => void }>({
+  open: false,
+  setOpen: () => {},
+});
+
+/** Lets the mega menu put the header into its glass state while a panel is open. */
+export const useHeaderMenu = () => useContext(MenuState);
+
 /**
  * The fixed site header. Transparent at the top of the page; picks up the frosted `glass-nav`
- * recipe once the page scrolls. `overlay` keeps the logo and links white while transparent (for
- * full-bleed heroes); `auto` does the same only when the page renders a `[data-hero]` section,
- * so the server-rendered first paint is already right.
+ * recipe once the page scrolls or a mega-menu panel opens. `overlay` keeps the logo and links
+ * white while transparent (for full-bleed heroes); `auto` does the same only when the page
+ * renders a `[data-hero]` section, so the server-rendered first paint is already right.
  */
 export function HeaderFrame({
   variant = 'auto',
@@ -19,14 +27,19 @@ export function HeaderFrame({
   children: ReactNode;
 }) {
   const scrolled = useScrolled(8);
+  const [open, setOpen] = useState(false);
+  const glass = scrolled || open;
   return (
-    <header
-      className={scrolled ? 'site-header glass-nav' : 'site-header'}
-      data-variant={variant}
-      data-scrolled={scrolled ? '' : undefined}
-      data-testid="site-header"
-    >
-      {children}
-    </header>
+    <MenuState.Provider value={{ open, setOpen }}>
+      <header
+        className={glass ? 'site-header glass-nav' : 'site-header'}
+        data-variant={variant}
+        data-scrolled={glass ? '' : undefined}
+        data-menu-open={open ? '' : undefined}
+        data-testid="site-header"
+      >
+        {children}
+      </header>
+    </MenuState.Provider>
   );
 }
