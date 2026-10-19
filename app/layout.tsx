@@ -1,3 +1,4 @@
+import { ServiceWorker } from '@/components/install/ServiceWorker';
 import type { Metadata, Viewport } from 'next';
 import { Instrument_Serif, Jost } from 'next/font/google';
 import { BRAND } from '@/lib/brand';
@@ -28,6 +29,8 @@ export const metadata: Metadata = {
   description: SHARE_DESCRIPTION,
   metadataBase: new URL(SITE_URL),
   applicationName: BRAND.name,
+  // Added to an iPhone home screen, it opens like an app.
+  appleWebApp: { capable: true, title: BRAND.name, statusBarStyle: 'default' },
   openGraph: {
     type: 'website',
     locale: 'en_AU',
@@ -52,6 +55,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen">
         {children}
         <OfflineGate />
+        <ServiceWorker />
       </body>
     </html>
   );
