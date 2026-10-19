@@ -7,6 +7,7 @@ import type { DiscoverEdit, DiscoverMaker, DiscoverPiece } from '@/lib/queries/d
 import { FollowButton } from '@/components/maker/FollowButton';
 import { SaveButton } from '@/components/product/SaveButton';
 import { Img as Image } from '@/components/ui/Img';
+import { LongPressAdd } from '@/components/product/LongPressAdd';
 
 export const FALLBACK_RATIO = 1.25;
 /** Space under a piece's image (name, maker line, tag) relative to column width. */
@@ -39,17 +40,19 @@ export function PieceCard({
   return (
     <article className="group" data-testid="discover-piece">
       <div className="relative overflow-hidden bg-stone-light">
-        <Link href={href} data-quickview tabIndex={-1} aria-hidden className="block">
-          <Image
-            src={piece.imageUrl ?? '/seed/hero-linen-suit.jpg'}
-            alt=""
-            width={w}
-            height={h}
-            priority={priority}
-            sizes="(min-width: 1280px) 20vw, (min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
-            className="h-auto w-full transition duration-500 group-hover:scale-[1.03]"
-          />
-        </Link>
+        <LongPressAdd slug={piece.slug}>
+          <Link href={href} data-quickview tabIndex={-1} aria-hidden className="block">
+            <Image
+              src={piece.imageUrl ?? '/seed/hero-linen-suit.jpg'}
+              alt=""
+              width={w}
+              height={h}
+              priority={priority}
+              sizes="(min-width: 1280px) 20vw, (min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
+              className="h-auto w-full transition duration-500 group-hover:scale-[1.03]"
+            />
+          </Link>
+        </LongPressAdd>
         {piece.previewOnly && (
           <span className="pointer-events-none absolute left-2 top-2 bg-ink px-2 py-[3px] text-[10px] uppercase leading-4 tracking-[0.14em] text-ground">
             Preview only

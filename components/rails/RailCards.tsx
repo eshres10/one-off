@@ -5,6 +5,7 @@ import { FollowButton } from '@/components/maker/FollowButton';
 import { SaveButton } from '@/components/product/SaveButton';
 import { Img as Image } from '@/components/ui/Img';
 import { RailItem } from './Rail';
+import { LongPressAdd } from '@/components/product/LongPressAdd';
 
 function compact(n: number) {
   return n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, '')}k` : String(n);
@@ -24,24 +25,26 @@ export function RailProductCard({ product, saved }: { product: RailProduct; save
   return (
     <RailItem className="w-[168px] md:w-[300px]">
       <article className="relative">
-        <Link href={`/products/${product.slug}`} className="block" tabIndex={-1} aria-hidden>
-          <div className="relative aspect-4/5 overflow-hidden bg-stone-light">
-            {product.imageUrl && (
-              <Image
-                src={product.imageUrl}
-                alt=""
-                fill
-                sizes="(min-width: 768px) 300px, 168px"
-                className="object-cover object-top"
-              />
-            )}
-            {(product.previewOnly || tag) && (
-              <span className="absolute bottom-2 left-2 bg-surface px-2 py-[3px] text-[10px] uppercase leading-4 tracking-[0.12em] text-ink">
-                {product.previewOnly ? 'Preview only' : tag}
-              </span>
-            )}
-          </div>
-        </Link>
+        <LongPressAdd slug={product.slug}>
+          <Link href={`/products/${product.slug}`} className="block" tabIndex={-1} aria-hidden>
+            <div className="relative aspect-4/5 overflow-hidden bg-stone-light">
+              {product.imageUrl && (
+                <Image
+                  src={product.imageUrl}
+                  alt=""
+                  fill
+                  sizes="(min-width: 768px) 300px, 168px"
+                  className="object-cover object-top"
+                />
+              )}
+              {(product.previewOnly || tag) && (
+                <span className="absolute bottom-2 left-2 bg-surface px-2 py-[3px] text-[10px] uppercase leading-4 tracking-[0.12em] text-ink">
+                  {product.previewOnly ? 'Preview only' : tag}
+                </span>
+              )}
+            </div>
+          </Link>
+        </LongPressAdd>
         <div className="absolute right-0 top-0">
           <SaveButton productId={product.id} saved={saved} title={product.title} />
         </div>

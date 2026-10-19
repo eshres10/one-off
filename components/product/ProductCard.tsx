@@ -7,6 +7,7 @@ import { Img as Image } from '@/components/ui/Img';
 import { ProductBadgePill } from '@/components/ui/Badge';
 import { Swatch } from '@/components/ui/Pill';
 import { SaveButton } from './SaveButton';
+import { LongPressAdd } from '@/components/product/LongPressAdd';
 
 export function ProductCard({
   product,
@@ -24,20 +25,22 @@ export function ProductCard({
     product.badges.find((b) => b === 'sold_out' || b === 'low_stock') ?? product.badges[0];
   return (
     <article className="group relative" data-testid="product-card">
-      <Link href={`/products/${product.slug}`} className="block" tabIndex={-1} aria-hidden>
-        <div className="relative aspect-4/5 overflow-hidden bg-stone-light">
-          {product.imageUrl && (
-            <Image
-              src={product.imageUrl}
-              alt=""
-              fill
-              priority={priority}
-              sizes="(min-width: 1280px) 22vw, (min-width: 768px) 30vw, 50vw"
-              className={`object-cover object-top transition duration-700 group-hover:scale-[1.02] ${soldOut ? 'opacity-60' : ''}`}
-            />
-          )}
-        </div>
-      </Link>
+      <LongPressAdd slug={product.slug}>
+        <Link href={`/products/${product.slug}`} className="block" tabIndex={-1} aria-hidden>
+          <div className="relative aspect-4/5 overflow-hidden bg-stone-light">
+            {product.imageUrl && (
+              <Image
+                src={product.imageUrl}
+                alt=""
+                fill
+                priority={priority}
+                sizes="(min-width: 1280px) 22vw, (min-width: 768px) 30vw, 50vw"
+                className={`object-cover object-top transition duration-700 group-hover:scale-[1.02] ${soldOut ? 'opacity-60' : ''}`}
+              />
+            )}
+          </div>
+        </Link>
+      </LongPressAdd>
       {product.previewOnly ? (
         <span
           className="pointer-events-none absolute left-2 top-2 bg-ink px-2 py-[3px] text-[10px] uppercase leading-4 tracking-[0.14em] text-ground md:left-3 md:top-3"

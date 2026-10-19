@@ -116,3 +116,51 @@ test.describe('empty and edge states', () => {
     expect(png.readUInt32BE(20)).toBe(630);
   });
 });
+
+test.describe('long press to add', () => {
+  const hold = async (page: import('@playwright/test').Page, slug: string) => {
+    const card = page.locator(`[data-long-press-add="${slug}"]:visible`).first();
+    await card.scrollIntoViewIfNeeded();
+    const box = (await card.boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.waitForTimeout(800);
+    await page.mouse.up();
+  };
+
+  test('holding a piece opens size choice, adds it, and doesn’t open the piece', async ({
+    page,
+  }) => {
+    const [p] = await db<{ slug: string; title: string }[]>`
+      select p.slug, p.title from public.products p join public.makers m on m.id = p.maker_id
+      where p.status = 'approved' and m.shop_status = 'live' and p.product_type = 'ready_to_ship'
+        and not ('preview-only' = any(p.tags))
+        and (select count(*) from public.product_variants v
+             where v.product_id = p.id and v.is_active and v.stock_quantity > 0) >= 3
+      order by p.slug limit 1`;
+    await page.goto(`/discover?q=${encodeURIComponent(p!.title)}`);
+    await hold(page, p!.slug);
+    await expect(page.getByTestId('quick-add-size').first()).toBeVisible({ timeout: 20_000 });
+    expect(new URL(page.url()).pathname).toBe('/discover');
+    await page.locator('[data-testid=quick-add-size]:not([disabled])').first().click();
+    await page.getByTestId('quick-add-submit').click();
+    await expect(page.getByTestId('quick-add-done')).toContainText('Added to your bag');
+    await page.goto('/bag');
+    await expect(page.getByTestId('bag-line')).toHaveCount(1);
+  });
+
+  test('a one-of-one goes straight in, and a tap still opens the piece', async ({ page }) => {
+    const [p] = await db<{ slug: string; title: string }[]>`
+      select p.slug, p.title from public.products p join public.makers m on m.id = p.maker_id
+      join public.product_variants v on v.product_id = p.id and v.is_active and v.stock_quantity > 0
+      where p.status = 'approved' and m.shop_status = 'live' and p.product_type = 'one_of_one'
+        and not ('preview-only' = any(p.tags))
+      order by p.slug desc limit 1`;
+    await page.goto(`/discover?q=${encodeURIComponent(p!.title)}`);
+    await hold(page, p!.slug);
+    await expect(page.getByTestId('quick-add-done')).toBeVisible({ timeout: 20_000 });
+    await page.getByRole('button', { name: 'Keep looking' }).click();
+    await page.locator(`[data-long-press-add="${p!.slug}"]:visible`).first().tap();
+    await expect(page).toHaveURL(new RegExp(`/products/${p!.slug}`));
+  });
+});
