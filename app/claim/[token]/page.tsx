@@ -109,7 +109,7 @@ async function Welcome({ shop, children }: { shop: ClaimShop; children: React.Re
           {[
             ...(shop.foundingNumber
               ? [
-                  `${TERMS.foundingCommissionPct}% commission for your first ${TERMS.foundingMonths} months.`,
+                  `${TERMS.foundingCommissionPct}% commission for your first ${TERMS.foundingMonths} months, from the day your shop goes live.`,
                 ]
               : []),
             `Paid every ${TERMS.payoutWeekday[0]!.toUpperCase()}${TERMS.payoutWeekday.slice(1)}, straight to your bank.`,

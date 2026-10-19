@@ -5,7 +5,8 @@
 export const TERMS = {
   standardCommissionPct: 15, // matches PLATFORM_FEE_BPS=1500 and the help and waitlist pages
   foundingCommissionPct: 0,
-  foundingMonths: 3, // [CONFIRM]
+  /** Confirmed: 3 months at the founding rate, counted from the day the shop goes live. */
+  foundingMonths: 3,
   foundingSpotsTotal: 20,
   payoutWeekday: 'thursday', // [CONFIRM]
   releaseDaysAfterDelivery: 3, // [CONFIRM]

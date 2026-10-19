@@ -158,7 +158,7 @@ export const publicFoundingOffer = cached(
   async (): Promise<string | null> => {
     const { left } = await foundingSpots();
     return left > 0
-      ? `Founding makers: limited spots, ${TERMS.foundingCommissionPct}% commission for ${TERMS.foundingMonths} months.`
+      ? `Founding makers: limited spots, ${TERMS.foundingCommissionPct}% commission for your first ${TERMS.foundingMonths} months from going live.`
       : null;
   },
   ['founding-offer'],
