@@ -14,6 +14,7 @@ import {
   type SaveResult,
 } from '@/lib/services/studio-listings';
 import type { PieceDraft } from '@/lib/studio/pieces';
+import { EMPTY_STORY, STORY_LIMITS } from '@/lib/listings/story';
 import { getSessionUser, requireSeller } from '@/lib/auth/session';
 
 const uuid = z.string().uuid();
@@ -43,6 +44,23 @@ const draftSchema = z.object({
   acceptsCustom: z.boolean(),
   images: z.array(z.object({ url: z.string().max(500), alt: z.string().max(300) })).max(8),
   measurements: z.array(z.object({ name: z.string().max(60), valueCm: z.number() })).max(20),
+  story: z
+    .object({
+      quote: z.string().max(STORY_LIMITS.quote + 20),
+      inspiration: z.string().max(STORY_LIMITS.inspiration + 50),
+      details: z.array(z.string().max(STORY_LIMITS.detail + 10)).max(STORY_LIMITS.details),
+      fabric: z.string().max(STORY_LIMITS.fabric + 20),
+      hoursToMake: z.number().int().min(0).max(STORY_LIMITS.hoursMax).nullable(),
+      closeups: z
+        .array(
+          z.object({
+            path: z.string().max(500),
+            caption: z.string().max(STORY_LIMITS.caption + 20),
+          }),
+        )
+        .max(STORY_LIMITS.closeups),
+    })
+    .default(EMPTY_STORY),
 });
 
 /** Sets one size's stock (steppers on Overview and Listings save straight away). */

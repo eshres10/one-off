@@ -75,11 +75,22 @@ async function put(name: string, bytes: Uint8Array, contentType: string): Promis
 export async function storeImage(
   bytes: Uint8Array,
   declaredType: string,
-  prefix: 'products' | 'messages' | 'commissions' | 'makers' | 'reviews' | 'collections',
+  prefix:
+    | 'products'
+    | 'messages'
+    | 'commissions'
+    | 'makers'
+    | 'reviews'
+    | 'collections'
+    | 'stories',
+  /** A folder under the prefix (stories/{product id}/); the month otherwise. */
+  folder?: string,
 ) {
   const type = validateImage(bytes, declaredType);
-  const stem = `${prefix}/${new Date().toISOString().slice(0, 7)}/${randomUUID()}`;
-  if (prefix === 'products' || prefix === 'makers') {
+  const sub =
+    folder && /^[0-9a-f-]{36}$/i.test(folder) ? folder : new Date().toISOString().slice(0, 7);
+  const stem = `${prefix}/${sub}/${randomUUID()}`;
+  if (prefix === 'products' || prefix === 'makers' || prefix === 'stories') {
     const photo = await processPhoto(bytes);
     if (photo) {
       // The size travels in the name (…-1200x1600.webp) so listings can reserve the right space.

@@ -1,3 +1,4 @@
+import { EMPTY_STORY, type PieceStory } from '@/lib/listings/story';
 import { TERMS } from './terms';
 
 export const PIECE_CATEGORIES = [
@@ -64,6 +65,8 @@ export interface PieceDraft {
   acceptsCustom: boolean;
   images: Array<{ url: string; alt: string }>;
   measurements: Array<{ name: string; valueCm: number }>;
+  /** "Story of the garment": optional, never needed to publish. */
+  story: PieceStory;
 }
 
 export const MIN_PHOTOS = 3;
@@ -153,5 +156,6 @@ export function newPiece(shop: EditorShop): EditorPiece {
     acceptsCustom: false,
     images: [],
     measurements: [],
+    story: EMPTY_STORY,
   };
 }

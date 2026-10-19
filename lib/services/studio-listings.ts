@@ -5,6 +5,7 @@ import type { SessionUser } from '@/lib/auth/session';
 import { sql, withUser, type Db } from '@/lib/db';
 import { sizeFromUrl } from '@/lib/image-size';
 import { sanitizeText } from '@/lib/domain/moderation';
+import { EMPTY_STORY, cleanStory, hasStory, type PieceStory } from '@/lib/listings/story';
 import { slugify, uniqueSuffix } from '@/lib/slug';
 import { isOwnImageUrl } from '@/lib/storage';
 import {
@@ -58,6 +59,7 @@ export async function getPiece(actor: Actor, productId: string): Promise<PieceRe
     const measurements = await db<{ name: string; valueCm: string }[]>`
       select garment_measurement_name as name, value_cm from public.product_measurements
       where product_id = ${productId} order by sort_order`;
+    const story = await readStory(db, productId);
     const sizes = emptySizes().map((s) => {
       const v = variants.find((x) => x.size === s.size);
       if (!v) return s;
@@ -90,8 +92,91 @@ export async function getPiece(actor: Actor, productId: string): Promise<PieceRe
       sizes,
       images,
       measurements: measurements.map((m) => ({ name: m.name, valueCm: Number(m.valueCm) })),
+      story: story ?? EMPTY_STORY,
     };
   });
+}
+
+interface StoryRow {
+  quote: string | null;
+  inspiration: string | null;
+  details: string[];
+  fabric: string | null;
+  hoursToMake: number | null;
+  closeups: Array<{ path: string; caption: string }>;
+}
+
+const fromRow = (r: StoryRow): PieceStory => ({
+  quote: r.quote ?? '',
+  inspiration: r.inspiration ?? '',
+  details: r.details ?? [],
+  fabric: r.fabric ?? '',
+  hoursToMake: r.hoursToMake,
+  closeups: r.closeups ?? [],
+});
+
+/** A piece's story, or null if it has none (reads through RLS as whoever `db` is). */
+export async function readStory(db: Db, productId: string): Promise<PieceStory | null> {
+  const [r] = await db<StoryRow[]>`
+    select quote, inspiration, details, fabric, hours_to_make, closeups
+    from public.product_stories where product_id = ${productId}`;
+  return r ? fromRow(r) : null;
+}
+
+/** Saves the story with the piece; an empty story removes the row. */
+async function writeStory(db: Db, productId: string, story: PieceStory) {
+  if (!hasStory(story)) {
+    await db`delete from public.product_stories where product_id = ${productId}`;
+    return;
+  }
+  await db`
+    insert into public.product_stories (product_id, quote, inspiration, details, fabric, hours_to_make, closeups, updated_at)
+    values (${productId}, ${story.quote || null}, ${story.inspiration || null}, ${story.details},
+      ${story.fabric || null}, ${story.hoursToMake}, ${db.json(story.closeups)}, now())
+    on conflict (product_id) do update set quote = excluded.quote, inspiration = excluded.inspiration,
+      details = excluded.details, fabric = excluded.fabric, hours_to_make = excluded.hours_to_make,
+      closeups = excluded.closeups, updated_at = now()`;
+}
+
+export interface ReusableStory {
+  productId: string;
+  title: string;
+  cover: string | null;
+  story: PieceStory;
+}
+
+/** The maker's other pieces with a story, for "Reuse a story". */
+export async function listReusableStories(
+  actor: Actor,
+  makerId: string,
+  exceptId: string | null,
+): Promise<ReusableStory[]> {
+  if (actor.role !== 'admin' && actor.makerId !== makerId) return [];
+  return withUser(actor, async (db) => {
+    const rows = await db<
+      (StoryRow & { productId: string; title: string; cover: string | null })[]
+    >`
+      select p.id as product_id, p.title,
+        (select public_url from public.product_images i where i.product_id = p.id order by sort_order limit 1) as cover,
+        s.quote, s.inspiration, s.details, s.fabric, s.hours_to_make, s.closeups
+      from public.product_stories s join public.products p on p.id = s.product_id
+      where p.maker_id = ${makerId} and p.status <> 'archived'
+        and (${exceptId}::uuid is null or p.id <> ${exceptId}::uuid)
+      order by s.updated_at desc limit 30`;
+    return rows.map((r) => ({
+      productId: r.productId,
+      title: r.title,
+      cover: r.cover,
+      story: fromRow(r),
+    }));
+  });
+}
+
+function cleanStoryInput(input: PieceStory | undefined): PieceStory {
+  const story = cleanStory(input);
+  if (story.closeups.some((c) => !isOwnImageUrl(c.path) && !c.path.startsWith('/seed/')))
+    throw new UserError('Please upload close-ups here rather than linking them.');
+  return story;
 }
 
 function clean(input: PieceDraft): PieceDraft {
@@ -150,6 +235,7 @@ function clean(input: PieceDraft): PieceDraft {
       url: i.url,
       alt: sanitizeText(i.alt || `${title || 'Piece'}, photo ${n + 1}`).slice(0, 200),
     })),
+    story: cleanStoryInput(input.story),
     measurements: input.measurements
       .filter(
         (m) => m.name.trim() && Number.isFinite(m.valueCm) && m.valueCm > 0 && m.valueCm < 400,
@@ -205,6 +291,7 @@ async function writePiece(db: Db, productId: string, p: PieceDraft) {
       values (${productId}, ${img.url.replace(/^\/api\/files\//, '')}, ${img.url}, ${img.alt}, ${i},
         ${size?.width ?? null}, ${size?.height ?? null})`;
   }
+  await writeStory(db, productId, p.story);
   await db`delete from public.product_measurements where product_id = ${productId}`;
   for (const [i, m] of p.measurements.entries()) {
     await db`insert into public.product_measurements (product_id, size, garment_measurement_name, value_cm, sort_order)

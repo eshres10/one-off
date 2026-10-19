@@ -7,7 +7,15 @@ import { storeMessagePhoto } from '@/lib/message-media';
 import { uploadsEnabled } from '@/lib/features';
 import { reportError } from '@/lib/log';
 
-const KINDS = ['products', 'messages', 'commissions', 'makers', 'reviews', 'collections'] as const;
+const KINDS = [
+  'products',
+  'stories',
+  'messages',
+  'commissions',
+  'makers',
+  'reviews',
+  'collections',
+] as const;
 
 /** Authenticated image upload. Validates type by signature and size (8 MB) server-side. */
 export async function POST(req: Request) {
@@ -24,7 +32,7 @@ export async function POST(req: Request) {
     if (!KINDS.includes(kind))
       return NextResponse.json({ error: 'Unknown upload type.' }, { status: 400 });
     if (
-      (kind === 'products' || kind === 'makers') &&
+      (kind === 'products' || kind === 'stories' || kind === 'makers') &&
       user.role !== 'seller' &&
       user.role !== 'admin'
     ) {
@@ -40,7 +48,13 @@ export async function POST(req: Request) {
     const stored =
       kind === 'messages'
         ? await storeMessagePhoto(bytes, file.type, user.id)
-        : await storeImage(bytes, file.type, kind);
+        : await storeImage(
+            bytes,
+            file.type,
+            kind,
+            // Story close-ups go under stories/{product id}/ once the piece has been saved.
+            kind === 'stories' ? String(form.get('productId') ?? '') || undefined : undefined,
+          );
     return NextResponse.json({ url: stored.url });
   } catch (err) {
     if (isUserFacing(err)) return NextResponse.json({ error: err.message }, { status: 400 });
