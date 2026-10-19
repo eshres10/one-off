@@ -241,6 +241,7 @@ export default async function DiscoverPage({ searchParams }: { searchParams: Sea
               fill
               priority
               sizes="100vw"
+              quality={70}
               className="object-cover object-[center_30%]"
             />
           )}
@@ -274,7 +275,10 @@ export default async function DiscoverPage({ searchParams }: { searchParams: Sea
       </div>
       <div className="mt-6">{filters.tab !== 'collections' && <FilterBar options={options} />}</div>
 
-      <section id="pieces" aria-label="Pieces" className="mt-[2px]">
+      <section id="pieces" aria-labelledby="pieces-title" className="mt-[2px]">
+        <h2 id="pieces-title" className="sr-only">
+          Pieces
+        </h2>
         <Suspense key={JSON.stringify(filters)} fallback={<ProductGridSkeleton />}>
           <Feed filters={filters} />
         </Suspense>

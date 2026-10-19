@@ -60,7 +60,7 @@ export function ProductCard({
           <h3 className="min-w-0 font-sans font-normal leading-snug">
             <Link
               href={`/products/${product.slug}`}
-              className="line-clamp-1 hover:underline"
+              className="-my-1 line-clamp-1 py-1 hover:underline"
               aria-label={
                 product.imageAlt ? `${product.title}. ${product.imageAlt}` : product.title
               }
@@ -72,12 +72,16 @@ export function ProductCard({
         </div>
         <Link
           href={`/makers/${product.makerSlug}`}
-          className="relative z-10 mt-0.5 inline-block text-[12px] text-muted-2 hover:underline"
+          className="relative z-10 mt-1 inline-block py-1 text-[12px] text-muted-2 hover:underline"
         >
           {product.makerName}
         </Link>
         {showSwatches && product.colours.length > 0 && (
-          <div className="mt-2 flex gap-1.5" aria-label={`Colours: ${product.colours.join(', ')}`}>
+          <div
+            className="mt-2 flex gap-1.5"
+            role="img"
+            aria-label={`Colours: ${product.colours.join(', ')}`}
+          >
             {product.colours.map((c) => (
               <Swatch key={c} colour={swatchColour(c)} />
             ))}

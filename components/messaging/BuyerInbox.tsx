@@ -63,7 +63,7 @@ export async function BuyerInbox({
           <h1 className="text-[40px] leading-none md:text-[48px]">Messages</h1>
           <Link
             href={`/messages${qs({ tab, unread: !unreadOnly })}`}
-            aria-pressed={unreadOnly}
+            aria-current={unreadOnly ? 'true' : undefined}
             className={`flex min-h-[44px] items-center border px-3 text-[11px] uppercase tracking-label ${unreadOnly ? 'border-ink bg-ink text-ground' : 'border-line-strong'}`}
           >
             <span className="md:hidden">Filter</span>

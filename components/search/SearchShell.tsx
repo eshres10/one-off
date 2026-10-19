@@ -107,7 +107,7 @@ export function SearchShell({
             start(() => router.replace(href(q, filter), { scroll: false }));
           }}
         >
-          <label className="glass-chip flex min-h-[48px] flex-1 items-center gap-2.5 px-3.5">
+          <label className="glass-chip flex min-h-[48px] min-w-0 flex-1 items-center gap-2.5 px-3.5">
             <SearchIcon width={18} height={18} strokeWidth={1.4} />
             <span className="sr-only">Search pieces, makers and occasions</span>
             <input
@@ -150,7 +150,7 @@ export function SearchShell({
                 start(() => router.replace(href('', filter), { scroll: false }));
                 input.current?.focus();
               }}
-              className="min-h-[44px] text-[11px] uppercase tracking-label"
+              className="min-h-[44px] shrink-0 text-[11px] uppercase tracking-label"
             >
               Cancel
             </button>
