@@ -229,7 +229,9 @@ export default async function BagPage({ searchParams }: { searchParams: { cancel
           <FreeShippingProgress
             className="mt-3"
             toFreeCents={delivery.toFreeCents}
-            freeOverCents={delivery.offer.enabled ? delivery.offer.freeOverCents : null}
+            freeOverCents={
+              delivery.offer.enabled && delivery.cents > 0 ? delivery.offer.freeOverCents : null
+            }
             testId="bag-free-progress"
           />
           <p className="mt-3 text-[13px] text-muted">

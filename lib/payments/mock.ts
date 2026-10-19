@@ -206,6 +206,16 @@ export function createMockDriver(): PaymentsDriver {
     async reverseTransfer(transferId, amountCents, idempotencyKey) {
       const existing = await get<{ id: string }>(`idem:${idempotencyKey}`);
       if (existing) return existing;
+      // Like Stripe: a transfer can't be reversed by more than what's left of it.
+      const [row] = await sql()<{ amount: number | null; reversed: number }[]>`
+        select
+          (select (data->>'amountCents')::int from public.mock_stripe_objects where id = ${transferId}) as amount,
+          (select coalesce(sum((data->>'amountCents')::int), 0)::int from public.mock_stripe_objects
+            where type = 'transfer_reversal' and data->>'transferId' = ${transferId}) as reversed`;
+      if (row?.amount != null && row.reversed + amountCents > row.amount)
+        throw new Error(
+          `Reversal exceeds the transfer (${row.reversed + amountCents} > ${row.amount})`,
+        );
       const id = `trr_mock_${randomUUID().slice(0, 12)}`;
       await put(id, 'transfer_reversal', { id, transferId, amountCents });
       await put(`idem:${idempotencyKey}`, 'idempotency', { id });

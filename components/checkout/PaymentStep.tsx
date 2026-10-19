@@ -196,7 +196,7 @@ function PaymentForm({
         const submitted = await elements.submit();
         if (submitted.error)
           return setError(submitted.error.message ?? 'Check your payment details.');
-        const res = await preparePaymentAction();
+        const res = await preparePaymentAction(view.totalCents);
         if (!res.ok) return setError(res.message);
         const a = view.address!;
         const address = {

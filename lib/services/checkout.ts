@@ -3,6 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { audit } from '@/lib/audit';
 import { sql, type Db } from '@/lib/db';
 import { sanitizeText } from '@/lib/domain/moderation';
+import { formatPrice } from '@/lib/domain/money';
 import { splitOrder } from '@/lib/domain/split';
 import type { ProductType } from '@/lib/domain/types';
 import { env } from '@/lib/env';
@@ -22,6 +23,7 @@ import {
   NO_BUNDLE,
   applyShippingOffer,
   makerParcelPrice,
+  parseShippingOffer,
   type BundleDeal,
   type MakerDeal,
   type OfferResult,
@@ -331,6 +333,32 @@ function parcelQuote(
   return { zone, cents, listCents: price.listCents, deal: price.makerDeal, arrival };
 }
 
+/** How long a checkout keeps the shipping offer it was first priced with. */
+export const OFFER_LOCK_MINUTES = 60;
+
+/**
+ * The shipping offer for a pending order: the one it was first priced with, for up to
+ * OFFER_LOCK_MINUTES, so the total can't change between what the buyer sees and what they pay
+ * (another order using up the budget, an admin edit, the month rolling over). After that, or on
+ * the first sync, the current offer is taken and kept.
+ */
+async function offerForOrder(orderId: string, now: Date, refresh: boolean): Promise<ShippingOffer> {
+  const [o] = await sql()<{ snapshot: unknown; lockedAt: Date | null }[]>`
+    select shipping_offer_snapshot as snapshot, shipping_offer_locked_at as locked_at
+    from public.orders where id = ${orderId}`;
+  const fresh =
+    o?.lockedAt &&
+    o.snapshot &&
+    now.getTime() - new Date(o.lockedAt).getTime() < OFFER_LOCK_MINUTES * 60_000;
+  if (fresh) return parseShippingOffer(o!.snapshot);
+  const offer = await activeShippingOffer(now);
+  if (refresh)
+    await sql()`
+      update public.orders set shipping_offer_snapshot = ${sql().json({ ...offer })}, shipping_offer_locked_at = ${now}
+      where id = ${orderId} and status = 'pending'`;
+  return offer;
+}
+
 /** One Off's offer across the bag's parcels (each maker's price at its chosen speed). */
 function offerFor(
   quotes: Array<{ makerId: string; speed: Speed; cents: number; listCents: number }>,
@@ -512,7 +540,7 @@ async function syncOrder(orderId: string, lines: CartLineView[], now: Date) {
   const offer = offerFor(
     Array.from(quotes.entries()).map(([makerId, q]) => ({ makerId, ...q })),
     subtotal,
-    await activeShippingOffer(now),
+    await offerForOrder(orderId, now, true),
   );
   const plan = splitOrder(
     lines,
@@ -673,8 +701,8 @@ export async function checkoutView(owner: Owner, now = new Date()): Promise<Chec
   >`
     select subtotal_cents, shipping_total_cents, total_cents, shipping_saving_cents, shipping_offer
     from public.orders where id = ${order.id}`;
-  const offer = await activeShippingOffer(now);
-  const freeOver = offer.enabled ? offer.freeOverCents : null;
+  const offer = await offerForOrder(order.id, now, false);
+  const freeOver = offer.enabled && totals!.shippingTotalCents > 0 ? offer.freeOverCents : null;
   const toFreeCents =
     freeOver && totals!.subtotalCents < freeOver ? freeOver - totals!.subtotalCents : null;
   const saved = owner.userId
@@ -811,6 +839,8 @@ async function customerFor(userId: string): Promise<string> {
 export async function preparePayment(
   owner: Owner,
   now = new Date(),
+  /** The total the buyer was shown: payment stops if it no longer matches. */
+  expectedTotalCents?: number,
 ): Promise<{
   orderId: string;
   orderNumber: string;
@@ -825,6 +855,10 @@ export async function preparePayment(
     throw new CartError('Some pieces in your bag are no longer available. Please review your bag.');
   await syncOrder(order.id, cart.lines, now);
   const view = await checkoutView(owner, now);
+  if (expectedTotalCents !== undefined && expectedTotalCents !== view.totalCents)
+    throw new CartError(
+      `Your total is now ${formatPrice(view.totalCents)}. Check your order and pay again.`,
+    );
   if (!view.detailsDone) throw new CartError('Add your email first.');
   const problem = addressProblem(view.address);
   if (problem) throw new CartError(problem);
@@ -935,7 +969,11 @@ export async function quoteForState(owner: Owner, state: string, now = new Date(
     };
   });
   const subtotal = cart.lines.reduce((s, l) => s + l.unitPriceCents * l.quantity, 0);
-  const shipping = offerFor(quotes, subtotal, await activeShippingOffer(now)).buyerTotalCents;
+  const shipping = offerFor(
+    quotes,
+    subtotal,
+    await offerForOrder(order.id, now, false),
+  ).buyerTotalCents;
   return { shippingCents: shipping, totalCents: subtotal + shipping };
 }
 

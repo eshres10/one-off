@@ -86,7 +86,7 @@ export function FreeShippingProgress({
   const done = Math.max(0, Math.min(100, ((freeOverCents - toFreeCents) / freeOverCents) * 100));
   return (
     <div className={className} data-testid={testId}>
-      <p className="text-[13px]">Add {formatPrice(toFreeCents)} more for free shipping</p>
+      <p className="text-[13px]">Add {formatPrice(toFreeCents)} more for free standard shipping</p>
       <div
         className="mt-1.5 h-[3px] w-full bg-line"
         role="progressbar"

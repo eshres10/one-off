@@ -196,7 +196,7 @@ export function offerLine(offer: ShippingOffer | null, format: (cents: number) =
   const parts: string[] = [];
   if (offer.capCents !== null)
     parts.push(`Shipping capped at ${format(offer.capCents)}, however many makers`);
-  if (offer.freeOverCents) parts.push(`free over ${format(offer.freeOverCents)}`);
+  if (offer.freeOverCents) parts.push(`free standard shipping over ${format(offer.freeOverCents)}`);
   if (!parts.length) return null;
   const line = parts.join(' · ');
   return line.charAt(0).toUpperCase() + line.slice(1) + '.';

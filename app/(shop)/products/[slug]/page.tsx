@@ -13,7 +13,7 @@ import { SoldPanel, SoldStamp } from '@/components/product/SoldPanel';
 import { estimateDelivery, formatDateRange } from '@/lib/domain/leadTime';
 import { formatPrice } from '@/lib/domain/money';
 import { offerLine } from '@/lib/shipping/offer';
-import { getShippingOffer } from '@/lib/shipping/settings';
+import { activeShippingOffer } from '@/lib/shipping/settings';
 import { productBadges } from '@/lib/domain/stock';
 import { checkoutEnabled, PREVIEW_MESSAGE } from '@/lib/features';
 import { shopBuyable } from '@/lib/domain/shop';
@@ -138,7 +138,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
   const badges = productBadges(product.productType, product.variants);
   const primaryBadge = badges.find((b) => b === 'sold_out') ?? badges[0]!;
   const totalStock = product.variants.reduce((s, v) => s + Math.max(0, v.stockQuantity), 0);
-  const offerText = offerLine(await getShippingOffer(), formatPrice);
+  const offerText = offerLine(await activeShippingOffer(), formatPrice);
   const shippingText = `Shipping ${m.freeShippingOverCents ? `free over ${formatPrice(m.freeShippingOverCents)}, otherwise ` : ''}${formatPrice(m.shippingStandardCents)} [placeholder], shown before you pay.${offerText ? ` ${offerText}` : ''}`;
   const custom = isCustomType(product.productType);
   // A sold one-of-one keeps its page (links and search still work), shown greyed with a stamp.

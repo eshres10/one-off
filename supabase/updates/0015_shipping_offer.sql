@@ -61,4 +61,16 @@ insert into public.site_settings (key, value)
 values ('shipping_offer', '{"enabled": true, "extraMakerCents": 500, "capCents": 2000, "freeOverCents": 30000, "monthlyBudgetCents": 50000}'::jsonb)
 on conflict (key) do nothing;
 
+-- Payouts with a subsidy: the main transfer (from the buyer's charge) and the covered shipping
+-- (from the platform balance) are worked out together when the maker is paid.
+alter table public.fulfilments add column if not exists transfer_amount_cents integer;
+alter table public.fulfilments add column if not exists transfer_reversed_cents integer not null default 0;
+alter table public.fulfilments add column if not exists shipping_subsidy_due_cents integer;
+alter table public.fulfilments add column if not exists shipping_subsidy_attempts integer not null default 0;
+
+-- The offer a checkout was priced with, kept for a while so the total can't change between
+-- what the buyer sees and what they're charged (budget used up, admin edits, month rolls over).
+alter table public.orders add column if not exists shipping_offer_snapshot jsonb;
+alter table public.orders add column if not exists shipping_offer_locked_at timestamptz;
+
 commit;

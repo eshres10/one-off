@@ -2,13 +2,22 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { randomUUID } from 'node:crypto';
 import { closeDb, sql } from '@/lib/db';
 import { addToCart, getCart } from '@/lib/services/cart';
-import { bagDeliveryEstimate, checkoutView, openCheckout } from '@/lib/services/checkout';
+import {
+  OFFER_LOCK_MINUTES,
+  bagDeliveryEstimate,
+  checkoutView,
+  openCheckout,
+  preparePayment,
+  saveCheckoutDelivery,
+  saveCheckoutDetails,
+} from '@/lib/services/checkout';
+import { refundOrderItem } from '@/lib/services/webhook';
 import { releaseDueTransfers } from '@/lib/services/payouts';
 import { activeShippingOffer } from '@/lib/shipping/settings';
 import { DEFAULT_SHIPPING_OFFER, type ShippingOffer } from '@/lib/shipping/offer';
 import { TERMS } from '@/lib/studio/terms';
 import { getSettings, saveSettings } from '@/lib/services/settings';
-import { MAKERS, buyAndPay, pickVariant, seller } from './helpers';
+import { MAKERS, TEST_ADDRESS, buyAndPay, pickVariant, seller } from './helpers';
 
 const DAY = 86_400_000;
 
@@ -286,5 +295,85 @@ describe('paying makers when One Off covers shipping', () => {
     // Running again never pays twice.
     await releaseDueTransfers();
     for (const f of fs) expect(await transfersFor(f.id)).toHaveLength(2);
+  });
+});
+
+describe('refunds on parcels where One Off covered shipping', () => {
+  it('reverses what the transfer holds and takes the rest off later payouts', async () => {
+    await setOffer({ freeOverCents: 10000 });
+    const { orderId } = await buyAndPay(await piecesFrom([2, 3], 4), 'refund-after@buyer.test');
+    await deliverAndRelease(orderId);
+    const [f] = await parcels(orderId);
+    const [item] = await sql()<{ id: string; lineTotalCents: number; sellerNetCents: number }[]>`
+      select id, line_total_cents, seller_net_cents from public.order_items where fulfilment_id = ${f!.id}`;
+    const [before] = await sql()<{ transferAmountCents: number }[]>`
+      select transfer_amount_cents from public.fulfilments where id = ${f!.id}`;
+    // The maker's share of the item is more than the main transfer holds (shipping came separately).
+    expect(item!.sellerNetCents).toBeGreaterThan(before!.transferAmountCents);
+
+    const res = await refundOrderItem({
+      orderItemId: item!.id,
+      reason: 'test',
+      actorUserId: null,
+    });
+    expect(res.reversal).toBe('deferred');
+    const [after] = await sql()<{ reversed: number }[]>`
+      select transfer_reversed_cents as reversed from public.fulfilments where id = ${f!.id}`;
+    expect(after!.reversed).toBe(before!.transferAmountCents);
+    const [adj] = await sql()<{ cents: number }[]>`
+      select coalesce(sum(amount_cents), 0)::int as cents from public.maker_adjustments where fulfilment_id = ${f!.id}`;
+    expect(adj!.cents + after!.reversed).toBe(item!.sellerNetCents);
+  });
+
+  it('takes a refund off the covered shipping when it hasn’t been paid yet', async () => {
+    await setOffer({ freeOverCents: 10000 });
+    const { orderId } = await buyAndPay(await piecesFrom([4, 5]), 'refund-before@buyer.test');
+    const [f] = await parcels(orderId);
+    // Main transfer made, covered shipping not paid yet (balance short).
+    await sql()`update public.fulfilments set status = 'completed', stripe_transfer_id = 'tr_test_' || left(id::text, 8),
+      transfer_status = 'created', transfer_amount_cents = seller_net_cents - shipping_subsidy_cents,
+      shipping_subsidy_due_cents = shipping_subsidy_cents, shipping_subsidy_status = 'failed' where id = ${f!.id}`;
+    const [item] = await sql()<{ id: string; sellerNetCents: number }[]>`
+      select id, seller_net_cents from public.order_items where fulfilment_id = ${f!.id}`;
+    const [ful] = await sql()<{ transferAmountCents: number }[]>`
+      select transfer_amount_cents from public.fulfilments where id = ${f!.id}`;
+    // Refunding the piece: the main transfer covers most of the maker's share; the rest comes off
+    // the covered shipping that hasn't gone out yet, not off a future payout.
+    const res = await refundOrderItem({ orderItemId: item!.id, reason: 'test', actorUserId: null });
+    expect(res.reversal).toBe('reversed');
+    const rest = item!.sellerNetCents - ful!.transferAmountCents;
+    expect(rest).toBeGreaterThan(0);
+    const [row] = await sql()<{ due: number }[]>`
+      select shipping_subsidy_due_cents as due from public.fulfilments where id = ${f!.id}`;
+    expect(row!.due).toBe(f!.shippingSubsidyCents - rest);
+    const [adj] = await sql()<{ n: number }[]>`
+      select count(*)::int as n from public.maker_adjustments where fulfilment_id = ${f!.id}`;
+    expect(adj!.n).toBe(0);
+  });
+});
+
+describe('the total can’t change between checkout and payment', () => {
+  it('keeps the shipping offer a checkout was priced with', async () => {
+    await setOffer({ freeOverCents: null });
+    const sessionId = randomUUID();
+    for (const l of await piecesFrom([6, 7]))
+      await addToCart({ sessionId, userId: null, ...l, quantity: 1 });
+    const owner = { sessionId, userId: null, email: null };
+    await openCheckout(owner);
+    await saveCheckoutDetails(owner, { email: 'locked@buyer.test', phone: '' });
+    await saveCheckoutDelivery(owner, { address: TEST_ADDRESS, speeds: {} });
+    const shown = await checkoutView(owner);
+    expect(shown.shippingOffer).toBe('cap');
+
+    // The offer is switched off (or the budget runs out) while the buyer is paying.
+    await setOffer({ enabled: false });
+    const paid = await preparePayment(owner, new Date(), shown.totalCents);
+    expect(paid.totalCents).toBe(shown.totalCents);
+
+    // After the lock runs out, the new price applies, and a stale total is refused.
+    const later = new Date(Date.now() + (OFFER_LOCK_MINUTES + 1) * 60_000);
+    await expect(preparePayment(owner, later, shown.totalCents)).rejects.toThrow(
+      /Your total is now/,
+    );
   });
 });

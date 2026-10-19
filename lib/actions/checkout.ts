@@ -92,10 +92,14 @@ export async function setSaveDetailsAction(on: boolean) {
 }
 
 /** Pay: returns the PaymentIntent client secret for Stripe.js to confirm. */
-export async function preparePaymentAction() {
+export async function preparePaymentAction(expectedTotalCents?: number) {
   return run(async () => {
     await rateLimit('checkout', clientIp());
-    return preparePayment(await owner());
+    return preparePayment(
+      await owner(),
+      new Date(),
+      typeof expectedTotalCents === 'number' ? expectedTotalCents : undefined,
+    );
   });
 }
 

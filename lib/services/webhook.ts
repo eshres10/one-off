@@ -414,10 +414,13 @@ export async function refundOrderItem(input: {
       refundedCents: number;
       paymentIntentId: string | null;
       transferId: string | null;
+      /** What's left of the transfer to reverse (null for transfers made before this was kept). */
+      reversibleCents: number | null;
     }[]
   >`
     select oi.id, oi.order_id, oi.fulfilment_id, oi.line_total_cents, oi.seller_net_cents, oi.refunded_cents,
-           o.stripe_payment_intent_id as payment_intent_id, f.stripe_transfer_id as transfer_id
+           o.stripe_payment_intent_id as payment_intent_id, f.stripe_transfer_id as transfer_id,
+           f.transfer_amount_cents - f.transfer_reversed_cents as reversible_cents
     from public.order_items oi join public.orders o on o.id = oi.order_id join public.fulfilments f on f.id = oi.fulfilment_id
     where oi.id = ${input.orderItemId}`;
   if (!item) throw new Error('Order item not found');
@@ -438,12 +441,41 @@ export async function refundOrderItem(input: {
   // their net (item price less One Off's commission), so the commission is refunded to them.
   let reversalOutcome: 'none' | 'reversed' | 'deferred' = 'none';
   if (item.transferId) {
-    const reversal = Math.round((amount * item.sellerNetCents) / item.lineTotalCents);
+    const share = Math.round((amount * item.sellerNetCents) / item.lineTotalCents);
+    // The transfer can be smaller than the maker's share (One Off covered their shipping in a
+    // separate transfer): reverse what it holds; the rest comes off the covered shipping if it
+    // hasn't been paid yet, and otherwise off the maker's next payouts.
+    const reversal =
+      item.reversibleCents === null ? share : Math.min(share, Math.max(0, item.reversibleCents));
+    let later = share - reversal;
+    if (later > 0) {
+      const [cut] = await sql()<{ cut: number }[]>`
+        update public.fulfilments f set
+          shipping_subsidy_due_cents = f.shipping_subsidy_due_cents - least(f.shipping_subsidy_due_cents, ${later}),
+          shipping_subsidy_status = case when f.shipping_subsidy_due_cents <= ${later} then 'none'
+                                         else f.shipping_subsidy_status end
+        from (select shipping_subsidy_due_cents as before from public.fulfilments where id = ${item.fulfilmentId}) b
+        where f.id = ${item.fulfilmentId} and f.shipping_subsidy_status in ('pending', 'failed')
+          and f.shipping_subsidy_due_cents > 0
+        returning least(b.before, ${later}) as cut`;
+      later -= cut?.cut ?? 0;
+    }
+    if (later > 0) {
+      await sql()`
+        insert into public.maker_adjustments (maker_id, amount_cents, reason, claim_id, fulfilment_id, return_id)
+        select f.maker_id, ${later},
+          ${input.adjustmentReason ?? `Refund ${refund.id}: the rest of the maker’s share`},
+          ${input.claimId ?? null}, f.id, ${input.returnId ?? null}
+        from public.fulfilments f where f.id = ${item.fulfilmentId}`;
+      reversalOutcome = 'deferred';
+    }
     if (reversal > 0) {
       try {
         await payments().reverseTransfer(item.transferId, reversal, `reversal:${refund.id}`);
-        await sql()`update public.fulfilments set payout_status = 'reversed' where id = ${item.fulfilmentId}`;
-        reversalOutcome = 'reversed';
+        await sql()`
+          update public.fulfilments set payout_status = 'reversed', transfer_reversed_cents = transfer_reversed_cents + ${reversal}
+          where id = ${item.fulfilmentId}`;
+        if (reversalOutcome === 'none') reversalOutcome = 'reversed';
       } catch (err) {
         // Usually not enough balance on the connected account: take it from the next payouts.
         reportError(err, { where: 'reverseTransfer', transferId: item.transferId });

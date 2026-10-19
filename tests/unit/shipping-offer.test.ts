@@ -9,6 +9,7 @@ import {
   type ShippingOffer,
 } from '@/lib/shipping/offer';
 import { splitOrder } from '@/lib/domain/split';
+import { splitPayout } from '@/lib/services/payouts';
 import type { CartLine, MakerShipping } from '@/lib/domain/types';
 
 const OFFER: ShippingOffer = {
@@ -198,7 +199,7 @@ describe('One Off’s shipping offer', () => {
   it('describes itself for product pages', () => {
     const fmt = (c: number) => `A$${c / 100}`;
     expect(offerLine(OFFER, fmt)).toBe(
-      'Shipping capped at A$20, however many makers · free over A$300.',
+      'Shipping capped at A$20, however many makers · free standard shipping over A$300.',
     );
     expect(offerLine({ ...OFFER, enabled: false }, fmt)).toBeNull();
   });
@@ -249,5 +250,52 @@ describe('splitting an order with the shipping offer', () => {
     expect(() =>
       splitOrder([line('a', 10000)], new Map([ship('a')]), 1500, new Map([['a', 1300]])),
     ).toThrow();
+  });
+});
+
+describe('splitting a payout when One Off covered shipping', () => {
+  it('sends the buyer-funded part from the charge and the covered shipping separately', () => {
+    expect(
+      splitPayout({
+        owedCents: 9700,
+        sellerNetCents: 9700,
+        subsidyCents: 1500,
+        refundedShareCents: 0,
+      }),
+    ).toEqual({ amount: 8200, subsidyDue: 1500 });
+  });
+
+  it('never pays more than the maker is owed after a refund', () => {
+    // A$297 + A$3 pieces, free shipping (A$15 covered), the A$297 one refunded after a claim.
+    const r = splitPayout({
+      owedCents: 26445 - 25245,
+      sellerNetCents: 26445,
+      subsidyCents: 1500,
+      refundedShareCents: 25245,
+    });
+    expect(r).toEqual({ amount: 0, subsidyDue: 1200 });
+    expect(r.amount + r.subsidyDue).toBe(1200);
+  });
+
+  it('takes what the maker owes off the total, not just one part', () => {
+    const r = splitPayout({
+      owedCents: 9700 - 9000,
+      sellerNetCents: 9700,
+      subsidyCents: 1500,
+      refundedShareCents: 0,
+    });
+    expect(r.amount + r.subsidyDue).toBe(700);
+    expect(r.amount).toBeLessThanOrEqual(9700 - 1500);
+  });
+
+  it('pays nothing when nothing is owed', () => {
+    expect(
+      splitPayout({
+        owedCents: -50,
+        sellerNetCents: 1000,
+        subsidyCents: 500,
+        refundedShareCents: 1200,
+      }),
+    ).toEqual({ amount: 0, subsidyDue: 0 });
   });
 });
