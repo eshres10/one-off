@@ -26,7 +26,7 @@ export default async function DiscoverPage({
   const params = parseDiscover(searchParams);
   const user = await getSessionUser();
   const [initial, saved, following, savedCount] = await Promise.all([
-    getDiscoverPage(params),
+    getDiscoverPage(params, null, user?.id ?? null),
     getSavedProductIds(user?.id ?? null),
     getFollowedMakerIds(user?.id ?? null),
     user ? getSavedCount(user) : Promise.resolve(0),

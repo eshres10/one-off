@@ -10,6 +10,7 @@ import { payments } from '@/lib/payments';
 import { accountInfo } from '@/lib/payments/stripe';
 import { recordProcessingFees, upsertPayout } from './payouts';
 import { notifyLowStock, notifyNewOrder } from './notifications';
+import { bumpTaste } from './taste';
 
 export type WebhookOutcome = 'processed' | 'duplicate' | 'ignored';
 
@@ -165,6 +166,7 @@ export async function onCheckoutCompleted(sessionId: string): Promise<void> {
   // record Stripe's processing fee so each maker's net is final.
   await recordProcessingFees(order.id, session.chargeId);
   await sendOrderEmails(order.id, email);
+  await bumpPurchaseTaste(order.id);
   await notifyLowStock(soldVariants).catch((err) => reportError(err, { where: 'low stock' }));
 }
 
@@ -397,4 +399,12 @@ export async function refundOrderItem(input: {
     );
   });
   return { refundId: refund.id, amountCents: amount };
+}
+
+/** Purchases count most towards a shopper's taste (+3 per piece). */
+async function bumpPurchaseTaste(orderId: string) {
+  const rows = await sql()<{ userId: string | null; productId: string }[]>`
+    select o.buyer_user_id as user_id, oi.product_id from public.order_items oi
+    join public.orders o on o.id = oi.order_id where oi.order_id = ${orderId}`;
+  for (const r of rows) await bumpTaste(r.userId, r.productId, 3);
 }

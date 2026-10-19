@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getSessionUser } from '@/lib/auth/session';
 import { AuthForms } from '@/components/forms/AuthForms';
@@ -31,6 +32,12 @@ export default async function LoginPage({
       <div className="mt-8">
         <AuthForms next={next} magicLinks={magicLinksEnabled()} />
       </div>
+      <p className="mt-8 text-center text-[13px]">
+        New to One Off?{' '}
+        <Link href="/join" className="underline underline-offset-4">
+          Join
+        </Link>
+      </p>
     </div>
   );
 }

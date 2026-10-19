@@ -1,3 +1,4 @@
+import { MAX_STYLE_TAGS, isStyleTag } from '@/lib/taste/tags';
 import { audit } from '@/lib/audit';
 import type { SessionUser } from '@/lib/auth/session';
 import { sql, withUser, type Db } from '@/lib/db';
@@ -41,7 +42,7 @@ export async function getPiece(actor: Actor, productId: string): Promise<PieceRe
         makerId: string;
       })[]
     >`
-      select id, slug, status, title, category, description, fabric_composition, care_instructions, occasions, colours,
+      select id, slug, status, title, category, description, fabric_composition, care_instructions, occasions, style_tags, colours,
         product_type, mto_lead, mto_capacity, price_cents, accepts_custom, listed_by_admin, reviewed_by_seller_at,
         updated_at, maker_id
       from public.products where id = ${productId}`;
@@ -77,6 +78,7 @@ export async function getPiece(actor: Actor, productId: string): Promise<PieceRe
       fabric: p.fabricComposition ?? '',
       care: p.careInstructions ?? '',
       occasions: p.occasions ?? [],
+      styleTags: p.styleTags ?? [],
       colours: p.colours ?? [],
       saleType: p.productType,
       mtoLead: p.mtoLead,
@@ -125,6 +127,7 @@ function clean(input: PieceDraft): PieceDraft {
     fabric: sanitizeText(input.fabric).slice(0, 300),
     care: sanitizeText(input.care).slice(0, 500),
     occasions: input.occasions.map((o) => o.toLowerCase()).slice(0, 8),
+    styleTags: [...new Set(input.styleTags.filter(isStyleTag))].slice(0, MAX_STYLE_TAGS),
     colours: input.colours.slice(0, 6),
     mtoLead:
       saleType === 'made_to_order'
@@ -157,7 +160,7 @@ async function writePiece(db: Db, productId: string, p: PieceDraft) {
   await db`
     update public.products set title = ${p.title || 'Untitled piece'}, category = ${p.category || 'dresses'},
       description = ${p.description}, fabric_composition = ${p.fabric || null}, care_instructions = ${p.care || null},
-      occasions = ${p.occasions}, colours = ${p.colours}, product_type = ${p.saleType}::product_type,
+      occasions = ${p.occasions}, style_tags = ${p.styleTags}, colours = ${p.colours}, product_type = ${p.saleType}::product_type,
       price_cents = ${p.priceCents ?? 100}, accepts_custom = ${p.acceptsCustom}, mto_lead = ${p.mtoLead},
       mto_capacity = ${p.mtoCapacity},
       lead_time_days = ${p.saleType === 'made_to_order' ? leadDaysFor(p.mtoLead) : null}, updated_at = now()

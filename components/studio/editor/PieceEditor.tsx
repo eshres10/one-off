@@ -1,5 +1,6 @@
 'use client';
 
+import { MAX_STYLE_TAGS, STYLE_TAGS } from '@/lib/taste/tags';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { savePieceAction } from '@/lib/actions/studio-listings';
@@ -34,12 +35,14 @@ function Chip({
   children,
   role = 'checkbox',
   testId,
+  disabled = false,
 }: {
   on: boolean;
   onClick: () => void;
   children: React.ReactNode;
   role?: 'checkbox' | 'radio';
   testId?: string;
+  disabled?: boolean;
 }) {
   return (
     <button
@@ -47,8 +50,9 @@ function Chip({
       role={role}
       aria-checked={on}
       onClick={onClick}
+      disabled={disabled}
       data-testid={testId}
-      className={`min-h-[40px] rounded-circle border px-4 text-[12px] ${on ? 'border-ink bg-ink text-ground' : 'border-line-strong hover:border-ink'}`}
+      className={`min-h-[40px] rounded-circle border px-4 text-[12px] disabled:cursor-not-allowed disabled:opacity-40 ${on ? 'border-ink bg-ink text-ground' : 'border-line-strong hover:border-ink'}`}
     >
       {children}
     </button>
@@ -507,6 +511,33 @@ export function PieceEditor({
                   }
                 >
                   {o}
+                </Chip>
+              );
+            })}
+          </div>
+        </fieldset>
+        <fieldset data-testid="style-tags">
+          <legend className="label">
+            Style <span className="text-muted-2">— up to {MAX_STYLE_TAGS}</span>
+          </legend>
+          <div className="flex flex-wrap gap-2">
+            {STYLE_TAGS.map((t) => {
+              const on = draft.styleTags.includes(t);
+              const full = !on && draft.styleTags.length >= MAX_STYLE_TAGS;
+              return (
+                <Chip
+                  key={t}
+                  on={on}
+                  disabled={full}
+                  onClick={() =>
+                    update({
+                      styleTags: on
+                        ? draft.styleTags.filter((x) => x !== t)
+                        : [...draft.styleTags, t],
+                    })
+                  }
+                >
+                  {t}
                 </Chip>
               );
             })}

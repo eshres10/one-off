@@ -8,8 +8,10 @@ const LINKS = [
   { href: '/saved', label: 'Saved' },
   { href: '/account/following', label: 'Following' },
   { href: '/messages', label: 'Messages' },
+  { href: '/account/style', label: 'Your style' },
   { href: '/account/measurements', label: 'Measurements' },
   { href: '/account/commissions', label: 'Custom requests' },
+  { href: '/account/help', label: 'Help' },
 ];
 
 export default async function AccountLayout({ children }: { children: React.ReactNode }) {

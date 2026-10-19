@@ -1,5 +1,6 @@
 'use server';
 
+import { bumpTaste } from '@/lib/services/taste';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { getSessionUser } from '@/lib/auth/session';
@@ -38,6 +39,7 @@ export async function toggleSaveAction(
     return true;
   });
   await bumpSaveCount(pid, saved ? 1 : -1);
+  if (saved) await bumpTaste(user.id, pid, 1);
   revalidateSaved();
   return { saved };
 }
@@ -68,6 +70,7 @@ export async function setSavedAction(
     ).length;
   });
   if (changed) await bumpSaveCount(pid, saved ? 1 : -1);
+  if (changed && saved) await bumpTaste(user.id, pid, 1);
   revalidateSaved();
   return { ok: true };
 }
@@ -134,4 +137,11 @@ export async function toggleFollowAction(
   revalidatePath('/account/following');
   revalidatePath('/saved');
   return { following };
+}
+
+/** A quick view held open for more than five seconds nudges the shopper's taste a little. */
+export async function quickViewDwellAction(productId: string): Promise<void> {
+  const user = await getSessionUser();
+  if (!user) return;
+  await bumpTaste(user.id, id.parse(productId), 0.25);
 }

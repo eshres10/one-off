@@ -23,6 +23,7 @@ const draftSchema = z.object({
   fabric: z.string().max(400),
   care: z.string().max(600),
   occasions: z.array(z.string().max(40)).max(12),
+  styleTags: z.array(z.string().max(30)).max(8).default([]),
   colours: z.array(z.string().max(30)).max(10),
   saleType: z.enum(['ready_to_ship', 'made_to_order', 'one_of_one']),
   mtoLead: z.string().max(20).nullable(),

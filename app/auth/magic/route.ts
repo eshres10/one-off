@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { env } from '@/lib/env';
+import { afterSignIn } from '@/lib/auth/onboarding';
 import { SESSION_COOKIE, SESSION_MAX_AGE, signSession, verifyToken } from '@/lib/auth/local';
 import { loadUser } from '@/lib/auth/session';
 import { claimGuestOrders } from '@/lib/auth/users';
@@ -22,5 +23,7 @@ export async function GET(req: Request) {
   });
   const user = await loadUser(userId);
   if (user) await claimGuestOrders(user.id, user.email);
-  return NextResponse.redirect(new URL(safeNext, base));
+  return NextResponse.redirect(
+    new URL(user ? await afterSignIn(user.id, safeNext) : safeNext, base),
+  );
 }

@@ -14,6 +14,7 @@ import {
   signSession,
   verifyPassword,
 } from '@/lib/auth/local';
+import { afterSignIn } from '@/lib/auth/onboarding';
 import { claimGuestOrders, ensureAppUser } from '@/lib/auth/users';
 import { emails } from '@/lib/email/templates';
 import { sendEmail } from '@/lib/email/send';
@@ -81,7 +82,11 @@ export async function signupAction(_prev: FormState, form: FormData): Promise<Fo
         password,
         options: {
           data: { name },
-          emailRedirectTo: `${env().APP_URL}/auth/callback?next=/account`,
+          emailRedirectTo: `${env().APP_URL}/auth/callback?next=${encodeURIComponent(
+            /^\/(claim|sell|studio)/.test(safeNext(form.get('next')))
+              ? safeNext(form.get('next'))
+              : '/welcome',
+          )}`,
         },
       });
       if (error) return { ok: false, message: error.message };
@@ -101,7 +106,9 @@ export async function signupAction(_prev: FormState, form: FormData): Promise<Fo
   } catch (err) {
     return toFormState(err);
   }
-  redirect(safeNext(form.get('next')));
+  // New shoppers start with the welcome steps; makers carry on with their shop.
+  const next = safeNext(form.get('next'));
+  redirect(/^\/(claim|sell|studio)/.test(next) ? next : '/welcome');
 }
 
 export async function magicLinkAction(_prev: FormState, form: FormData): Promise<FormState> {

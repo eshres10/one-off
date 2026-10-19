@@ -83,7 +83,8 @@ function tsQuery(p: DiscoverParams): string | null {
   return parts.length ? parts.join(' & ') : null;
 }
 
-function feedArgs(p: DiscoverParams) {
+/** `userId` personalises "Relevant" with the shopper's taste and sizes. */
+function feedArgs(p: DiscoverParams, userId: string | null = null) {
   const db = sql();
   const avail = p.avail.map((a) => AVAILABILITY.find((x) => x.value === a)!.productType);
   return db`
@@ -95,7 +96,8 @@ function feedArgs(p: DiscoverParams) {
       ${p.max !== null ? p.max * 100 : null}::int,
       ${p.colour.length ? p.colour : null}::text[],
       ${p.suburb}::text,
-      ${p.sort}::text
+      ${p.sort}::text,
+      ${userId}::uuid
     )`;
 }
 
@@ -138,6 +140,7 @@ async function makerCards(
 export async function getDiscoverPage(
   p: DiscoverParams,
   rawCursor?: string | null,
+  userId: string | null = null,
 ): Promise<DiscoverPage> {
   const cursor = decodeCursor(rawCursor);
   const page = cursor ? cursor.page + 1 : 0;
@@ -153,7 +156,7 @@ export async function getDiscoverPage(
       m.display_name as maker_name, m.slug as maker_slug, f.sort_key::text as sort_key,
       coalesce((select sum(v.stock_quantity) from public.product_variants v where v.product_id = p.id and v.is_active), 0)::int as total_stock,
       img.public_url as image_url, img.alt_text as image_alt, img.width, img.height
-    from ${feedArgs(p)} f
+    from ${feedArgs(p, userId)} f
     join public.products p on p.id = f.product_id
     join public.makers m on m.id = p.maker_id
     left join lateral (

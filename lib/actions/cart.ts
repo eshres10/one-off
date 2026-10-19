@@ -1,5 +1,6 @@
 'use server';
 
+import { bumpTaste } from '@/lib/services/taste';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { getSessionUser } from '@/lib/auth/session';
@@ -43,6 +44,7 @@ export async function addToBagAction(_prev: FormState, form: FormData): Promise<
       ...parsed.data,
       customMeasurements: customMeasurements(form),
     });
+    await bumpTaste(user?.id, parsed.data.productId, 2);
     revalidatePath('/', 'layout');
     return { ok: true, message: 'Added to your bag' };
   } catch (err) {

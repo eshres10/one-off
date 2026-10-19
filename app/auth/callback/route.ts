@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { env } from '@/lib/env';
+import { afterSignIn } from '@/lib/auth/onboarding';
+import { loadUser } from '@/lib/auth/session';
 import { claimGuestOrders, ensureAppUser } from '@/lib/auth/users';
 
 /** Supabase Auth callback (magic links, email confirmation, seller invites). */
@@ -20,5 +22,8 @@ export async function GET(req: Request) {
     (data.user.user_metadata?.name as string | undefined) ?? null,
   );
   await claimGuestOrders(data.user.id, data.user.email);
-  return NextResponse.redirect(new URL(safeNext, base));
+  const user = await loadUser(data.user.id);
+  return NextResponse.redirect(
+    new URL(user ? await afterSignIn(user.id, safeNext) : safeNext, base),
+  );
 }

@@ -53,6 +53,8 @@ export interface PieceDraft {
   fabric: string;
   care: string;
   occasions: string[];
+  /** Up to four from the style vocabulary (lib/taste/tags.ts). */
+  styleTags: string[];
   colours: string[];
   saleType: SaleType;
   mtoLead: string | null;
@@ -141,6 +143,7 @@ export function newPiece(shop: EditorShop): EditorPiece {
     fabric: '',
     care: shop.careDefault ?? '',
     occasions: [],
+    styleTags: [],
     colours: [],
     saleType: 'ready_to_ship',
     mtoLead: shop.mtoDefaultLead ?? TERMS.mtoLeadOptions[1],

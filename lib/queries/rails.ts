@@ -27,6 +27,24 @@ export async function getMostPopular(limit = 10): Promise<RailProduct[]> {
   return rows.map(({ rank: _r, ...r }) => toRail(r));
 }
 
+/** Homepage "Picked for you": the shopper's Discover ranking (taste, size, recency, saves). */
+export async function getPickedForYou(userId: string, limit = 10): Promise<RailProduct[]> {
+  const [hasTaste] = await sql()`
+    select 1 from public.customer_prefs where user_id = ${userId} and taste_tags <> '{}'::jsonb`;
+  if (!hasTaste) return [];
+  const rows = await sql()<(RailRow & { rank: number })[]>`
+    with top as (
+      select product_id, row_number() over (order by sort_key desc, product_id desc) as rank
+      from public.discover_feed(null, null, null, null, null, null, null, 'relevant', ${userId}::uuid)
+      order by sort_key desc, product_id desc limit ${limit * 2}
+    )
+    select ${cardColumns()}, p.save_count, top.rank
+    from top join public.products p on p.id = top.product_id ${cardJoins()}
+    where ${VISIBLE()}
+    order by top.rank limit ${limit}`;
+  return rows.map(({ rank: _r, ...r }) => toRail(r));
+}
+
 export async function getUnder(limitCents: number, limit = 12): Promise<RailProduct[]> {
   const rows = await sql()<RailRow[]>`
     select ${cardColumns()}, p.save_count from public.products p ${cardJoins()}

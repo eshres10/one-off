@@ -630,6 +630,11 @@ export async function seed(databaseUrl: string) {
       await seedCommissions(tx);
       await refreshThreadState(tx);
       studio = await seedStudio(tx, upsertUser, hash, mockPayments);
+      // Style tags for the taste picker and personal ranking (makers can change them).
+      await tx`
+        update public.products
+        set style_tags = public.infer_style_tags(title, fabric_composition, colours, category, description)
+        where style_tags = '{}'`;
 
       await tx`
         insert into public.audit_events (id, actor_user_id, action, entity_type, entity_id, metadata)

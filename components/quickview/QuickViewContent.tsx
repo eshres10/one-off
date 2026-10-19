@@ -8,6 +8,7 @@ import type { QaEntry } from '@/lib/queries/questions';
 import { FollowButton } from '@/components/maker/FollowButton';
 import { AskQuestionForm, Questions } from '@/components/product/Questions';
 import { Img as Image } from '@/components/ui/Img';
+import { DwellTracker } from './DwellTracker';
 import { QuickBuy } from './QuickBuy';
 import { QuickGallery } from './QuickGallery';
 import { MoreMenu } from './MoreMenu';
@@ -73,6 +74,7 @@ export function QuickViewContent({
   const sale = shopBuyable(m);
   return (
     <div className="flex h-full">
+      {signedIn && <DwellTracker productId={p.id} />}
       <div className="h-full w-[55%] shrink-0">
         <QuickGallery images={p.images} title={p.title} />
       </div>

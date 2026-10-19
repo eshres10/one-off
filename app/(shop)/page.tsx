@@ -23,6 +23,7 @@ import {
   getFollowedMakerIds,
   getMostPopular,
   getNewMakers,
+  getPickedForYou,
   getShopByMaker,
   getUnder,
 } from '@/lib/queries/rails';
@@ -54,7 +55,8 @@ function queryString(
 
 async function HomeRails() {
   const user = await getSessionUser();
-  const [popular, newMakers, makers, under, savedIds, following] = await Promise.all([
+  const [picked, popular, newMakers, makers, under, savedIds, following] = await Promise.all([
+    user ? getPickedForYou(user.id, 10) : Promise.resolve([]),
     getMostPopular(10),
     getNewMakers(10),
     getShopByMaker(16),
@@ -64,6 +66,18 @@ async function HomeRails() {
   ]);
   return (
     <div className="mt-6">
+      {picked.length > 0 && (
+        <Rail
+          title="Picked for you"
+          subtitle="Ranked by your style and sizes. The more you save, the better it gets."
+          viewAllHref="/discover"
+          testId="rail-picked"
+        >
+          {picked.map((p) => (
+            <RailProductCard key={p.id} product={p} saved={savedIds.has(p.id)} />
+          ))}
+        </Rail>
+      )}
       {popular.length > 0 && (
         <Rail
           title="Most popular"
