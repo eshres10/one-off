@@ -10,6 +10,7 @@ import { slugify } from '@/lib/slug';
 import { isOwnImageUrl } from '@/lib/storage';
 import { TERMS } from '@/lib/studio/terms';
 import { UserError } from './errors';
+import { nextFoundingNumber } from './founding';
 
 type Admin = Pick<SessionUser, 'id' | 'role'>;
 
@@ -101,11 +102,8 @@ export async function sendInvite(admin: Admin, makerId: string): Promise<{ url: 
       insert into public.shop_invites (maker_id, token_hash, email, expires_at, created_by)
       values (${makerId}, ${hashToken(token)}, ${shop.email}, now() + make_interval(days => ${TERMS.inviteLinkDays}), ${admin.id})`;
     if (shop.foundingNumber === null) {
-      await tx`select pg_advisory_xact_lock(hashtext('founding_number'))`;
-      const [next] = await tx<{ n: number }[]>`
-        select coalesce(max(founding_number), 0) + 1 as n from public.makers`;
-      if (next!.n <= TERMS.foundingMakerCap)
-        await tx`update public.makers set founding_number = ${next!.n} where id = ${makerId}`;
+      const n = await nextFoundingNumber(tx);
+      if (n) await tx`update public.makers set founding_number = ${n} where id = ${makerId}`;
     }
     await tx`update public.makers set shop_status = 'invited' where id = ${makerId}`;
   });
@@ -167,7 +165,7 @@ export async function getPipeline(): Promise<PipelineRow[]> {
         coalesce((select max(created_at) from public.shop_events e where e.maker_id = m.id), m.created_at)) as last_activity,
       (select event from public.shop_events e where e.maker_id = m.id order by created_at desc limit 1) as last_event
     from public.makers m
-    where m.created_by_admin or m.shop_status in ('draft', 'invited')
+    where m.source = 'invite'
     order by case m.shop_status when 'invited' then 0 when 'draft' then 1 else 2 end, last_activity desc`;
   return rows.map(({ opened, signed, connected, ...r }) => ({
     ...r,

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { getPipeline } from '@/lib/services/concierge';
-import { TERMS } from '@/lib/studio/terms';
+import { foundingSpots } from '@/lib/services/applications';
 
 export const metadata = { title: 'Shops pipeline' };
 
@@ -14,8 +14,7 @@ const STAGES = [
 ] as const;
 
 export default async function AdminShopsPage() {
-  const rows = await getPipeline();
-  const founding = rows.filter((r) => r.foundingNumber !== null).length;
+  const [rows, spots] = await Promise.all([getPipeline(), foundingSpots()]);
   return (
     <div>
       <div className="mb-2 flex flex-wrap items-end justify-between gap-4">
@@ -29,8 +28,12 @@ export default async function AdminShopsPage() {
         </Link>
       </div>
       <p className="mb-6 text-sm text-ink-muted">
-        Shops One Off sets up for makers, from draft to live. Founding places used: {founding} of{' '}
-        {TERMS.foundingMakerCap}. Makers from the{' '}
+        Shops One Off sets up for makers, from draft to live. Invited shops are pre-approved and
+        never enter the{' '}
+        <Link href="/admin/applications" className="link">
+          applications
+        </Link>{' '}
+        queue. Founding spots used: {spots.used} of {spots.total}. Makers from the{' '}
         <Link href="/admin/waitlist?kind=maker" className="link">
           waitlist
         </Link>{' '}
@@ -51,6 +54,7 @@ export default async function AdminShopsPage() {
           <thead className="eyebrow">
             <tr className="border-b border-line">
               <th className="py-2 pr-4 font-normal">Shop</th>
+              <th className="py-2 pr-4 font-normal">Source</th>
               <th className="py-2 pr-4 font-normal">Nº</th>
               <th className="py-2 pr-4 font-normal">Stage</th>
               <th className="py-2 pr-4 font-normal">Claim step</th>
@@ -67,6 +71,7 @@ export default async function AdminShopsPage() {
                     {r.displayName}
                   </Link>
                 </td>
+                <td className="py-2 pr-4">Invite</td>
                 <td className="py-2 pr-4">
                   {r.foundingNumber ? String(r.foundingNumber).padStart(2, '0') : '—'}
                 </td>

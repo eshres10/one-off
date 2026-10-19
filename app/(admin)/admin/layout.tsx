@@ -1,18 +1,24 @@
 import { requireAdmin } from '@/lib/auth/session';
 import { DashboardShell } from '@/components/layout/DashboardShell';
 import { marketplaceMetrics } from '@/lib/services/admin';
+import { applicationQueue } from '@/lib/services/applications';
 import { countClaimsNeedingAttention } from '@/lib/services/claims';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   await requireAdmin();
-  const [m, claims] = await Promise.all([marketplaceMetrics(), countClaimsNeedingAttention()]);
+  const [m, claims, applications] = await Promise.all([
+    marketplaceMetrics(),
+    countClaimsNeedingAttention(),
+    applicationQueue('applied').then((r) => r.length),
+  ]);
   return (
     <DashboardShell
       title="Admin"
       links={[
         { href: '/admin', label: 'Metrics' },
+        { href: '/admin/applications', label: 'Applications', count: applications },
         { href: '/admin/shops', label: 'Shops' },
         { href: '/admin/makers', label: 'Makers', count: m.pendingMakers },
         { href: '/admin/listings', label: 'Listings', count: m.pendingListings },

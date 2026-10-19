@@ -37,7 +37,7 @@ function FoundingPanel({ o, shopName }: { o: Overview; shopName: string }) {
         <>
           <p className="text-[10px] uppercase tracking-[0.2em] text-ground/70">
             Founding maker · Nº {String(o.foundingNumber ?? 0).padStart(2, '0')} of{' '}
-            {TERMS.foundingMakerCap}
+            {TERMS.foundingSpotsTotal}
           </p>
           <p className="mt-3 max-w-[16ch] font-display text-[34px] leading-[1.02] md:text-[44px]">
             {TERMS.foundingCommissionPct}% commission until {shortDate(o.foundingUntil!)}.

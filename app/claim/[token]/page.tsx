@@ -80,7 +80,7 @@ async function Welcome({ shop, children }: { shop: ClaimShop; children: React.Re
         <div className="relative">
           {shop.foundingNumber && (
             <p className="text-[10px] uppercase tracking-[0.22em] text-ground/80">
-              Founding maker · Nº {nn(shop.foundingNumber)} of {TERMS.foundingMakerCap}
+              Founding maker · Nº {nn(shop.foundingNumber)} of {TERMS.foundingSpotsTotal}
             </p>
           )}
           <h1 className="mt-3 text-[44px] leading-[1]">Your shop is ready, {shop.displayName}.</h1>

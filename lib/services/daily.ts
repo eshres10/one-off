@@ -1,4 +1,6 @@
 import { reportError } from '@/lib/log';
+import { SITE } from '@/lib/site/config';
+import { applicationsDigest } from './applications';
 import { escalateOverdueClaims } from './claims';
 import { shipByReminders, weeklySummaries } from './notifications';
 import { holidayTransitions } from './settings';
@@ -24,8 +26,9 @@ export function melbourneWeekday(at: Date): string {
 }
 
 /**
- * The daily jobs. The cron runs at 21:00 and 22:00 UTC so one run lands on 8am Melbourne in both
- * AEST and AEDT; the morning emails only go out on that run. Each job is idempotent and isolated,
+ * The daily jobs. The cron runs at 21:00, 22:00 and 23:00 UTC so runs land on 8am and 9am
+ * Melbourne in both AEST and AEDT; the morning emails (8am) and the applications summary (9am)
+ * only go out on their run. Each job is idempotent and isolated,
  * so one failure doesn't stop the rest.
  */
 export async function runDailyJobs(now: Date) {
@@ -37,6 +40,8 @@ export async function runDailyJobs(now: Date) {
     ['transfers', () => releaseDueTransfers(now)],
     ['holidays', () => holidayTransitions(now)],
   ];
+  if (melbourneHour(now) === SITE.adminDigestHour)
+    jobs.push(['applicationsDigest', () => applicationsDigest(now)]);
   if (melbourneHour(now) === 8) {
     jobs.push(['shipByReminders', () => shipByReminders(now)]);
     if (melbourneWeekday(now) === 'Mon') jobs.push(['weeklySummaries', () => weeklySummaries(now)]);

@@ -6,9 +6,9 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
 
 /**
- * Runs at 21:00 and 22:00 UTC (vercel.json): one of the two is 8am in Melbourne whatever the
- * daylight-saving season. Every job is idempotent, so the second run is harmless; jobs tied to
- * 8am local time only act on the run that lands on it.
+ * Runs at 21:00, 22:00 and 23:00 UTC (vercel.json), so 8am and 9am in Melbourne are both covered
+ * whatever the daylight-saving season. Every job is idempotent, so the extra runs are harmless;
+ * jobs tied to a local hour only act on the run that lands on it.
  */
 export async function GET(req: Request) {
   const secret = env().CRON_SECRET;

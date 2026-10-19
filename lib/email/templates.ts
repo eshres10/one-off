@@ -554,6 +554,30 @@ export const emails = {
     };
   },
 
+  spotCheckUnpublished: (
+    to: string,
+    p: { makerId: string; title: string; note: string },
+  ): EmailMessage => {
+    const lines = [
+      `We’ve taken ${p.title} off your shop for now. It’s back in your drafts in Studio.`,
+      p.note,
+      'Make the changes and publish it again, or reply to this email if you have questions.',
+    ];
+    return {
+      to,
+      template: 'spot_check_unpublished',
+      subject: `About ${p.title}`,
+      text: `${lines.join('\n\n')}\n\nOpen your listings: ${url('/studio/listings')}${sign}`,
+      html: renderEmail({
+        heading: `About ${p.title}`,
+        paragraphs: lines,
+        button: { label: 'Open your listings', url: '/studio/listings' },
+        sellerFooter: true,
+      }),
+      related: { type: 'maker', id: p.makerId },
+    };
+  },
+
   applicationsWaiting: (
     to: string,
     waiting: Array<{ label: string; days: number }>,
