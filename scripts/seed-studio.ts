@@ -322,7 +322,8 @@ export async function seedStudio(
         ${shipping ? 'Standard tracked' : 'Free tracked shipping'}, ${placed}, ${`demo${o.number}`})
       on conflict (id) do update set status = excluded.status, mto_step = excluded.mto_step,
         estimated_dispatch_date = excluded.estimated_dispatch_date, shipped_at = excluded.shipped_at,
-        delivered_at = excluded.delivered_at`;
+        delivered_at = excluded.delivered_at, tracking_number = excluded.tracking_number,
+        carrier = excluded.carrier`;
     const itemId = seedId(`studio-item:${o.number}`);
     await db`
       insert into public.order_items (id, order_id, fulfilment_id, product_id, variant_id, maker_id, product_title, variant_label,
@@ -332,7 +333,9 @@ export async function seedStudio(
         ${p.productType}::product_type,
         (select public_url from public.product_images where product_id = ${p.id} order by sort_order limit 1), 1, ${p.priceCents}, ${p.priceCents}, 0, ${p.priceCents},
         ${itemStatus}::fulfilment_status, ${tracking}, ${tracking ? 'auspost' : null}, ${shippedAt}, ${deliveredAt}, ${placed})
-      on conflict (id) do update set image_url = excluded.image_url`;
+      on conflict (id) do update set image_url = excluded.image_url,
+        fulfilment_status = excluded.fulfilment_status, tracking_number = excluded.tracking_number,
+        carrier = excluded.carrier, shipped_at = excluded.shipped_at, delivered_at = excluded.delivered_at`;
     if (o.status === 'issue') {
       await db`
         insert into public.return_claims (id, order_id, order_item_id, buyer_id, seller_id, reason, details, photos, respond_by,
