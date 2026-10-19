@@ -240,3 +240,17 @@ create policy support_messages_own_write on public.support_messages for insert
   with check (user_id = auth.uid() and sender_user_id = auth.uid() and not from_admin);
 grant select, insert on public.support_messages to authenticated;
 grant all on public.support_messages to service_role;
+
+-- ---------------------------------------------------------------------------
+-- Makers who sign up themselves (/sell/start), rather than being set up by One Off. Their shop
+-- stays a draft until the first piece is published and payouts are connected.
+-- ---------------------------------------------------------------------------
+alter table public.makers add column if not exists self_signup boolean not null default false;
+alter table public.makers add column if not exists sell_modes text[] not null default '{}';
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'makers_sell_modes_check') then
+    alter table public.makers add constraint makers_sell_modes_check
+      check (sell_modes <@ array['ready_to_ship', 'made_to_order', 'custom']::text[]);
+  end if;
+end $$;

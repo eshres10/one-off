@@ -173,7 +173,10 @@ export async function hasAgreement(makerId: string) {
  * Step 3: Stripe Connect Express. Creates the connected account on first visit (weekly payouts
  * on TERMS.payoutWeekday) and returns an onboarding link back to the claim flow.
  */
-export async function stripeOnboardingLink(user: User): Promise<string> {
+export async function stripeOnboardingLink(
+  user: User,
+  backTo = '/claim/continue?step=3',
+): Promise<string> {
   const shop = await ownShop(user);
   let accountId = shop.stripeAccountId;
   if (!accountId) {
@@ -190,8 +193,8 @@ export async function stripeOnboardingLink(user: User): Promise<string> {
   const base = env().APP_URL;
   const link = await payments().createAccountLink(
     accountId,
-    `${base}/claim/continue?step=3&refresh=1`,
-    `${base}/claim/continue?step=3&return=1`,
+    `${base}${backTo}&refresh=1`,
+    `${base}${backTo}&return=1`,
   );
   return link.url;
 }

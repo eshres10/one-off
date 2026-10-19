@@ -1,5 +1,6 @@
 'use server';
 
+import { goLiveIfReady } from '@/lib/services/sell';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
@@ -201,8 +202,11 @@ export async function syncStripeAccount(makerId: string) {
   >`select stripe_account_id from public.makers where id = ${makerId}`;
   if (!m?.stripeAccountId) return;
   const a = await payments().retrieveAccount(m.stripeAccountId);
-  await sql()`update public.makers set stripe_onboarding_complete = ${a.detailsSubmitted}, stripe_payouts_enabled = ${a.payoutsEnabled}
+  await sql()`update public.makers set stripe_onboarding_complete = ${a.detailsSubmitted}, stripe_payouts_enabled = ${a.payoutsEnabled},
+              stripe_charges_enabled = ${a.chargesEnabled},
+              bank_name = coalesce(${a.bankName}, bank_name), bank_last4 = coalesce(${a.bankLast4}, bank_last4)
               where id = ${makerId}`;
+  await goLiveIfReady(makerId);
 }
 
 export async function commissionResponseAction(form: FormData) {

@@ -143,42 +143,53 @@ export function PieceEditor({
     return () => clearInterval(t);
   }, []);
 
+  // Saves run one at a time, so an autosave and a publish never both create a new piece.
+  const idRef = useRef(id);
+  idRef.current = id ?? idRef.current;
+  const queue = useRef<Promise<unknown>>(Promise.resolve());
   const save = useCallback(
-    (intent: 'autosave' | 'draft' | 'publish') =>
-      new Promise<boolean>((resolve) =>
-        start(async () => {
-          const res = await savePieceAction({
-            id,
-            makerId: mode === 'admin' ? shop.makerId : undefined,
-            draft,
-            intent,
-          });
-          if (!res.ok) {
-            setError(res.message);
-            resolve(false);
-            return;
-          }
-          setError(null);
-          setDirty(false);
-          setSavedAt(Date.now());
-          setStatus(res.result.status);
-          setSlug(res.result.slug);
-          if (!id) {
-            setId(res.result.id);
-            // Address the new piece without remounting the editor (keeps the success screen).
-            if (!embedded)
-              window.history.replaceState(
-                null,
-                '',
-                mode === 'admin'
-                  ? `/admin/shops/${shop.makerId}/pieces/${res.result.id}`
-                  : `/studio/listings/${res.result.id}`,
-              );
-          }
-          resolve(true);
-        }),
-      ),
-    [id, draft, mode, shop.makerId, embedded],
+    (intent: 'autosave' | 'draft' | 'publish') => {
+      const run = queue.current.then(
+        () =>
+          new Promise<boolean>((resolve) =>
+            start(async () => {
+              const res = await savePieceAction({
+                id: idRef.current,
+                makerId: mode === 'admin' ? shop.makerId : undefined,
+                draft,
+                intent,
+              });
+              if (!res.ok) {
+                setError(res.message);
+                resolve(false);
+                return;
+              }
+              setError(null);
+              setDirty(false);
+              setSavedAt(Date.now());
+              setStatus(res.result.status);
+              setSlug(res.result.slug);
+              if (!idRef.current) {
+                idRef.current = res.result.id;
+                setId(res.result.id);
+                // Address the new piece without remounting the editor (keeps the success screen).
+                if (!embedded)
+                  window.history.replaceState(
+                    null,
+                    '',
+                    mode === 'admin'
+                      ? `/admin/shops/${shop.makerId}/pieces/${res.result.id}`
+                      : `/studio/listings/${res.result.id}`,
+                  );
+              }
+              resolve(true);
+            }),
+          ),
+      );
+      queue.current = run.catch(() => undefined);
+      return run;
+    },
+    [draft, mode, shop.makerId, embedded],
   );
 
   // Autosave: drafts always; a live piece only while it still passes the checklist.
@@ -288,7 +299,9 @@ export function PieceEditor({
         <p className="mt-3 text-[14px] text-muted">
           {status === 'approved'
             ? `${draft.title} is in your shop now.`
-            : `${draft.title} goes live with your shop.`}
+            : status === 'pending'
+              ? `${draft.title} goes live with your shop as soon as your payouts are connected.`
+              : `${draft.title} goes live with your shop.`}
         </p>
         {draft.images[0] && (
           <div className="relative mx-auto mt-8 aspect-4/5 w-48 overflow-hidden bg-stone">
@@ -921,7 +934,13 @@ export function PieceEditor({
               data-testid="save-state"
             >
               <span className="text-ink">
-                {live ? 'Live' : mode === 'admin' ? 'Draft · set up by One Off' : 'Draft'}
+                {live
+                  ? 'Live'
+                  : status === 'pending'
+                    ? 'Ready · goes live with your shop'
+                    : mode === 'admin'
+                      ? 'Draft · set up by One Off'
+                      : 'Draft'}
               </span>{' '}
               ·{' '}
               {saving ? 'saving…' : dirty && savedAt ? 'unsaved changes' : savedLabel(savedAt, now)}

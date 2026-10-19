@@ -11,6 +11,7 @@ import { accountInfo } from '@/lib/payments/stripe';
 import { recordProcessingFees, upsertPayout } from './payouts';
 import { notifyLowStock, notifyNewOrder } from './notifications';
 import { bumpTaste } from './taste';
+import { goLiveIfReady } from './sell';
 
 export type WebhookOutcome = 'processed' | 'duplicate' | 'ignored';
 
@@ -267,6 +268,11 @@ async function onAccountUpdated(account: Stripe.Account) {
       stripe_charges_enabled = ${info.chargesEnabled}, stripe_payouts_enabled = ${info.payoutsEnabled},
       bank_name = coalesce(${info.bankName}, bank_name), bank_last4 = coalesce(${info.bankLast4}, bank_last4)
     where stripe_account_id = ${account.id}`;
+  // A self-sign-up shop with a published piece goes live once payouts are on.
+  const [m] = await sql()<
+    { id: string }[]
+  >`select id from public.makers where stripe_account_id = ${account.id}`;
+  if (m) await goLiveIfReady(m.id);
   await audit(
     'connect.account_updated',
     { type: 'stripe_account', id: account.id },

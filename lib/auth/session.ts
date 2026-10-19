@@ -15,6 +15,8 @@ export interface SessionUser {
   makerStatus: 'draft' | 'pending' | 'approved' | 'paused' | null;
   /** Studio state of the maker's shop: draft, invited, live, holiday or closed. */
   shopStatus: string | null;
+  /** The maker set their shop up themselves (/sell/start) rather than claiming an invite. */
+  selfSignup: boolean | null;
 }
 
 async function currentAuthUserId(): Promise<string | null> {
@@ -30,7 +32,7 @@ async function currentAuthUserId(): Promise<string | null> {
 export async function loadUser(authUserId: string): Promise<SessionUser | null> {
   const [row] = await sql()<SessionUser[]>`
     select u.id, u.email, u.role, u.display_name, m.id as maker_id, m.slug as maker_slug, m.status as maker_status,
-      m.shop_status
+      m.shop_status, m.self_signup
     from public.users u left join public.makers m on m.user_id = u.id
     where u.auth_user_id = ${authUserId}`;
   return row ?? null;
@@ -50,14 +52,15 @@ export async function requireUser(next = '/account'): Promise<SessionUser> {
 }
 
 /**
- * Studio pages: a seller whose shop is live (or on holiday). A maker still setting up goes back
- * to their claim flow; anyone without a shop goes to the waitlist.
+ * Studio pages: a seller whose shop is live (or on holiday), or a self-sign-up maker whose
+ * draft shop goes live from Studio. A maker claiming an invite goes back to their claim flow;
+ * anyone without a shop goes to the waitlist.
  */
 export async function requireSeller(): Promise<SessionUser & { makerId: string }> {
   const user = await requireUser('/studio');
   if (user.role !== 'seller' || !user.makerId) redirect('/waitlist');
-  if (user.shopStatus !== 'live' && user.shopStatus !== 'holiday' && user.shopStatus !== 'closed')
-    redirect('/claim/continue');
+  const open = ['live', 'holiday', 'closed'].includes(user.shopStatus ?? '');
+  if (!open && !(user.selfSignup && user.shopStatus === 'draft')) redirect('/claim/continue');
   return user as SessionUser & { makerId: string };
 }
 

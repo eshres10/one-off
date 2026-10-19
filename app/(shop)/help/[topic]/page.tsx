@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { HELP } from '@/lib/help-content';
 import { Accordion } from '@/components/ui/Panels';
@@ -90,6 +91,21 @@ export default function HelpPage({ params }: { params: { topic: string } }) {
                 </a>
                 .
               </p>
+            </section>
+          )}
+          {params.topic === 'sell-with-us' && (
+            <section className="max-w-2xl border-t border-ink pt-6">
+              <h2 className="text-[34px] leading-none">Ready to start?</h2>
+              <p className="mt-3 text-[14px] text-muted">
+                Set up your shop in a few minutes: your label, how selling works, and your bank.
+              </p>
+              <Link
+                href="/sell/start"
+                className="glass-dark mt-5 inline-flex min-h-[52px] items-center px-8 text-[11px] uppercase tracking-[0.18em] text-ground"
+                data-testid="start-selling"
+              >
+                Set up your shop
+              </Link>
             </section>
           )}
           {params.topic === 'sell-with-us' && (

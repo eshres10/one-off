@@ -15,6 +15,7 @@ import {
 } from '@/lib/studio/pieces';
 import { TERMS, leadDaysFor } from '@/lib/studio/terms';
 import { UserError } from './errors';
+import { goLiveIfReady } from './sell';
 
 type Actor = Pick<SessionUser, 'id' | 'role' | 'makerId'>;
 
@@ -238,8 +239,8 @@ export async function savePiece(
   if (input.intent === 'publish' && !check.ready)
     throw new UserError(`Finish the checklist first (${check.passed}/${check.items.length}).`);
 
-  const [shop] = await sql()<{ shopStatus: string }[]>`
-    select shop_status from public.makers where id = ${makerId}`;
+  const [shop] = await sql()<{ shopStatus: string; selfSignup: boolean }[]>`
+    select shop_status, self_signup from public.makers where id = ${makerId}`;
   if (!shop) throw new UserError('Shop not found.');
   const shopLive = shop.shopStatus === 'live' || shop.shopStatus === 'holiday';
 
@@ -272,6 +273,10 @@ export async function savePiece(
       if (shopLive && !asAdmin) {
         await db`update public.products set status = 'approved' where id = ${id}`;
         status = 'approved';
+      } else if (shop.selfSignup && !asAdmin) {
+        // Ready, waiting for the shop: it goes live with the shop once payouts are connected.
+        await db`update public.products set status = 'pending' where id = ${id}`;
+        status = 'pending';
       } else {
         await db`update public.products set keep_on_claim = true where id = ${id}`;
       }
@@ -285,6 +290,7 @@ export async function savePiece(
       { asAdmin },
       actor.id,
     );
+  if (result.status === 'pending' && (await goLiveIfReady(makerId))) result.status = 'approved';
   return { ...result, live: result.status === 'approved' };
 }
 
