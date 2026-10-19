@@ -262,7 +262,7 @@ export async function seedStudio(
     update public.fulfilments set status = 'completed',
       shipped_at = coalesce(shipped_at, created_at + interval '2 days'),
       delivered_at = coalesce(delivered_at, created_at + interval '7 days'),
-      transfer_released_at = coalesce(transfer_released_at, created_at + interval '10 days'),
+      transfer_released_at = least(coalesce(transfer_released_at, created_at + interval '10 days'), now() - interval '36 days'),
       commission_pct_applied = coalesce(commission_pct_applied, 15)
     where maker_id = ${halde.id} and status <> 'completed' and order_id not in (
       select id from public.orders where order_number in ${db(ORDERS.map((o) => `OO-${o.number}`))})`;

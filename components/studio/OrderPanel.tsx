@@ -17,7 +17,9 @@ const SALE_TYPE: Record<string, string> = {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="border-t border-line py-5">
-      <h3 className="mb-3 font-sans text-[11px] font-normal uppercase tracking-label text-muted-2">{title}</h3>
+      <h3 className="mb-3 font-sans text-[11px] font-normal uppercase tracking-label text-muted-2">
+        {title}
+      </h3>
       {children}
     </section>
   );
