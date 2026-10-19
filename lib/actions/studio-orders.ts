@@ -81,6 +81,6 @@ export async function confirmReceivedAction(form: FormData): Promise<void> {
   );
   if (!own) return;
   await markDelivered(own.id, 'buyer');
-  revalidatePath(`/account/orders/${own.orderId}`);
+  revalidatePath('/account/orders/[id]', 'page');
   revalidatePath('/account/orders');
 }

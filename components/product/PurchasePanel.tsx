@@ -1,6 +1,6 @@
 'use client';
 
-import { CustomMeasurements } from '@/components/product/CustomMeasurements';
+import { CustomMeasurements, type SavedFit } from '@/components/product/CustomMeasurements';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useFormState, useFormStatus } from 'react-dom';
@@ -58,6 +58,7 @@ export function PurchasePanel({
   checkoutEnabled = true,
   previewMessage,
   disabledLabel = 'Launching soon',
+  savedSizes = null,
 }: {
   productId: string;
   productSlug: string;
@@ -73,6 +74,8 @@ export function PurchasePanel({
   previewMessage?: string;
   /** Button text when buying is off (e.g. "Away until 12 Jan"). */
   disabledLabel?: string;
+  /** The buyer's Sizes & fit: pre-selects their usual size and pre-fills custom measurements. */
+  savedSizes?: SavedFit | null;
 }) {
   const [colour, setColour] = useState<string | null>(colours[0] ?? null);
   const visible = useMemo(
@@ -80,8 +83,13 @@ export function PurchasePanel({
     [variants, colour, colours.length],
   );
   const firstAvailable = visible.find((v) => v.stockQuantity > 0);
+  const usual = savedSizes?.usualSize
+    ? visible.find(
+        (v) => v.stockQuantity > 0 && v.size.replace(/^AU\s*/i, '') === savedSizes.usualSize,
+      )
+    : undefined;
   const [variantId, setVariantId] = useState<string | null>(
-    variants.length === 1 && firstAvailable ? firstAvailable.id : null,
+    variants.length === 1 && firstAvailable ? firstAvailable.id : (usual?.id ?? null),
   );
   const selected = variants.find((v) => v.id === variantId) ?? null;
   const [state, action] = useFormState<FormState, FormData>(addToBagAction, undefined);
@@ -175,7 +183,7 @@ export function PurchasePanel({
             </p>
           )}
       </fieldset>
-      {selected?.size === 'Custom' && <CustomMeasurements />}
+      {selected?.size === 'Custom' && <CustomMeasurements saved={savedSizes} />}
 
       <div className="mt-6 hidden md:block">
         <AddButton disabled={disabled} label={label} className="w-full" />

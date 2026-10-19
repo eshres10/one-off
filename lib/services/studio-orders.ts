@@ -3,6 +3,7 @@ import type { SessionUser } from '@/lib/auth/session';
 import { sql, withUser, type Db } from '@/lib/db';
 import { sendEmail } from '@/lib/email/send';
 import { emails } from '@/lib/email/templates';
+import { textBuyerShipped } from './notifications';
 import { CARRIERS, trackingError, trackingUrl, type Carrier } from '@/lib/studio/carriers';
 import { UserError } from './errors';
 
@@ -277,6 +278,7 @@ export async function markShipped(
       trackingUrl(input.carrier, tracking),
     ),
   );
+  await textBuyerShipped(input.fulfilmentId);
   return { buyerFirstName: firstName(b.name) };
 }
 

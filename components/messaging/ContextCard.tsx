@@ -34,7 +34,7 @@ export function ContextCard({ context, makerName }: { context: ThreadContext; ma
     .join(' · ');
   return (
     <Link
-      href={`/products/${context.productSlug}`}
+      href={context.productSlug ? `/products/${context.productSlug}` : '#'}
       className="flex items-center gap-3 border-y border-line bg-surface px-4 py-3 hover:bg-ground"
       data-testid="thread-context"
     >
@@ -50,9 +50,17 @@ export function ContextCard({ context, makerName }: { context: ThreadContext; ma
         )}
       </span>
       <span className="min-w-0 flex-1 text-[13px]">
+        {context.orderNumber && (
+          <span
+            className="block text-[10px] uppercase tracking-label text-muted"
+            data-testid="thread-order"
+          >
+            Order {context.orderNumber}
+          </span>
+        )}
         <span className="block font-normal">{context.productTitle}</span>
         {meta && <span className="block text-muted">{meta}</span>}
-        {type && (
+        {type && !context.orderNumber && (
           <span className="block text-[10px] uppercase tracking-label text-muted-2">{type}</span>
         )}
       </span>

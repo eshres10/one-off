@@ -8,6 +8,7 @@ type Actor = Pick<SessionUser, 'id' | 'role'>;
 
 export interface BuyerOrderItem {
   id: string;
+  productId: string;
   productTitle: string;
   productSlug: string | null;
   variantLabel: string;
@@ -24,8 +25,16 @@ export interface BuyerOrderItem {
 
 export interface BuyerFulfilment {
   id: string;
+  makerId: string;
   makerName: string;
   makerSlug: string;
+  /** "Melbourne VIC" */
+  makerPlace: string;
+  speed: string;
+  shippedAt: Date | null;
+  deliveredAt: Date | null;
+  estimatedDispatchDate: Date | null;
+  leadDays: number | null;
   status: FulfilmentStatus;
   shippingCents: number;
   carrier: string | null;
@@ -46,31 +55,37 @@ export interface BuyerOrder {
   shippingTotalCents: number;
   refundedCents: number;
   createdAt: Date;
+  paidAt: Date | null;
   shippingAddress: Record<string, string> | null;
   agreedSpec: AgreedSpecData | null;
   fulfilments: BuyerFulfilment[];
 }
 
 /** Buyer's orders, read through RLS (orders_select / fulfilments_select / order_items_select). */
-export async function getBuyerOrders(user: Actor, orderId?: string): Promise<BuyerOrder[]> {
+export async function getBuyerOrders(user: Actor, orderRef?: string): Promise<BuyerOrder[]> {
+  const byId = orderRef && /^[0-9a-f-]{36}$/i.test(orderRef);
   return withUser(user, async (db) => {
     const orders = await db<Omit<BuyerOrder, 'fulfilments'>[]>`
-      select id, order_number, status, total_cents, subtotal_cents, shipping_total_cents, refunded_cents, created_at, shipping_address,
-             agreed_spec
+      select id, order_number, status, total_cents, subtotal_cents, shipping_total_cents, refunded_cents, created_at, paid_at,
+             shipping_address, agreed_spec
       from public.orders
       where buyer_user_id = ${user.id} and status <> 'pending' and status <> 'failed'
-        ${orderId ? db`and id = ${orderId}` : db``}
+        ${orderRef ? (byId ? db`and id = ${orderRef}` : db`and order_number = ${orderRef}`) : db``}
       order by created_at desc limit 100`;
     if (!orders.length) return [];
     const ids = orders.map((o) => o.id);
     const fulfilments = await db<(Omit<BuyerFulfilment, 'items'> & { orderId: string })[]>`
-      select f.id, f.order_id, m.display_name as maker_name, m.slug as maker_slug, f.status, f.shipping_cents, f.carrier,
+      select f.id, f.order_id, f.maker_id, m.display_name as maker_name, m.slug as maker_slug,
+             concat_ws(' ', m.city, m.state) as maker_place,
+             f.status, f.shipping_cents, f.carrier, f.speed, f.shipped_at, f.delivered_at, f.estimated_dispatch_date,
              f.tracking_number, f.estimated_delivery_from, f.estimated_delivery_to, f.mto_step,
+             (select max(p.lead_time_days) from public.order_items oi join public.products p on p.id = oi.product_id
+               where oi.fulfilment_id = f.id and oi.product_type = 'made_to_order')::int as lead_days,
              exists (select 1 from public.order_items oi where oi.fulfilment_id = f.id and oi.product_type = 'made_to_order') as is_mto
       from public.fulfilments f join public.makers m on m.id = f.maker_id
       where f.order_id in ${db(ids)} order by m.display_name`;
     const items = await db<(BuyerOrderItem & { fulfilmentId: string })[]>`
-      select oi.id, oi.fulfilment_id, oi.product_title, p.slug as product_slug, oi.variant_label, oi.quantity, oi.line_total_cents,
+      select oi.id, oi.product_id, oi.fulfilment_id, oi.product_title, p.slug as product_slug, oi.variant_label, oi.quantity, oi.line_total_cents,
              oi.image_url, oi.product_type, oi.fulfilment_status,
              exists (select 1 from public.reviews r where r.order_item_id = oi.id) as reviewed,
              coalesce(oi.delivered_at, f.delivered_at) as delivered_at, c.id as claim_id, c.status as claim_status
@@ -122,21 +137,29 @@ export async function getSavedIds(user: Actor) {
   return rows.map((r) => r.productId);
 }
 
-export async function getMeasurements(user: Actor) {
+export interface SavedSizes {
+  heightCm: string | null;
+  bustCm: string | null;
+  waistCm: string | null;
+  hipsCm: string | null;
+  insideLegCm: string | null;
+  fitNotes: string | null;
+  usualSize: string | null;
+  fitPref: 'close' | 'true' | 'relaxed' | null;
+}
+
+/** Sizes & fit: measurements plus the usual size and fit preference. Null when nothing is saved. */
+export async function getMeasurements(user: Actor): Promise<SavedSizes | null> {
   const [row] = await withUser(
     user,
-    (db) => db<
-      {
-        heightCm: string | null;
-        bustCm: string | null;
-        waistCm: string | null;
-        hipsCm: string | null;
-        fitNotes: string | null;
-      }[]
-    >`
-    select height_cm, bust_cm, waist_cm, hips_cm, fit_notes from public.buyer_measurements where user_id = ${user.id}`,
+    (db) => db<SavedSizes[]>`
+    select m.height_cm, m.bust_cm, m.waist_cm, m.hips_cm, m.inside_leg_cm, m.fit_notes, p.usual_size, p.fit_pref
+    from (select ${user.id}::uuid as user_id) u
+    left join public.buyer_measurements m on m.user_id = u.user_id
+    left join public.customer_prefs p on p.user_id = u.user_id`,
   );
-  return row ?? null;
+  if (!row || Object.values(row).every((v) => v === null)) return null;
+  return row;
 }
 
 export interface BuyerCommission {

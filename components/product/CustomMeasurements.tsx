@@ -1,5 +1,16 @@
-/** Measurement fields shown when a buyer picks the "Custom" size on a made-to-order piece. */
-export function CustomMeasurements() {
+export interface SavedFit {
+  usualSize: string | null;
+  bust: number | null;
+  waist: number | null;
+  hips: number | null;
+  height: number | null;
+}
+
+/**
+ * Measurement fields shown when a buyer picks the "Custom" size on a made-to-order piece,
+ * pre-filled from their Sizes & fit.
+ */
+export function CustomMeasurements({ saved = null }: { saved?: SavedFit | null }) {
   const fields = [
     ['bust', 'Bust'],
     ['waist', 'Waist'],
@@ -20,12 +31,14 @@ export function CustomMeasurements() {
               min={30}
               max={250}
               required={name !== 'height'}
+              defaultValue={saved?.[name] ?? undefined}
               className="input mt-1"
             />
           </label>
         ))}
       </div>
       <p className="mt-2 text-[11px] text-muted-2">
+        {saved && (saved.bust || saved.waist || saved.hips) ? 'From your Sizes & fit. ' : ''}
         The maker cuts to these. Measure over underwear, tape snug, not tight.
       </p>
     </fieldset>

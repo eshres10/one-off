@@ -68,6 +68,20 @@ export const measurementsSchema = z.object({
     .max(220)
     .optional()
     .or(z.literal('').transform(() => undefined)),
+  insideLegCm: z.coerce
+    .number()
+    .min(40)
+    .max(120)
+    .optional()
+    .or(z.literal('').transform(() => undefined)),
+  usualSize: z
+    .enum(['6', '8', '10', '12', '14', '16', '18', '20'])
+    .optional()
+    .or(z.literal('').transform(() => undefined)),
+  fitPref: z
+    .enum(['close', 'true', 'relaxed'])
+    .optional()
+    .or(z.literal('').transform(() => undefined)),
   fitNotes: optionalText(1000),
 });
 

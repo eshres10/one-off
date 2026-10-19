@@ -12,6 +12,7 @@ import { startDepositCheckout } from '@/lib/services/commissions';
 import {
   blockBuyer,
   openMakerThread,
+  openOrderThread,
   openProductThread,
   reportThread,
   sendMessage,
@@ -58,6 +59,15 @@ export async function openThreadAction(form: FormData): Promise<void> {
     productId,
     variantId: variant.success ? variant.data : undefined,
   });
+  redirect(`/messages/${threadId}`);
+}
+
+/** "Message {maker}" on an order: the thread opens with the order attached. */
+export async function openOrderThreadAction(form: FormData): Promise<void> {
+  const fulfilmentId = uuid.parse(form.get('fulfilmentId'));
+  const user = await getSessionUser();
+  if (!user) redirect('/login?next=/account/orders');
+  const threadId = await openOrderThread(user, fulfilmentId);
   redirect(`/messages/${threadId}`);
 }
 

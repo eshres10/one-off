@@ -138,7 +138,7 @@ const toStored = (a: CheckoutAddress): StoredAddress => ({
   country: 'AU',
 });
 
-function cleanAddress(
+export function cleanAddress(
   raw: (Partial<CheckoutAddress> & StoredAddress) | null | undefined,
 ): CheckoutAddress | null {
   if (!raw) return null;
@@ -162,7 +162,7 @@ function cleanAddress(
   return out;
 }
 
-function addressProblem(a: CheckoutAddress | null): string | null {
+export function addressProblem(a: CheckoutAddress | null): string | null {
   if (!a) return 'Add your delivery address.';
   if (a.name.length < 2) return 'Add the name for the delivery.';
   if (a.line1.length < 3) return 'Add your street address.';
@@ -429,8 +429,18 @@ async function syncOrder(orderId: string, lines: CartLineView[], now: Date) {
           values (${orderId}, ${ful!.id}, ${item.productId}, ${item.variantId}, ${item.makerId}, ${item.productTitle},
             ${item.variantLabel}, ${item.productType}, ${item.imageUrl ?? null}, ${item.quantity}, ${item.unitPriceCents},
             ${item.lineTotalCents}, ${item.platformCommissionCents}, ${item.sellerNetCents},
-            (select ci.custom_measurements from public.cart_items ci join public.orders o on o.cart_id = ci.cart_id
-              where o.id = ${orderId} and ci.variant_id = ${item.variantId} limit 1),
+            coalesce(
+              (select ci.custom_measurements from public.cart_items ci join public.orders o on o.cart_id = ci.cart_id
+                where o.id = ${orderId} and ci.variant_id = ${item.variantId} limit 1),
+              -- Made to order in a standard size: the maker gets the buyer's saved Sizes & fit.
+              case when ${item.productType === 'made_to_order'} then (
+                select nullif(jsonb_strip_nulls(jsonb_build_object(
+                  'bust', bm.bust_cm::int || ' cm', 'waist', bm.waist_cm::int || ' cm', 'hips', bm.hips_cm::int || ' cm',
+                  'height', bm.height_cm::int || ' cm', 'inside_leg', bm.inside_leg_cm::int || ' cm',
+                  'fit', p.fit_pref)), '{}'::jsonb)
+                from public.orders o join public.buyer_measurements bm on bm.user_id = o.buyer_user_id
+                left join public.customer_prefs p on p.user_id = o.buyer_user_id
+                where o.id = ${orderId}) end),
             ${notes.get(item.variantId) ?? null})`;
       }
     }
@@ -469,6 +479,12 @@ export async function checkoutView(owner: Owner, now = new Date()): Promise<Chec
     where oi.order_id = ${order.id}
     order by f.created_at, oi.created_at`;
   const makers = await makerRows(Array.from(new Set(rows.map((r) => r.makerId))));
+  const [sizes] = owner.userId
+    ? await sql()<{ n: number }[]>`
+        select count(*)::int as n from public.buyer_measurements
+        where user_id = ${owner.userId} and coalesce(bust_cm, waist_cm, hips_cm) is not null`
+    : [];
+  const hasSizes = (sizes?.n ?? 0) > 0;
   const parcels: CheckoutParcel[] = [];
   for (const fid of Array.from(new Set(rows.map((r) => r.fulfilmentId)))) {
     const items = rows.filter((r) => r.fulfilmentId === fid);
@@ -496,7 +512,7 @@ export async function checkoutView(owner: Owner, now = new Date()): Promise<Chec
       ),
       options: { standard: quote('standard'), express: quote('express') },
       mtoNote: mto
-        ? `Made to order. ${m.makerName} starts once you pay and finishes in about ${mto.leadTimeDays ?? 14} days.`
+        ? `Made to order. ${m.makerName} starts once you pay and finishes in about ${mto.leadTimeDays ?? 14} days.${hasSizes ? ' Your measurements from Sizes & fit go with the order.' : ''}`
         : null,
     });
   }

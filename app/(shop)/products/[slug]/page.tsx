@@ -5,6 +5,7 @@ import { headers } from 'next/headers';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getSessionUser } from '@/lib/auth/session';
+import { getMeasurements } from '@/lib/queries/account';
 import { estimateDelivery, formatDateRange } from '@/lib/domain/leadTime';
 import { formatPrice } from '@/lib/domain/money';
 import { productBadges } from '@/lib/domain/stock';
@@ -70,6 +71,17 @@ export default async function ProductPage({ params }: { params: { slug: string }
     }
   }
   if (!product) notFound();
+  const sizes = user ? await getMeasurements(user) : null;
+  const num = (v: string | null | undefined) => (v ? Number(v) : null);
+  const fit = sizes
+    ? {
+        usualSize: sizes.usualSize,
+        bust: num(sizes.bustCm),
+        waist: num(sizes.waistCm),
+        hips: num(sizes.hipsCm),
+        height: num(sizes.heightCm),
+      }
+    : null;
   const [related, reviews, savedIds, qa, nextSlot] = await Promise.all([
     getRelated(product.id, product.maker.id, product.category, product.colours),
     getReviews({ productId: product.id }, 3),
@@ -260,6 +272,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
                   : undefined
               }
               modelLine={modelLine}
+              savedSizes={fit}
               checkoutEnabled={(await checkoutEnabled()) && !previewOnly && sale.ok}
               previewMessage={
                 previewOnly

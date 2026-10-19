@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { sql } from '@/lib/db';
+import { sql, type Db } from '@/lib/db';
 import { formatPrice } from '@/lib/domain/money';
 import { env } from '@/lib/env';
 import { sendEmail } from '@/lib/email/send';
@@ -40,6 +40,67 @@ export async function prefsFor(userId: string | null): Promise<Record<NotifyEven
     select event, email, push, sms from public.notification_prefs where user_id = ${userId}`;
   for (const r of rows) prefs[r.event] = { email: r.email, push: r.push, sms: r.sms };
   return prefs;
+}
+
+/**
+ * What a buyer chose in Account → Notifications. Order and delivery emails are always sent, so
+ * they aren't here. Delivery texts use the sms column; the rest use email.
+ */
+export const BUYER_NOTIFY = [
+  'delivery_sms',
+  'maker_messages',
+  'following_weekly',
+  'one_of_ones_in_size',
+  'news',
+] as const;
+export type BuyerNotify = (typeof BUYER_NOTIFY)[number];
+
+export const BUYER_DEFAULTS: Record<BuyerNotify, boolean> = {
+  delivery_sms: true,
+  maker_messages: true,
+  following_weekly: true,
+  one_of_ones_in_size: false,
+  news: false,
+};
+
+export async function buyerPrefs(userId: string | null): Promise<Record<BuyerNotify, boolean>> {
+  const prefs = { ...BUYER_DEFAULTS };
+  if (!userId) return prefs;
+  const rows = await sql()<{ event: BuyerNotify; email: boolean; sms: boolean }[]>`
+    select event, email, sms from public.notification_prefs
+    where user_id = ${userId} and event in ${sql()(BUYER_NOTIFY as unknown as string[])}`;
+  for (const r of rows) prefs[r.event] = r.event === 'delivery_sms' ? r.sms : r.email;
+  return prefs;
+}
+
+/** Saves the buyer's switches (through RLS: only their own rows). */
+export async function saveBuyerPrefs(db: Db, userId: string, prefs: Record<BuyerNotify, boolean>) {
+  for (const event of BUYER_NOTIFY) {
+    const on = prefs[event];
+    const sms = event === 'delivery_sms' ? on : false;
+    const email = event === 'delivery_sms' ? true : on;
+    await db`
+      insert into public.notification_prefs (user_id, event, email, push, sms)
+      values (${userId}, ${event}, ${email}, false, ${sms})
+      on conflict (user_id, event) do update set email = excluded.email, sms = excluded.sms, updated_at = now()`;
+  }
+}
+
+/** "Your order's on its way" by text, when the buyer left delivery texts on and gave a mobile. */
+export async function textBuyerShipped(fulfilmentId: string) {
+  const [o] = await sql()<
+    { userId: string | null; phone: string | null; orderNumber: string; makerName: string }[]
+  >`
+    select o.buyer_user_id as user_id, o.buyer_phone as phone, o.order_number, m.display_name as maker_name
+    from public.fulfilments f join public.orders o on o.id = f.order_id join public.makers m on m.id = f.maker_id
+    where f.id = ${fulfilmentId}`;
+  const to = toE164(o?.phone);
+  if (!o || !to || !(await buyerPrefs(o.userId)).delivery_sms) return;
+  await sendSms(
+    to,
+    `One Off: your piece from ${o.makerName} is on its way (order ${o.orderNumber}). Track it at ${env().APP_URL}/account/orders/${o.orderNumber}`,
+    'buyer_shipped',
+  );
 }
 
 export async function notifyPayoutSent(

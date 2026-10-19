@@ -3,7 +3,7 @@ import { sql, withUser, type Db } from '@/lib/db';
 import { formatPrice } from '@/lib/domain/money';
 import { blockedMessage, moderateMessage, sanitizeText } from '@/lib/domain/moderation';
 import { emails } from '@/lib/email/templates';
-import { prefsFor } from './notifications';
+import { buyerPrefs, prefsFor } from './notifications';
 import { sendEmail } from '@/lib/email/send';
 import { env } from '@/lib/env';
 import { rateLimit } from '@/lib/rate-limit';
@@ -39,6 +39,9 @@ export interface ThreadContext {
   variantLabel?: string | null;
   leadTimeDays?: number | null;
   commissionGarment?: string;
+  /** Set when the buyer messages from an order: the maker sees which order it's about. */
+  orderNumber?: string;
+  orderId?: string;
 }
 
 export interface QuoteSnapshot {
@@ -134,6 +137,60 @@ export async function startProductThread(
   const threadId = await openProductThread(buyer, input);
   await sendMessage(buyer, { threadId, body: input.body, imageUrls: input.imageUrls });
   return threadId;
+}
+
+/**
+ * "Message {maker}" on an order: the conversation about the first piece in that parcel, with the
+ * order attached so the maker knows which purchase it's about.
+ */
+export async function openOrderThread(buyer: Actor, fulfilmentId: string): Promise<string> {
+  return withUser(buyer, async (db) => {
+    const [f] = await db<
+      {
+        makerId: string;
+        orderId: string;
+        orderNumber: string;
+        productId: string | null;
+        productTitle: string;
+        productSlug: string | null;
+        imageUrl: string | null;
+        priceCents: number;
+        productType: string;
+        variantLabel: string;
+      }[]
+    >`
+      select f.maker_id, o.id as order_id, o.order_number, oi.product_id, oi.product_title, p.slug as product_slug,
+        oi.image_url, oi.unit_price_cents as price_cents, oi.product_type, oi.variant_label
+      from public.fulfilments f join public.orders o on o.id = f.order_id
+      join lateral (select * from public.order_items i where i.fulfilment_id = f.id order by i.created_at limit 1) oi on true
+      left join public.products p on p.id = oi.product_id
+      where f.id = ${fulfilmentId} and o.buyer_user_id = ${buyer.id}`;
+    if (!f) throw new UserError('We couldn’t find that order.');
+    const context: ThreadContext = {
+      productId: f.productId ?? undefined,
+      productTitle: f.productTitle,
+      productSlug: f.productSlug ?? undefined,
+      imageUrl: f.imageUrl,
+      priceCents: f.priceCents,
+      productType: f.productType,
+      variantLabel: f.variantLabel,
+      orderNumber: f.orderNumber,
+      orderId: f.orderId,
+    };
+    const [existing] = await db<{ id: string }[]>`
+      select id from public.message_threads
+      where buyer_user_id = ${buyer.id} and maker_id = ${f.makerId} and commission_request_id is null
+        and ${f.productId ? db`product_id = ${f.productId}` : db`product_id is null`}
+      order by created_at limit 1`;
+    if (existing) {
+      await db`update public.message_threads set context = ${db.json(context as never)} where id = ${existing.id}`;
+      return existing.id;
+    }
+    const [created] = await db<{ id: string }[]>`
+      insert into public.message_threads (buyer_user_id, maker_id, product_id, context, kind)
+      values (${buyer.id}, ${f.makerId}, ${f.productId}, ${db.json(context as never)}, 'enquiry') returning id`;
+    return created!.id;
+  });
 }
 
 /** General question to a maker (no specific piece): "Ask a question" on the maker profile. */
@@ -355,7 +412,7 @@ async function notify(sender: Actor, thread: ThreadRow, fromBuyer: boolean) {
     { email: string; makerName: string }[]
   >`select u.email, m.display_name as maker_name from public.users u, public.makers m
     where u.id = ${thread.buyerUserId} and m.id = ${thread.makerId}`;
-  if (buyer)
+  if (buyer && (await buyerPrefs(thread.buyerUserId)).maker_messages)
     await sendEmail(
       emails.newMessage(
         buyer.email,

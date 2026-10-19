@@ -22,7 +22,7 @@ import type { StudioOrderDetail } from '@/lib/services/studio-orders';
 const A5 = [419.53, 595.28] as const;
 
 /** The logo path uses absolute M, L and C commands only; turn it into PDF path operators. */
-function pathOperators(d: string) {
+export function pathOperators(d: string) {
   const ops = [];
   const re = /([MLCZ])([^MLCZ]*)/gi;
   for (const [, cmd, args] of d.matchAll(re)) {
@@ -39,12 +39,12 @@ function pathOperators(d: string) {
   }
   return ops;
 }
-const INK = rgb(17 / 255, 17 / 255, 17 / 255);
-const MUTED = rgb(107 / 255, 103 / 255, 98 / 255);
-const LINE = rgb(226 / 255, 222 / 255, 215 / 255);
+export const INK = rgb(17 / 255, 17 / 255, 17 / 255);
+export const MUTED = rgb(107 / 255, 103 / 255, 98 / 255);
+export const LINE = rgb(226 / 255, 222 / 255, 215 / 255);
 
 /** The standard PDF fonts only cover Latin-1: drop accents and anything else they can't draw. */
-function safe(font: PDFFont, text: string) {
+export function safe(font: PDFFont, text: string) {
   const plain = text.normalize('NFD').replace(/[̀-ͯ]/g, '');
   return Array.from(plain)
     .map((ch) => {
@@ -58,7 +58,7 @@ function safe(font: PDFFont, text: string) {
     .join('');
 }
 
-function wrap(font: PDFFont, text: string, size: number, width: number): string[] {
+export function wrap(font: PDFFont, text: string, size: number, width: number): string[] {
   const lines: string[] = [];
   let line = '';
   for (const word of text.split(/\s+/)) {

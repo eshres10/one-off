@@ -1,6 +1,7 @@
 import { audit } from '@/lib/audit';
 import { sql, withUser } from '@/lib/db';
 import { emails } from '@/lib/email/templates';
+import { textBuyerShipped } from './notifications';
 import { sendEmail } from '@/lib/email/send';
 import type { SessionUser } from '@/lib/auth/session';
 import { UserError } from './errors';
@@ -65,6 +66,7 @@ export async function updateFulfilment(seller: Actor, input: FulfilmentAction) {
         input.trackingNumber,
       ),
     );
+    await textBuyerShipped(input.fulfilmentId);
   }
   if (info && input.action === 'delivered') {
     await sendEmail(

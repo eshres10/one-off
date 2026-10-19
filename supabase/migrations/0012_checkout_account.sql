@@ -79,9 +79,13 @@ begin
 end $$;
 -- [{ id, label, name, line1, line2, suburb, state, postcode, phone, isDefault }]
 alter table public.customer_prefs add column if not exists addresses jsonb not null default '[]'::jsonb;
--- { delivery_sms, maker_messages, following_weekly, one_of_ones_in_size, news } (order emails are always on)
-alter table public.customer_prefs add column if not exists notify jsonb not null default
-  '{"delivery_sms": true, "maker_messages": true, "following_weekly": true, "one_of_ones_in_size": false, "news": false}'::jsonb;
+-- Buyer notification choices live in notification_prefs next to the makers' ones (order and
+-- delivery emails are always on, so they have no row): delivery_sms (sms column), maker_messages,
+-- following_weekly, one_of_ones_in_size, news (email column).
+alter table public.notification_prefs drop constraint if exists notification_prefs_event_check;
+alter table public.notification_prefs add constraint notification_prefs_event_check check (event in
+  ('new_order', 'ship_by_reminder', 'message', 'low_stock', 'payout_sent', 'weekly_summary',
+   'delivery_sms', 'maker_messages', 'following_weekly', 'one_of_ones_in_size', 'news'));
 
 alter table public.buyer_measurements add column if not exists inside_leg_cm numeric(5, 1)
   check (inside_leg_cm is null or inside_leg_cm between 40 and 120);

@@ -144,7 +144,7 @@ export const HELP: Record<string, HelpTopic> = {
         id: 'how-to-measure',
         heading: 'How to measure',
         body: [
-          'Bust: around the fullest part, keeping the tape level. Waist: around the narrowest part of your torso. Hips: around the fullest part, feet together. Height: barefoot, against a wall.',
+          'Bust: around the fullest part, keeping the tape level. Waist: around the narrowest part of your torso. Hips: around the fullest part, feet together. Height: barefoot, against a wall. Inside leg: from the top of your inner thigh to the floor, barefoot.',
           'Save your measurements in your account to make sizing questions and custom requests quicker.',
         ],
       },
