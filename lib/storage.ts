@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { env } from '@/lib/env';
+import { imageSize } from '@/lib/image-size';
 import { UserError } from '@/lib/services/errors';
 
 export const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
@@ -33,7 +34,10 @@ export async function storeImage(
   prefix: 'products' | 'messages' | 'commissions' | 'makers' | 'reviews' | 'collections',
 ) {
   const type = validateImage(bytes, declaredType);
-  const name = `${prefix}/${new Date().toISOString().slice(0, 7)}/${randomUUID()}.${TYPES[type].ext}`;
+  // The size travels in the name (…-1200x1600.jpg) so listings can reserve the right space.
+  const size = imageSize(bytes);
+  const suffix = size ? `-${size.width}x${size.height}` : '';
+  const name = `${prefix}/${new Date().toISOString().slice(0, 7)}/${randomUUID()}${suffix}.${TYPES[type].ext}`;
   const e = env();
   if (e.STORAGE_DRIVER === 'supabase') {
     const { supabaseAdmin } = await import('@/lib/auth/supabase');

@@ -6,8 +6,11 @@ import { useEffect, useState } from 'react';
 import { onLocalSavesChange, readLocalSaves } from '@/lib/local-saves';
 import { HeartIcon } from '@/components/ui/icons';
 
-/** Phone header shortcut to /saved on Home and Discover, with a dot when anything is saved. */
-export function SavedHeart({ count }: { count: number }) {
+/**
+ * Phone shortcut to /saved, with a dot when anything is saved. The header shows it on Home;
+ * Discover places its own beside the page title (`always`).
+ */
+export function SavedHeart({ count, always = false }: { count: number; always?: boolean }) {
   const pathname = usePathname() ?? '/';
   const [local, setLocal] = useState(0);
   useEffect(() => {
@@ -15,7 +18,7 @@ export function SavedHeart({ count }: { count: number }) {
     read();
     return onLocalSavesChange(read);
   }, []);
-  if (pathname !== '/' && !pathname.startsWith('/discover')) return null;
+  if (!always && pathname !== '/') return null;
   const any = count + local > 0;
   return (
     <Link

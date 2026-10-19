@@ -1,3 +1,4 @@
+import { sizeFromUrl } from '@/lib/image-size';
 import { audit } from '@/lib/audit';
 import { withUser, type Db } from '@/lib/db';
 import { validateLeadTime } from '@/lib/domain/leadTime';
@@ -80,8 +81,10 @@ async function writeChildren(db: Db, productId: string, input: ListingInput) {
   await db`delete from public.product_images where product_id = ${productId}`;
   for (const [i, img] of input.images.entries()) {
     const storagePath = img.url.replace(/^\/api\/files\//, '');
-    await db`insert into public.product_images (product_id, storage_path, public_url, alt_text, sort_order)
-             values (${productId}, ${storagePath}, ${img.url}, ${sanitizeText(img.alt).slice(0, 200)}, ${i})`;
+    const size = sizeFromUrl(img.url);
+    await db`insert into public.product_images (product_id, storage_path, public_url, alt_text, sort_order, width, height)
+             values (${productId}, ${storagePath}, ${img.url}, ${sanitizeText(img.alt).slice(0, 200)}, ${i},
+               ${size?.width ?? null}, ${size?.height ?? null})`;
   }
   await db`delete from public.product_measurements where product_id = ${productId}`;
   for (const [i, m] of input.measurements.entries()) {
@@ -193,8 +196,8 @@ export async function duplicateListing(seller: Actor, productId: string): Promis
     await db`insert into public.product_variants (product_id, size, colour, price_cents, stock_quantity, is_active, low_stock_threshold, sort_order)
              select ${newId}, size, colour, price_cents, stock_quantity, is_active, low_stock_threshold, sort_order
              from public.product_variants where product_id = ${productId} and is_active`;
-    await db`insert into public.product_images (product_id, storage_path, public_url, alt_text, sort_order)
-             select ${newId}, storage_path, public_url, alt_text, sort_order from public.product_images where product_id = ${productId}`;
+    await db`insert into public.product_images (product_id, storage_path, public_url, alt_text, sort_order, width, height)
+             select ${newId}, storage_path, public_url, alt_text, sort_order, width, height from public.product_images where product_id = ${productId}`;
     await db`insert into public.product_measurements (product_id, size, garment_measurement_name, value_cm, notes, sort_order)
              select ${newId}, size, garment_measurement_name, value_cm, notes, sort_order from public.product_measurements where product_id = ${productId}`;
     return newId;

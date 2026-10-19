@@ -431,7 +431,14 @@ export interface ProductSeed {
   createdDaysAgo: number;
   variants: Array<{ id: string; size: string; colour: string; stock: number; sku: string }>;
   measurements: Array<{ name: string; valueCm: number }>;
-  images: Array<{ path: string; url: string; alt: string; view: number }>;
+  images: Array<{
+    path: string;
+    url: string;
+    alt: string;
+    view: number;
+    width: number;
+    height: number;
+  }>;
   occasions: string[];
 }
 
@@ -759,12 +766,23 @@ function buildProducts(): ProductSeed[] {
       }, French seams throughout.`;
 
       const images = hero
-        ? [{ path: `seed/${slug}.jpg`, url: `/seed/${slug}.jpg`, alt: hero.alt, view: 0 }]
+        ? [
+            {
+              path: `seed/${slug}.jpg`,
+              url: `/seed/${slug}.jpg`,
+              alt: hero.alt,
+              view: 0,
+              width: 933,
+              height: 1400,
+            },
+          ]
         : VIEW_ALT.map((alt, view) => ({
             path: `seed/products/${slug}-${view + 1}.svg`,
             url: `/seed/products/${slug}-${view + 1}.svg`,
             alt: alt(title, colour),
             view,
+            width: 800,
+            height: 1000,
           }));
       const occasions =
         hero?.occasions ?? (tags.includes('wedding-guest') ? ['wedding guest'] : []);

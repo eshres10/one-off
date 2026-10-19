@@ -102,10 +102,11 @@ async function seedProducts(db: Sql) {
     await db`delete from public.product_images where product_id = ${p.id} and not (id = any(${imageIds}::uuid[]))`;
     for (const img of p.images) {
       await db`
-        insert into public.product_images (id, product_id, storage_path, public_url, alt_text, sort_order, is_placeholder)
-        values (${seedId(`image:${p.slug}:${img.view}`)}, ${p.id}, ${img.path}, ${img.url}, ${img.alt}, ${img.view}, true)
+        insert into public.product_images (id, product_id, storage_path, public_url, alt_text, sort_order, is_placeholder, width, height)
+        values (${seedId(`image:${p.slug}:${img.view}`)}, ${p.id}, ${img.path}, ${img.url}, ${img.alt}, ${img.view}, true, ${img.width}, ${img.height})
         on conflict (id) do update set storage_path = excluded.storage_path, public_url = excluded.public_url,
-          alt_text = excluded.alt_text, sort_order = excluded.sort_order, is_placeholder = true`;
+          alt_text = excluded.alt_text, sort_order = excluded.sort_order, is_placeholder = true,
+          width = excluded.width, height = excluded.height`;
     }
     for (const [i, v] of p.variants.entries()) {
       await db`
