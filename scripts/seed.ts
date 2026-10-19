@@ -561,13 +561,14 @@ export async function seed(databaseUrl: string) {
             id, user_id, slug, display_name, tagline, story, location, city, state, process, materials, sizing_notes,
             avatar_url, cover_url, lead_time_days, response_time_hours, custom_commissions_enabled, status,
             stripe_account_id, stripe_onboarding_complete, stripe_payouts_enabled, shipping_standard_cents,
-            free_shipping_over_cents, dispatch_days, approved_at
+            free_shipping_over_cents, dispatch_days, approved_at, shop_status, stripe_charges_enabled, went_live_at
           ) values (
             ${m.id}, ${m.userId}, ${m.slug}, ${m.displayName}, ${m.tagline}, ${m.story}, ${`${m.suburb}, ${m.city}`}, ${m.city},
             ${m.state}, ${m.process}, ${m.materials}, ${m.sizingNotes}, ${m.portrait ?? `/seed/makers/${m.slug}-avatar.svg`},
             ${coverFor(m.slug)}, ${m.leadTimeDays}, ${m.responseTimeHours}, ${m.customCommissions}, 'approved',
             ${mockPayments ? `acct_mock_${m.slug.replace(/-/g, '_')}` : null}, ${mockPayments}, ${mockPayments},
             ${m.shippingStandardCents}, ${m.freeShippingOverCents}, ${m.dispatchDays},
+            now() - make_interval(days => ${m.joinedDaysAgo}), 'live', ${mockPayments},
             now() - make_interval(days => ${m.joinedDaysAgo})
           )
           on conflict (id) do update set

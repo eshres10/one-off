@@ -55,7 +55,7 @@ describe('row level security: sellers', () => {
     expect(own).toHaveLength(1);
   });
 
-  it('a seller cannot approve their own listing or change platform-managed fields', async () => {
+  it('a seller publishes only in a live shop and cannot change platform-managed fields', async () => {
     const [p] = await sql()<
       { id: string }[]
     >`select id from public.products where maker_id = ${a.makerId} and status = 'approved' and not is_featured limit 1`;
@@ -64,13 +64,41 @@ describe('row level security: sellers', () => {
     ).rejects.toThrow();
     const [draft] = await sql()<{ id: string }[]>`
       insert into public.products (maker_id, slug, title, category, price_cents, product_type, status)
-      values (${a.makerId}, ${'self-approve-' + Date.now()}, 'Self approve', 'dresses', 20000, 'ready_to_ship', 'pending') returning id`;
+      values (${a.makerId}, ${'self-publish-' + Date.now()}, 'Self publish', 'dresses', 20000, 'ready_to_ship', 'draft') returning id`;
+    // Live shop: the maker publishes their own piece.
+    await withUser(
+      a,
+      (db) => db`update public.products set status = 'approved' where id = ${draft!.id}`,
+    );
+    // Not live (e.g. closed): publishing is refused.
+    await sql()`update public.makers set shop_status = 'closed' where id = ${a.makerId}`;
+    try {
+      await withUser(
+        a,
+        (db) => db`update public.products set status = 'archived' where id = ${draft!.id}`,
+      );
+      await expect(
+        withUser(
+          a,
+          (db) => db`update public.products set status = 'approved' where id = ${draft!.id}`,
+        ),
+      ).rejects.toThrow(/shop is live/);
+    } finally {
+      await sql()`update public.makers set shop_status = 'live' where id = ${a.makerId}`;
+    }
     await expect(
       withUser(
         a,
-        (db) => db`update public.products set status = 'approved' where id = ${draft!.id}`,
+        (db) => db`update public.products set status = 'rejected' where id = ${draft!.id}`,
       ),
     ).rejects.toThrow(/admins/);
+    await expect(
+      withUser(
+        a,
+        (db) =>
+          db`update public.makers set shop_status = 'live', founding_until = now() where id = ${a.makerId}`,
+      ),
+    ).rejects.toThrow(/managed by the platform/);
     await expect(
       withUser(
         a,
