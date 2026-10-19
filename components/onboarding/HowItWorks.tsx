@@ -70,6 +70,8 @@ export function HowItWorks({ images }: { images: string[] }) {
   const router = useRouter();
   const track = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
+  // While Next/dots scroll the track, ignore the in-between scroll positions.
+  const target = useRef<number | null>(null);
   const [pending, start] = useTransition();
   const cards = [
     {
@@ -90,6 +92,7 @@ export function HowItWorks({ images }: { images: string[] }) {
   ];
   const go = (i: number) => {
     const el = track.current;
+    target.current = i;
     setActive(i);
     el?.scrollTo({ left: i * el.clientWidth, behavior: 'smooth' });
   };
@@ -118,9 +121,16 @@ export function HowItWorks({ images }: { images: string[] }) {
       <div
         ref={track}
         className="no-scrollbar -mx-4 flex snap-x snap-mandatory overflow-x-auto"
+        onPointerDown={() => (target.current = null)}
+        onWheel={() => (target.current = null)}
         onScroll={(e) => {
           const el = e.currentTarget;
           const i = Math.round(el.scrollLeft / el.clientWidth);
+          if (target.current !== null) {
+            if (Math.abs(el.scrollLeft - target.current * el.clientWidth) < 2)
+              target.current = null;
+            return;
+          }
           if (i !== active) setActive(i);
         }}
         aria-roledescription="carousel"

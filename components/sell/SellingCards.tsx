@@ -44,9 +44,12 @@ function Card({
 export function SellingCards({ images, payout }: { images: string[]; payout: PayoutExample }) {
   const track = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
+  // While Next/dots scroll the track, ignore the in-between scroll positions.
+  const target = useRef<number | null>(null);
   const go = (i: number) => {
-    setActive(i);
     const el = track.current;
+    target.current = i;
+    setActive(i);
     el?.scrollTo({ left: i * el.clientWidth, behavior: 'smooth' });
   };
   const cards = [
@@ -162,9 +165,16 @@ export function SellingCards({ images, payout }: { images: string[]; payout: Pay
         ref={track}
         tabIndex={0}
         className="no-scrollbar -mx-5 flex snap-x snap-mandatory overflow-x-auto"
+        onPointerDown={() => (target.current = null)}
+        onWheel={() => (target.current = null)}
         onScroll={(e) => {
           const el = e.currentTarget;
           const i = Math.round(el.scrollLeft / el.clientWidth);
+          if (target.current !== null) {
+            if (Math.abs(el.scrollLeft - target.current * el.clientWidth) < 2)
+              target.current = null;
+            return;
+          }
           if (i !== active) setActive(i);
         }}
         onKeyDown={(e) => {

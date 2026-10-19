@@ -27,7 +27,9 @@ async function login(page: Page, email: string, next: string) {
 async function join(page: Page, name: string) {
   const email = `${name.toLowerCase().replace(/\W+/g, '.')}.${Date.now()}@buyer.test`;
   await page.goto('/join');
-  await page.getByTestId('join-use-password').click();
+  // Without email links (production build with the outbox) the password form shows straight away.
+  const usePassword = page.getByTestId('join-use-password');
+  if (await usePassword.isVisible()) await usePassword.click();
   await page.getByLabel('Name').fill(name);
   await page.locator('input[name=email]:visible').fill(email);
   await page.getByLabel('Password', { exact: true }).fill(PASSWORD);
@@ -143,9 +145,9 @@ test.describe.serial('onboarding and scroll', () => {
       on conflict (user_id) do update set taste_tags = excluded.taste_tags`;
     const topSlugs = async (page: Page) => {
       await page.goto('/discover');
-      await expect(page.getByTestId('discover-piece').first()).toBeVisible();
-      const hrefs = await page
-        .getByTestId('discover-piece')
+      const cards = page.getByTestId('discover-piece').filter({ visible: true });
+      await expect(cards.first()).toBeVisible();
+      const hrefs = await cards
         .locator('a[href^="/products/"]')
         .evaluateAll((as) => [...new Set(as.map((a) => a.getAttribute('href')!.split('/')[2]!))]);
       return hrefs.slice(0, 12);
