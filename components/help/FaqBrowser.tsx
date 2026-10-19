@@ -121,7 +121,7 @@ export function FaqBrowser({
 
   return (
     <>
-      <div className="mx-auto mt-8 max-w-[630px]">
+      <div className="mx-auto mt-8 max-w-[calc(630px+2*var(--gutter))] px-[var(--gutter)]">
         <label htmlFor={searchId} className="sr-only">
           Search help
         </label>
@@ -150,7 +150,7 @@ export function FaqBrowser({
       </div>
 
       <div className="mt-12 border-t border-line pt-12 md:mt-14 md:pt-14">
-        <div className="container-page grid gap-10 md:grid-cols-[220px_minmax(0,1fr)_minmax(260px,300px)] md:gap-12 lg:grid-cols-[260px_minmax(0,1fr)_320px]">
+        <div className="container-page grid grid-cols-[minmax(0,1fr)] gap-10 md:grid-cols-[220px_minmax(0,1fr)_minmax(260px,300px)] md:gap-12 lg:grid-cols-[260px_minmax(0,1fr)_320px]">
           {/* Categories: a list on desktop, chips on phone. */}
           <nav aria-label="Help topics" className={results ? 'hidden md:block md:opacity-40' : ''}>
             <ul className="no-scrollbar -mx-[var(--gutter)] flex gap-2 overflow-x-auto px-[var(--gutter)] md:mx-0 md:block md:overflow-visible md:border-t md:border-ink md:px-0">

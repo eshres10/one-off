@@ -29,7 +29,7 @@ export default function HowItWorksPage() {
       </header>
 
       <section className="container-page py-14 md:py-20" aria-labelledby="ways-title">
-        <h2 id="ways-title" className="eyebrow">
+        <h2 id="ways-title" className="eyebrow font-sans">
           {h.waysKicker}
         </h2>
         <ul className="mt-6 grid gap-8 md:grid-cols-3 md:gap-4">
@@ -59,7 +59,7 @@ export default function HowItWorksPage() {
 
       <section className="container-page pb-14 md:pb-20" aria-labelledby="steps-title">
         <div className="border-t border-ink pt-4">
-          <h2 id="steps-title" className="eyebrow">
+          <h2 id="steps-title" className="eyebrow font-sans">
             {h.stepsKicker}
           </h2>
         </div>

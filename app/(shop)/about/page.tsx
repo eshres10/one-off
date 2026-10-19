@@ -72,7 +72,7 @@ export default function AboutPage() {
 
       <section className="container-page py-16 md:py-24" aria-labelledby="promises-title">
         <div className="flex items-baseline justify-between border-t border-ink pt-4">
-          <h2 id="promises-title" className="text-[11px] uppercase tracking-label text-muted-2">
+          <h2 id="promises-title" className="font-sans text-[11px] uppercase tracking-label text-muted-2">
             {a.promises.kicker}
           </h2>
           <p className="text-[11px] uppercase tracking-label text-muted-2">{a.promises.aside}</p>

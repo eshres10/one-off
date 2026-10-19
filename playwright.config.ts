@@ -116,6 +116,12 @@ export default defineConfig({
       dependencies: ['states'],
       use: { browserName: 'chromium', viewport: { width: 1280, height: 860 } },
     },
+    {
+      name: 'content',
+      testMatch: 'content.spec.ts',
+      dependencies: ['change-of-mind'],
+      use: { browserName: 'chromium', viewport: { width: 1280, height: 860 } },
+    },
   ],
   webServer: {
     command:
