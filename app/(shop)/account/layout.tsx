@@ -4,6 +4,9 @@ import { accountSummary } from '@/lib/queries/account-home';
 import { AccountBack, AccountSidebar } from '@/components/account/AccountNav';
 import { accountItems } from '@/lib/account/nav';
 
+/** Private pages: kept out of search results (they can still use the default share image). */
+export const metadata = { robots: { index: false, follow: false } };
+
 /**
  * The buyer account. Desktop: "Hi, {name}", the email and the sections down the left, with the
  * page on the right. Phone: the account home is the menu; subpages have "‹ Account".

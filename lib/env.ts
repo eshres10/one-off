@@ -37,6 +37,8 @@ const schema = z
     STRIPE_CONNECT_WEBHOOK_SECRET: z.string().optional(),
     /** Public key for Stripe.js (Payment Element, Express Checkout Element) on /checkout. */
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().optional(),
+    /** The public site address for share links and images; falls back to APP_URL. */
+    NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
 
     EMAIL_DRIVER: z.enum(['outbox', 'resend']).default('outbox'),
     RESEND_API_KEY: z.string().optional(),

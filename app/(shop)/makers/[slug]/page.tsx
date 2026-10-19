@@ -1,3 +1,4 @@
+import { makerCard } from '@/lib/og/data';
 import { HolidayBanner } from '@/components/states/HolidayBanner';
 import { holidayMessage, shipsFrom } from '@/lib/domain/shop';
 import { SITE } from '@/lib/site/config';
@@ -28,9 +29,30 @@ export async function generateMetadata({
   params: { slug: string };
 }): Promise<Metadata> {
   const data = await getMaker(params.slug);
+  if (!data) return { title: 'Maker' };
+  const share = await makerCard(params.slug);
+  const title = `${data.maker.displayName} — One Off`;
+  const description =
+    data.maker.tagline ??
+    `Original pieces by ${data.maker.displayName}, made in ${data.maker.city ?? 'Australia'}.`;
+  const image = {
+    url: `/og/makers/${data.maker.slug}?v=${share?.version ?? '0'}`,
+    width: 1200,
+    height: 630,
+    alt: data.maker.displayName,
+  };
   return {
-    title: data?.maker.displayName ?? 'Maker',
-    description: data?.maker.tagline ?? undefined,
+    title: { absolute: title },
+    description,
+    alternates: { canonical: `/makers/${data.maker.slug}` },
+    openGraph: {
+      type: 'website',
+      title,
+      description,
+      url: `/makers/${data.maker.slug}`,
+      images: [image],
+    },
+    twitter: { card: 'summary_large_image', title, description, images: [image.url] },
   };
 }
 

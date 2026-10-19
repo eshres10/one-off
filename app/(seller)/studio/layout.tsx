@@ -8,6 +8,9 @@ import { StudioShell } from '@/components/studio/StudioShell';
 import { HelpButton } from '@/components/studio/HelpButton';
 import { StudioTour } from '@/components/tour/StudioTour';
 
+/** Private pages: kept out of search results (they can still use the default share image). */
+export const metadata = { robots: { index: false, follow: false } };
+
 export const dynamic = 'force-dynamic';
 
 export default async function StudioLayout({ children }: { children: React.ReactNode }) {

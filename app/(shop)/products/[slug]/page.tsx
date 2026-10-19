@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getSessionUser } from '@/lib/auth/session';
 import { getMeasurements } from '@/lib/queries/account';
+import { productCard } from '@/lib/og/data';
 import { RememberPiece } from '@/components/states/RememberPiece';
 import { HolidayBanner } from '@/components/states/HolidayBanner';
 import { SoldPanel, SoldStamp } from '@/components/product/SoldPanel';
@@ -47,9 +48,25 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const p = await getProduct(params.slug);
   if (!p) return { title: 'Not found' };
+  const share = await productCard(params.slug);
+  const title = `${p.title} by ${p.maker.displayName} — One Off`;
+  const description = p.description
+    .replace(/^Preview only[^\n]*\n+/, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 150);
+  const image = {
+    url: `/og/products/${p.slug}?v=${share?.version ?? '0'}`,
+    width: 1200,
+    height: 630,
+    alt: p.title,
+  };
   return {
-    title: `${p.title} by ${p.maker.displayName}`,
-    description: p.description.slice(0, 160),
+    title: { absolute: title },
+    description,
+    alternates: { canonical: `/products/${p.slug}` },
+    openGraph: { type: 'website', title, description, url: `/products/${p.slug}`, images: [image] },
+    twitter: { card: 'summary_large_image', title, description, images: [image.url] },
   };
 }
 

@@ -4,6 +4,9 @@ import { marketplaceMetrics } from '@/lib/services/admin';
 import { applicationQueue } from '@/lib/services/applications';
 import { countClaimsNeedingAttention } from '@/lib/services/claims';
 
+/** Private pages: kept out of search results (they can still use the default share image). */
+export const metadata = { robots: { index: false, follow: false } };
+
 export const dynamic = 'force-dynamic';
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {

@@ -3,6 +3,9 @@ import { BRAND } from '@/lib/brand';
 import { ArrowLeftIcon, LockIcon } from '@/components/ui/icons';
 import { Wordmark } from '@/components/ui/Wordmark';
 
+/** Private pages: kept out of search results (they can still use the default share image). */
+export const metadata = { robots: { index: false, follow: false } };
+
 export const dynamic = 'force-dynamic';
 
 /** A focused layout for checkout: the wordmark, "Back to bag" and "Secure checkout" only. */
