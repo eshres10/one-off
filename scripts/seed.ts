@@ -5,6 +5,7 @@
 import 'dotenv/config';
 import bcrypt from 'bcryptjs';
 import postgres from 'postgres';
+import { seedStudio } from './seed-studio';
 import { splitOrder } from '../lib/domain/split';
 import { estimateDelivery, toIsoDate } from '../lib/domain/leadTime';
 import type { CartLine, MakerShipping } from '../lib/domain/types';
@@ -549,6 +550,7 @@ export async function seed(databaseUrl: string) {
   const db = postgres(databaseUrl, { max: 1, onnotice: () => {} });
   const hash = bcrypt.hashSync(PASSWORD, 10);
   const mockPayments = (process.env.PAYMENTS_DRIVER ?? 'mock') === 'mock';
+  let studio = null as { claimUrl: string } | null;
   try {
     await db.begin(async (tx) => {
       await upsertUser(tx, ADMIN.id, ADMIN.email, ADMIN.name, 'admin', hash);
@@ -627,6 +629,7 @@ export async function seed(databaseUrl: string) {
       await seedMessages(tx);
       await seedCommissions(tx);
       await refreshThreadState(tx);
+      studio = await seedStudio(tx, upsertUser, hash, mockPayments);
 
       await tx`
         insert into public.audit_events (id, actor_user_id, action, entity_type, entity_id, metadata)
@@ -636,17 +639,23 @@ export async function seed(databaseUrl: string) {
   } finally {
     await db.end();
   }
+  return studio;
 }
 
 if (require.main === module) {
   const url = process.env.DATABASE_URL ?? 'postgres://postgres@127.0.0.1:54329/marketplace';
   seed(url)
-    .then(() =>
+    .then((studio) => {
       console.log(
         `Seeded ${MAKERS.length} makers, ${PRODUCTS.length} products, ${COLLECTIONS.length} collections, ${BUYERS.length} buyers. ` +
           `Logins: ${ADMIN.email} / ${MAKERS[0]!.email} / ${BUYERS[0]!.email} (password: ${PASSWORD})`,
-      ),
-    )
+      );
+      if (studio)
+        console.log(
+          `Studio demo: Halde Studio (founding Nº 07). Invited shop Mira Atelier — claim it at ` +
+            `${process.env.APP_URL ?? 'http://localhost:3000'}${studio.claimUrl}`,
+        );
+    })
     .catch((err) => {
       console.error(err);
       process.exit(1);

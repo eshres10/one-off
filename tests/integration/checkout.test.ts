@@ -45,8 +45,9 @@ async function orderState(orderId: string) {
 
 describe('checkout → webhook (ready-to-ship)', () => {
   it('marks the order paid, decrements stock, records commission and fees, holds the maker’s money and emails both sides', async () => {
+    // Halde Studio is a founding maker (0%); this checks the standard rate.
     const { product, variantId, stock } = await pickVariant(
-      (p) => p.productType === 'ready_to_ship',
+      (p) => p.productType === 'ready_to_ship' && p.maker.slug !== 'halde-studio',
     );
     const { orderId, outcome } = await buyAndPay(
       [{ productId: product.id, variantId }],
