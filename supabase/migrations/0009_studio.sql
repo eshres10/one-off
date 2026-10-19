@@ -210,9 +210,6 @@ alter table public.order_items add column if not exists custom_measurements json
 -- ---------------------------------------------------------------------------
 alter table public.orders add column if not exists gift_note text
   check (gift_note is null or char_length(gift_note) <= 300);
-alter table public.cart_items add column if not exists gift_note text;
-alter table public.carts add column if not exists gift_note text
-  check (gift_note is null or char_length(gift_note) <= 300);
 
 -- estimated_dispatch_date is the ship-by date (business days, AU public holidays skipped).
 alter table public.fulfilments add column if not exists mto_step smallint not null default 0

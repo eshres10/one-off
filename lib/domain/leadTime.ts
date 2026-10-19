@@ -1,11 +1,13 @@
+import { isPublicHoliday } from './holidays';
 import type { ProductType } from './types';
 
 /** Typical Australia Post domestic parcel transit, in business days. */
 export const TRANSIT_BUSINESS_DAYS = { min: 2, max: 6 } as const;
 
+/** Weekends and Australian public holidays: nothing is dispatched or counted on them. */
 function isWeekend(d: Date): boolean {
   const day = d.getUTCDay();
-  return day === 0 || day === 6;
+  return day === 0 || day === 6 || isPublicHoliday(d);
 }
 
 function startOfUtcDay(d: Date): Date {

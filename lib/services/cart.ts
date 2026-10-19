@@ -5,6 +5,7 @@ import { assertCheckoutEnabled } from '@/lib/features';
 import { computeCartTotals, type CartTotals } from '@/lib/domain/cart';
 import { estimateDelivery, formatDateRange } from '@/lib/domain/leadTime';
 import { validateStock } from '@/lib/domain/stock';
+import { shopBuyable } from '@/lib/domain/shop';
 import type { CartLine, MakerShipping, ProductType } from '@/lib/domain/types';
 
 export interface CartLineView extends CartLine {
@@ -50,6 +51,9 @@ interface Row {
   shippingStandardCents: number;
   freeShippingOverCents: number | null;
   dispatchDays: number;
+  shopStatus: string;
+  chargesEnabled: boolean;
+  holidayUntil: Date | null;
 }
 
 export function variantLabel(size: string, colour: string | null, colourCount: number) {
@@ -64,7 +68,8 @@ async function loadRows(db: Db, cartId: string): Promise<Row[]> {
            (select public_url from public.product_images i where i.product_id = p.id order by sort_order limit 1) as image_url,
            ci.quantity, coalesce(v.price_cents, p.price_cents) as unit_price_cents, p.lead_time_days,
            v.stock_quantity, v.is_active as variant_active, v.low_stock_threshold, p.status as product_status,
-           m.status as maker_status, m.shipping_standard_cents, m.free_shipping_over_cents, m.dispatch_days
+           m.status as maker_status, m.shipping_standard_cents, m.free_shipping_over_cents, m.dispatch_days,
+           m.shop_status, m.stripe_charges_enabled as charges_enabled, m.holiday_until
     from public.cart_items ci
     join public.products p on p.id = ci.product_id
     join public.product_variants v on v.id = ci.variant_id
@@ -114,8 +119,10 @@ export async function getCart(sessionId: string | undefined, db: Db = sql()): Pr
   const rows = await loadRows(db, cartId);
   const lines: CartLineView[] = rows.map((r) => {
     let problem: string | null = null;
+    const sale = shopBuyable(r);
     if (r.productStatus !== 'approved' || r.makerStatus !== 'approved')
       problem = 'This piece is no longer available.';
+    else if (!sale.ok) problem = sale.message;
     else {
       const check = validateStock(
         {
@@ -182,9 +189,13 @@ export async function addToCart(input: {
         unitPriceCents: number;
         visible: boolean;
         previewOnly: boolean;
+        shopStatus: string;
+        chargesEnabled: boolean;
+        holidayUntil: Date | null;
       }[]
     >`
       select v.stock_quantity, v.is_active, v.low_stock_threshold, p.product_type,
+             m.shop_status, m.stripe_charges_enabled as charges_enabled, m.holiday_until,
              coalesce(v.price_cents, p.price_cents) as unit_price_cents,
              (p.status = 'approved' and m.status = 'approved') as visible,
              ${PREVIEW_ONLY_TAG} = any(p.tags) as preview_only
@@ -192,6 +203,8 @@ export async function addToCart(input: {
       where v.id = ${input.variantId} and v.product_id = ${input.productId}`;
     if (!variant || !variant.visible) throw new CartError('This piece is no longer available.');
     if (variant.previewOnly) throw new CartError(`${PREVIEW_ONLY_LABEL}.`);
+    const sale = shopBuyable(variant);
+    if (!sale.ok) throw new CartError(sale.message);
 
     const [cart] = await db<{ id: string }[]>`
       insert into public.carts (session_id, user_id) values (${input.sessionId}, ${input.userId})

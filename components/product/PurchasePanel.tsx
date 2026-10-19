@@ -56,6 +56,7 @@ export function PurchasePanel({
   modelLine,
   checkoutEnabled = true,
   previewMessage,
+  disabledLabel = 'Launching soon',
 }: {
   productId: string;
   productSlug: string;
@@ -69,6 +70,8 @@ export function PurchasePanel({
   /** False in preview mode: sizes stay browsable but nothing can be added to the bag. */
   checkoutEnabled?: boolean;
   previewMessage?: string;
+  /** Button text when buying is off (e.g. "Away until 12 Jan"). */
+  disabledLabel?: string;
 }) {
   const [colour, setColour] = useState<string | null>(colours[0] ?? null);
   const visible = useMemo(
@@ -92,7 +95,7 @@ export function PurchasePanel({
 
   const allSoldOut = variants.every((v) => v.stockQuantity <= 0);
   const label = !checkoutEnabled
-    ? 'Launching soon'
+    ? disabledLabel
     : allSoldOut
       ? 'Sold out'
       : !selected

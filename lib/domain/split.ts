@@ -15,7 +15,12 @@ export interface FulfilmentPlan {
   subtotalCents: number;
   shippingCents: number;
   platformCommissionCents: number;
-  /** Amount transferred to the maker's connected account: items net of commission + shipping. */
+  /** Commission rate applied to this maker's items, in basis points (founding makers pay less). */
+  feeBps: number;
+  /**
+   * The maker's share before card processing: items net of commission, plus shipping. The
+   * processing fee is deducted once Stripe reports it.
+   */
   sellerNetCents: number;
 }
 
@@ -30,18 +35,20 @@ export interface OrderPlan {
 /**
  * Turns one buyer cart into one buyer-facing order and one fulfilment per maker.
  * Commission applies to item value only; shipping passes through to the maker who ships it.
+ * `feeBps` is one rate for everyone, or a rate per maker (founding makers pay less).
  */
 export function splitOrder(
   lines: CartLine[],
   shippingByMaker: Map<string, MakerShipping>,
-  feeBps: number,
+  feeBps: number | ((makerId: string) => number),
 ): OrderPlan {
   if (lines.length === 0) throw new Error('Cannot create an order from an empty cart');
   const totals = computeCartTotals(lines, shippingByMaker);
   const fulfilments = totals.groups.map<FulfilmentPlan>((group) => {
+    const bps = typeof feeBps === 'function' ? feeBps(group.makerId) : feeBps;
     const items = group.lines.map<SplitItem>((line) => {
       const total = lineTotalCents(line);
-      const commission = commissionCents(total, feeBps);
+      const commission = commissionCents(total, bps);
       return {
         ...line,
         lineTotalCents: total,
@@ -58,6 +65,7 @@ export function splitOrder(
       subtotalCents: group.subtotalCents,
       shippingCents: group.shippingCents,
       platformCommissionCents,
+      feeBps: bps,
       sellerNetCents: itemsNet + group.shippingCents,
     };
   });

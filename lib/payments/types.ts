@@ -57,6 +57,11 @@ export interface AccountInfo {
   detailsSubmitted: boolean;
   chargesEnabled: boolean;
   payoutsEnabled: boolean;
+  /** The payout bank account, for "Connected ✓ {bank} ••{last4}". */
+  bankName: string | null;
+  bankLast4: string | null;
+  /** Stripe still needs information before payouts or charges are enabled. */
+  requirementsDue: boolean;
 }
 
 export interface PaymentsDriver {
@@ -87,6 +92,8 @@ export interface PaymentsDriver {
     email: string;
     makerId: string;
     businessName: string;
+    /** Weekly payout day (TERMS.payoutWeekday). */
+    payoutWeekday?: string;
   }): Promise<{ id: string }>;
   createAccountLink(
     accountId: string,
@@ -94,6 +101,10 @@ export interface PaymentsDriver {
     returnUrl: string,
   ): Promise<{ url: string }>;
   createLoginLink(accountId: string): Promise<{ url: string }>;
+  /** Weekly payouts on the maker's chosen weekday. */
+  setWeeklyPayouts(accountId: string, weekday: string): Promise<void>;
+  /** Stripe's actual processing fee on a charge, in cents. */
+  getChargeFee(chargeId: string): Promise<number>;
   retrieveAccount(accountId: string): Promise<AccountInfo>;
   /** Verifies a webhook signature and parses the event. Throws on invalid signature. */
   constructEvent(rawBody: string, signature: string, secret: string): Stripe.Event;

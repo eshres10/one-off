@@ -232,6 +232,20 @@ export const emails = {
     text: `A payment dispute was opened. Reason: ${reason}.\n\nRespond in the Stripe dashboard. Dispute: ${disputeId}\n${url('/admin/orders')}`,
   }),
 
+  payoutSent: (
+    to: string,
+    makerId: string,
+    amount: string,
+    bankName: string | null,
+    last4: string | null,
+  ): EmailMessage => ({
+    to,
+    template: 'payout_sent',
+    subject: `${amount} is on its way to ${bankName ?? 'your bank'}${last4 ? ` ••${last4}` : ''}`,
+    text: `${amount} is on its way to ${bankName ?? 'your bank'}${last4 ? ` ••${last4}` : ''}. It usually arrives in one to two business days.\n\nSee your payouts: ${url('/studio/payouts')}${sign}`,
+    related: { type: 'maker', id: makerId },
+  }),
+
   payoutFailed: (to: string, maker: string): EmailMessage => ({
     to,
     template: 'payout_failed',

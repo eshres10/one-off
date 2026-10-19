@@ -93,6 +93,20 @@ export function CheckoutForm({
           )}
         </div>
       )}
+      <details className="pb-2">
+        <summary className="min-h-[44px] cursor-pointer py-3 text-[13px]">Add a gift note</summary>
+        <label htmlFor="giftNote" className="label">
+          Gift note (the maker includes it)
+        </label>
+        <textarea
+          id="giftNote"
+          name="giftNote"
+          maxLength={300}
+          rows={3}
+          className="input"
+          placeholder="Happy birthday, love Sam"
+        />
+      </details>
       <div className="py-2">
         <div className="flex items-start gap-3">
           <input

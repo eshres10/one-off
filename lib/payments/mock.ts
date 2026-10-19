@@ -161,7 +161,29 @@ export function createMockDriver(): PaymentsDriver {
     async retrieveAccount(accountId) {
       const a = await get<{ detailsSubmitted?: boolean }>(accountId);
       const done = a?.detailsSubmitted ?? accountId.startsWith('acct_mock_');
-      return { id: accountId, detailsSubmitted: done, chargesEnabled: done, payoutsEnabled: done };
+      return {
+        id: accountId,
+        detailsSubmitted: done,
+        chargesEnabled: done,
+        payoutsEnabled: done,
+        bankName: done ? 'Commonwealth Bank' : null,
+        bankLast4: done ? '4821' : null,
+        requirementsDue: !done,
+      };
+    },
+
+    async setWeeklyPayouts(accountId, weekday) {
+      const a = (await get<Record<string, unknown>>(accountId)) ?? { id: accountId };
+      await put(accountId, 'account', { ...a, payoutSchedule: { interval: 'weekly', weekday } });
+    },
+
+    /** Stripe's AU domestic card rate (1.75% + 30c) on the mock charge's amount. */
+    async getChargeFee(chargeId) {
+      const [row] = await sql()<{ amount: number | null }[]>`
+        select (data->>'amountTotal')::int as amount from public.mock_stripe_objects
+        where type = 'checkout.session' and data->>'chargeId' = ${chargeId} limit 1`;
+      const amount = row?.amount ?? 0;
+      return amount ? Math.round(amount * 0.0175) + 30 : 0;
     },
 
     constructEvent(rawBody, signature, secret) {

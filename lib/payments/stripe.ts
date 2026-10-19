@@ -1,5 +1,5 @@
 import Stripe from 'stripe';
-import type { CheckoutSessionInfo, PaymentsDriver } from './types';
+import type { AccountInfo, CheckoutSessionInfo, PaymentsDriver } from './types';
 
 /**
  * Real Stripe driver. Marketplace model: the platform is merchant of record and uses
@@ -196,8 +196,41 @@ export function createStripeDriver(secretKey: string): PaymentsDriver {
         },
         capabilities: { transfers: { requested: true } },
         metadata: { maker_id: input.makerId },
+        ...(input.payoutWeekday
+          ? {
+              settings: {
+                payouts: {
+                  schedule: {
+                    interval: 'weekly',
+                    weekly_anchor:
+                      input.payoutWeekday as Stripe.AccountCreateParams.Settings.Payouts.Schedule.WeeklyAnchor,
+                  },
+                },
+              },
+            }
+          : {}),
       });
       return { id: a.id };
+    },
+
+    async setWeeklyPayouts(accountId, weekday) {
+      await stripe.accounts.update(accountId, {
+        settings: {
+          payouts: {
+            schedule: {
+              interval: 'weekly',
+              weekly_anchor:
+                weekday as Stripe.AccountUpdateParams.Settings.Payouts.Schedule.WeeklyAnchor,
+            },
+          },
+        },
+      });
+    },
+
+    async getChargeFee(chargeId) {
+      const charge = await stripe.charges.retrieve(chargeId, { expand: ['balance_transaction'] });
+      const bt = charge.balance_transaction;
+      return bt && typeof bt === 'object' ? bt.fee : 0;
     },
 
     async createAccountLink(accountId, refreshUrl, returnUrl) {
@@ -217,16 +250,27 @@ export function createStripeDriver(secretKey: string): PaymentsDriver {
 
     async retrieveAccount(accountId) {
       const a = await stripe.accounts.retrieve(accountId);
-      return {
-        id: a.id,
-        detailsSubmitted: a.details_submitted ?? false,
-        chargesEnabled: a.charges_enabled ?? false,
-        payoutsEnabled: a.payouts_enabled ?? false,
-      };
+      return accountInfo(a);
     },
 
     constructEvent(rawBody, signature, secret) {
       return stripe.webhooks.constructEvent(rawBody, signature, secret);
     },
+  };
+}
+
+/** Flattens a Stripe account into what Studio stores (also used by the account.updated webhook). */
+export function accountInfo(a: Stripe.Account): AccountInfo {
+  const bank = a.external_accounts?.data.find((x) => x.object === 'bank_account') as
+    | Stripe.BankAccount
+    | undefined;
+  return {
+    id: a.id,
+    detailsSubmitted: a.details_submitted ?? false,
+    chargesEnabled: a.charges_enabled ?? false,
+    payoutsEnabled: a.payouts_enabled ?? false,
+    bankName: bank?.bank_name ?? null,
+    bankLast4: bank?.last4 ?? null,
+    requirementsDue: (a.requirements?.currently_due?.length ?? 0) > 0,
   };
 }

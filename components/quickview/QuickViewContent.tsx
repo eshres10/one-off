@@ -3,6 +3,7 @@ import { estimateDelivery } from '@/lib/domain/leadTime';
 import { formatPrice } from '@/lib/domain/money';
 import { PREVIEW_ONLY_LABEL } from '@/lib/domain/preview';
 import type { ProductDetail } from '@/lib/queries/catalog';
+import { shopBuyable } from '@/lib/domain/shop';
 import type { QaEntry } from '@/lib/queries/questions';
 import { FollowButton } from '@/components/maker/FollowButton';
 import { AskQuestionForm, Questions } from '@/components/product/Questions';
@@ -66,6 +67,7 @@ export function QuickViewContent({
   const m = p.maker;
   const suburb = (m.location ?? m.city ?? '').split(',')[0]?.trim();
   const full = `/products/${p.slug}`;
+  const sale = shopBuyable(m);
   return (
     <div className="flex h-full">
       <div className="h-full w-[55%] shrink-0">
@@ -124,9 +126,19 @@ export function QuickViewContent({
             variants={p.variants}
             saved={saved}
             saveCount={saveCount}
-            checkoutEnabled={checkoutOn && !previewOnly}
-            disabledLabel={previewOnly ? 'Preview only' : 'Launching soon'}
+            checkoutEnabled={checkoutOn && !previewOnly && sale.ok}
+            disabledLabel={previewOnly ? 'Preview only' : sale.ok ? 'Launching soon' : sale.label}
           />
+
+          {!sale.ok && !previewOnly && (
+            <p
+              className="mt-3 bg-stone-light px-3 py-2.5 text-[13px]"
+              data-testid="shop-unavailable"
+            >
+              {sale.message}
+              {sale.kind === 'away' && m.holidayNote ? ` ${m.holidayNote}` : ''}
+            </p>
+          )}
 
           <dl className="mt-7 space-y-3 border-t border-line pt-5 text-[13px]">
             <div>

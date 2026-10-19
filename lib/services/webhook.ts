@@ -7,6 +7,8 @@ import { sendEmail } from '@/lib/email/send';
 import { env } from '@/lib/env';
 import { log, reportError } from '@/lib/log';
 import { payments } from '@/lib/payments';
+import { accountInfo } from '@/lib/payments/stripe';
+import { recordProcessingFees, upsertPayout } from './payouts';
 
 export type WebhookOutcome = 'processed' | 'duplicate' | 'ignored';
 
@@ -55,8 +57,9 @@ export async function handleStripeEvent(event: Stripe.Event): Promise<WebhookOut
       case 'account.updated':
         await onAccountUpdated(event.data.object as Stripe.Account);
         break;
+      case 'payout.paid':
       case 'payout.failed':
-        await onPayoutFailed(event.data.object as Stripe.Payout, event.account ?? null);
+        await onPayout(event.data.object as Stripe.Payout, event.account ?? null);
         break;
       default:
         outcome = 'ignored';
@@ -156,70 +159,10 @@ export async function onCheckoutCompleted(sessionId: string): Promise<void> {
     );
   }
 
-  await createTransfersForOrder(order.id, session.chargeId);
+  // Makers are paid later, once the order is delivered (see releaseDueTransfers); for now
+  // record Stripe's processing fee so each maker's net is final.
+  await recordProcessingFees(order.id, session.chargeId);
   await sendOrderEmails(order.id, email);
-}
-
-export async function createTransfersForOrder(
-  orderId: string,
-  chargeId: string | null,
-): Promise<void> {
-  const rows = await sql()<
-    {
-      id: string;
-      makerId: string;
-      sellerNetCents: number;
-      stripeAccountId: string | null;
-      onboarded: boolean;
-      transferStatus: string;
-      status: string;
-      refundedShare: number;
-    }[]
-  >`
-    select f.id, f.maker_id, f.seller_net_cents, m.stripe_account_id, m.stripe_onboarding_complete as onboarded, f.transfer_status,
-           f.status,
-           coalesce((select sum(round(oi.refunded_cents::numeric * oi.seller_net_cents / oi.line_total_cents))
-                     from public.order_items oi where oi.fulfilment_id = f.id), 0)::int as refunded_share
-    from public.fulfilments f join public.makers m on m.id = f.maker_id
-    where f.order_id = ${orderId}`;
-  for (const f of rows) {
-    if (f.transferStatus !== 'pending') continue;
-    if (f.status === 'refunded') {
-      await sql()`update public.fulfilments set transfer_status = 'skipped' where id = ${f.id}`;
-      continue;
-    }
-    if (!f.stripeAccountId || !f.onboarded) {
-      await sql()`update public.fulfilments set transfer_status = 'skipped' where id = ${f.id}`;
-      await audit(
-        'transfer.skipped',
-        { type: 'fulfilment', id: f.id },
-        { reason: 'maker not onboarded to Stripe' },
-      );
-      continue;
-    }
-    try {
-      // Items refunded before the transfer (e.g. oversold) are excluded from the maker's share.
-      const amount = f.sellerNetCents - f.refundedShare;
-      const transfer = await payments().createTransfer({
-        amountCents: amount,
-        destination: f.stripeAccountId,
-        transferGroup: orderId,
-        sourceTransaction: chargeId,
-        metadata: { order_id: orderId, fulfilment_id: f.id, maker_id: f.makerId },
-        idempotencyKey: `transfer:${f.id}`,
-      });
-      await sql()`update public.fulfilments set stripe_transfer_id = ${transfer.id}, transfer_status = 'created' where id = ${f.id}`;
-      await audit(
-        'transfer.created',
-        { type: 'fulfilment', id: f.id },
-        { amount, transferId: transfer.id },
-      );
-    } catch (err) {
-      reportError(err, { fulfilmentId: f.id, where: 'createTransfer' });
-      await sql()`update public.fulfilments set transfer_status = 'failed' where id = ${f.id}`;
-      await audit('transfer.failed', { type: 'fulfilment', id: f.id }, { error: String(err) });
-    }
-  }
 }
 
 async function sendOrderEmails(orderId: string, buyerEmail: string) {
@@ -327,32 +270,60 @@ async function onDisputeCreated(dispute: Stripe.Dispute) {
 }
 
 async function onAccountUpdated(account: Stripe.Account) {
-  const complete = Boolean(account.details_submitted && account.charges_enabled !== undefined);
+  const info = accountInfo(account);
   await sql()`
-    update public.makers set stripe_onboarding_complete = ${Boolean(account.details_submitted)},
-      stripe_payouts_enabled = ${Boolean(account.payouts_enabled)}
+    update public.makers set stripe_onboarding_complete = ${info.detailsSubmitted},
+      stripe_charges_enabled = ${info.chargesEnabled}, stripe_payouts_enabled = ${info.payoutsEnabled},
+      bank_name = coalesce(${info.bankName}, bank_name), bank_last4 = coalesce(${info.bankLast4}, bank_last4)
     where stripe_account_id = ${account.id}`;
   await audit(
     'connect.account_updated',
     { type: 'stripe_account', id: account.id },
     {
-      detailsSubmitted: account.details_submitted,
-      payoutsEnabled: account.payouts_enabled,
-      complete,
+      detailsSubmitted: info.detailsSubmitted,
+      chargesEnabled: info.chargesEnabled,
+      payoutsEnabled: info.payoutsEnabled,
     },
   );
 }
 
-async function onPayoutFailed(payout: Stripe.Payout, accountId: string | null) {
-  const [maker] = await sql()<{ id: string; displayName: string; email: string }[]>`
-    select m.id, m.display_name, u.email from public.makers m join public.users u on u.id = m.user_id
-    where m.stripe_account_id = ${accountId ?? ''}`;
+/** payout.paid / payout.failed on a maker's connected account. */
+async function onPayout(payout: Stripe.Payout, accountId: string | null) {
+  if (!accountId) return; // platform payouts aren't makers'
+  const saved = await upsertPayout(accountId, {
+    id: payout.id,
+    amount: payout.amount,
+    arrivalDate: payout.arrival_date ? new Date(payout.arrival_date * 1000) : null,
+    status: payout.status,
+    failureMessage: payout.failure_message,
+  });
+  if (!saved) return;
+  const [maker] = await sql()<
+    {
+      displayName: string;
+      email: string | null;
+      bankName: string | null;
+      bankLast4: string | null;
+    }[]
+  >`
+    select m.display_name, u.email, m.bank_name, m.bank_last4
+    from public.makers m left join public.users u on u.id = m.user_id where m.id = ${saved.makerId}`;
   await audit(
-    'payout.failed',
-    { type: 'maker', id: maker?.id ?? null },
-    { payoutId: payout.id, amount: payout.amount, code: payout.failure_code },
+    `payout.${payout.status}`,
+    { type: 'maker', id: saved.makerId },
+    {
+      payoutId: payout.id,
+      amount: payout.amount,
+      code: payout.failure_code ?? null,
+    },
   );
-  if (maker) await sendEmail(emails.payoutFailed(maker.email, maker.displayName));
+  if (!maker?.email) return;
+  if (payout.status === 'failed')
+    await sendEmail(emails.payoutFailed(maker.email, maker.displayName));
+  else if (payout.status === 'paid' && saved.isNew) {
+    const { notifyPayoutSent } = await import('./notifications');
+    await notifyPayoutSent(saved.makerId, payout.amount, maker);
+  }
 }
 
 /**

@@ -61,6 +61,7 @@ export async function checkoutAction(_prev: FormState, form: FormData): Promise<
       userId: user?.id ?? null,
       email: typeof email === 'string' ? email : email?.success ? email.data : null,
       returnsAck: form.get('returnsAck') === 'on',
+      giftNote: String(form.get('giftNote') ?? '').slice(0, 300),
     });
     url = result.url;
   } catch (err) {

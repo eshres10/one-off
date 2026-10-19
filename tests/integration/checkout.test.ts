@@ -26,12 +26,15 @@ async function orderState(orderId: string) {
       shippingCents: number;
       platformCommissionCents: number;
       sellerNetCents: number;
+      processingFeeCents: number;
+      commissionPctApplied: string;
       transferStatus: string;
       stripeTransferId: string | null;
       estimatedDispatchDate: Date;
     }[]
   >`
-    select maker_id, subtotal_cents, shipping_cents, platform_commission_cents, seller_net_cents, transfer_status, stripe_transfer_id, estimated_dispatch_date
+    select maker_id, subtotal_cents, shipping_cents, platform_commission_cents, seller_net_cents, processing_fee_cents,
+      commission_pct_applied, transfer_status, stripe_transfer_id, estimated_dispatch_date
     from public.fulfilments where order_id = ${orderId}`;
   const items = await sql()<
     { platformCommissionCents: number; lineTotalCents: number; sellerNetCents: number }[]
@@ -41,7 +44,7 @@ async function orderState(orderId: string) {
 }
 
 describe('checkout → webhook (ready-to-ship)', () => {
-  it('marks the order paid, decrements stock, records commission, transfers to the maker and emails both sides', async () => {
+  it('marks the order paid, decrements stock, records commission and fees, holds the maker’s money and emails both sides', async () => {
     const { product, variantId, stock } = await pickVariant(
       (p) => p.productType === 'ready_to_ship',
     );
@@ -57,10 +60,19 @@ describe('checkout → webhook (ready-to-ship)', () => {
     expect(order.totalCents).toBe(order.subtotalCents + order.shippingTotalCents);
     expect(items[0]!.platformCommissionCents).toBe(Math.round(product.priceCents * 0.15));
     expect(fulfilments).toHaveLength(1);
-    expect(fulfilments[0]!.transferStatus).toBe('created');
-    expect(fulfilments[0]!.sellerNetCents).toBe(
-      product.priceCents - items[0]!.platformCommissionCents + fulfilments[0]!.shippingCents,
+    const f = fulfilments[0]!;
+    expect(Number(f.commissionPctApplied)).toBe(15);
+    // Stripe's fee (mock: 1.75% + 30c of the charge) comes out of the maker's share.
+    expect(f.processingFeeCents).toBe(Math.round(order.totalCents * 0.0175) + 30);
+    expect(f.sellerNetCents).toBe(
+      product.priceCents -
+        items[0]!.platformCommissionCents +
+        f.shippingCents -
+        f.processingFeeCents,
     );
+    // Nothing is transferred until the order is delivered.
+    expect(f.transferStatus).toBe('pending');
+    expect(f.stripeTransferId).toBeNull();
 
     const [v] = await sql()<
       { stockQuantity: number }[]
@@ -87,7 +99,7 @@ describe('checkout → webhook (made-to-order)', () => {
 });
 
 describe('multi-maker cart', () => {
-  it('creates one buyer order with a separate fulfilment and transfer per maker', async () => {
+  it('creates one buyer order with a separate fulfilment per maker and splits the card fee', async () => {
     const a = await pickVariant(
       (p) => p.productType === 'ready_to_ship' && p.maker.slug === MAKERS[0]!.slug,
     );
@@ -109,11 +121,13 @@ describe('multi-maker cart', () => {
     expect(new Set(fulfilments.map((f) => f.makerId))).toEqual(
       new Set([a.product.maker.id, b.product.maker.id, c.product.maker.id]),
     );
-    expect(fulfilments.every((f) => f.transferStatus === 'created' && f.stripeTransferId)).toBe(
+    expect(fulfilments.every((f) => f.transferStatus === 'pending' && !f.stripeTransferId)).toBe(
       true,
     );
     const nets = fulfilments.reduce((s, f) => s + f.sellerNetCents, 0);
-    expect(nets + order.platformFeeTotalCents).toBe(order.totalCents);
+    const fees = fulfilments.reduce((s, f) => s + f.processingFeeCents, 0);
+    expect(fees).toBe(Math.round(order.totalCents * 0.0175) + 30);
+    expect(nets + order.platformFeeTotalCents + fees).toBe(order.totalCents);
     expect(order.shippingTotalCents).toBe(fulfilments.reduce((s, f) => s + f.shippingCents, 0));
   });
 });
@@ -163,9 +177,9 @@ describe('webhook security & idempotency', () => {
         { stock: number },
       ];
     expect(after).toBe(before);
-    const transfers =
-      await sql()`select id from public.fulfilments where order_id = ${orderId} and stripe_transfer_id is not null`;
-    expect(transfers).toHaveLength(1);
+    const [fee] = await sql()<{ n: number }[]>`
+      select count(*)::int as n from public.fulfilments where order_id = ${orderId} and processing_fee_cents > 0`;
+    expect(fee!.n).toBe(1);
   });
 
   it('never marks an order paid when Stripe reports it unpaid', async () => {
@@ -202,10 +216,15 @@ describe('refunds', () => {
   it('partially refunds an item, reverses the maker share and updates order status', async () => {
     const { refundOrderItem } = await import('@/lib/services/webhook');
     const { product, variantId } = await pickVariant((p) => p.productType === 'ready_to_ship', 6);
+    const { releaseDueTransfers } = await import('@/lib/services/payouts');
     const { orderId } = await buyAndPay([{ productId: product.id, variantId }]);
     const [item] = await sql()<
       { id: string; lineTotalCents: number }[]
     >`select id, line_total_cents from public.order_items where order_id = ${orderId}`;
+    // Delivered four days ago, so the maker has been paid.
+    await sql()`update public.fulfilments set status = 'delivered', shipped_at = now() - interval '6 days',
+      delivered_at = now() - interval '4 days' where order_id = ${orderId}`;
+    await releaseDueTransfers();
     await refundOrderItem({
       orderItemId: item!.id,
       amountCents: 5000,

@@ -9,6 +9,7 @@ import { estimateDelivery, formatDateRange } from '@/lib/domain/leadTime';
 import { formatPrice } from '@/lib/domain/money';
 import { productBadges } from '@/lib/domain/stock';
 import { checkoutEnabled, PREVIEW_MESSAGE } from '@/lib/features';
+import { shopBuyable } from '@/lib/domain/shop';
 import { log } from '@/lib/log';
 import { isCustomType, returnsLine } from '@/lib/content/returns';
 import { PREVIEW_ONLY_LABEL, PREVIEW_ONLY_NOTE, isPreviewOnly } from '@/lib/domain/preview';
@@ -104,6 +105,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
   const custom = isCustomType(product.productType);
   const previewOnly = isPreviewOnly(product.tags);
   const saved = savedIds.has(product.id);
+  const sale = shopBuyable(m);
   const modelLine = product.modelHeightCm
     ? `Model is ${product.modelHeightCm} cm and wears size ${product.modelSizeWorn ?? '—'}.`
     : null;
@@ -211,8 +213,17 @@ export default async function ProductPage({ params }: { params: { slug: string }
                   : undefined
               }
               modelLine={modelLine}
-              checkoutEnabled={checkoutEnabled() && !previewOnly}
-              previewMessage={previewOnly ? PREVIEW_ONLY_NOTE : PREVIEW_MESSAGE}
+              checkoutEnabled={checkoutEnabled() && !previewOnly && sale.ok}
+              previewMessage={
+                previewOnly
+                  ? PREVIEW_ONLY_NOTE
+                  : !sale.ok
+                    ? [sale.message, sale.kind === 'away' ? m.holidayNote : null]
+                        .filter(Boolean)
+                        .join(' ')
+                    : PREVIEW_MESSAGE
+              }
+              disabledLabel={previewOnly ? 'Preview only' : sale.ok ? 'Launching soon' : sale.label}
             />
           </div>
 
