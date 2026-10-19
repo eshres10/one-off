@@ -19,6 +19,9 @@ const PHOTOS = ['tangerine-bias-maxi', 'draped-satin-midi', 'lace-trim-maxi-dres
 
 test.afterAll(() => db.end());
 
+/** Studio shows order numbers as "#10001". */
+const short = (orderNumber: string) => orderNumber.replace(/^OO-/, '#');
+
 async function login(page: Page, email: string, next: string) {
   await page.goto(`/login?next=${encodeURIComponent(next)}`);
   await page.getByLabel('Email', { exact: true }).fill(email);
@@ -217,9 +220,11 @@ test.describe.serial('Studio', () => {
   }) => {
     shippedOrder = await buy(browser, 'studio-e2e@buyer.test');
     await login(page, halde.email, '/studio');
-    await expect(page.getByTestId('needs-row').filter({ hasText: shippedOrder })).toBeVisible();
+    await expect(
+      page.getByTestId('needs-row').filter({ hasText: short(shippedOrder) }),
+    ).toBeVisible();
     await page.goto('/studio/orders');
-    const row = page.getByTestId('order-row').filter({ hasText: shippedOrder });
+    const row = page.getByTestId('order-row').filter({ hasText: short(shippedOrder) });
     await expect(row).toBeVisible();
     await row.getByTestId('order-open').click();
     await expect(page.getByTestId('order-panel')).toBeVisible();
@@ -252,7 +257,7 @@ test.describe.serial('Studio', () => {
     await seller.goto(`/studio/orders?tab=mto`);
     await seller
       .getByTestId('order-row')
-      .filter({ hasText: mto!.orderNumber })
+      .filter({ hasText: short(mto!.orderNumber) })
       .getByTestId('order-open')
       .click();
     await seller.getByTestId('making-step-2').click();
