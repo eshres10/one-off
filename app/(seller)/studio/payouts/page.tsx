@@ -1,110 +1,222 @@
 import { requireSeller } from '@/lib/auth/session';
-import { getSellerMaker, getSellerOrders, getSellerStats } from '@/lib/queries/seller';
 import {
   openStripeDashboardAction,
   startPayoutOnboardingAction,
   syncStripeAccount,
 } from '@/lib/actions/seller';
 import { formatPrice } from '@/lib/domain/money';
-import { Stat } from '@/components/seller/Stat';
-import { SubmitButton } from '@/components/ui/SubmitButton';
-import { StatusPill } from '@/components/ui/Badge';
+import { getPayouts } from '@/lib/queries/payouts';
+import { TERMS, commissionPctAt, processingEstimateCents } from '@/lib/studio/terms';
+import { getStudioShop } from '@/lib/queries/studio';
+import { Monogram } from '@/components/ui/Monogram';
 
-export const metadata = { title: 'Payouts' };
+export const metadata = { title: 'Payouts · Studio' };
 
-export default async function PayoutsPage({
-  searchParams,
-}: {
-  searchParams: { return?: string; onboarded?: string; unavailable?: string };
-}) {
+const day = (
+  iso: string | null,
+  opts: Intl.DateTimeFormatOptions = { weekday: 'short', day: 'numeric', month: 'short' },
+) =>
+  iso
+    ? new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-AU', { ...opts, timeZone: 'UTC' })
+    : '—';
+const weekday = TERMS.payoutWeekday[0]!.toUpperCase() + TERMS.payoutWeekday.slice(1);
+
+const STATUS: Record<string, string> = {
+  paid: 'Paid',
+  in_transit: 'On the way',
+  pending: 'Pending',
+  failed: 'Failed',
+  canceled: 'Cancelled',
+};
+
+export default async function PayoutsPage({ searchParams }: { searchParams: { return?: string } }) {
   const seller = await requireSeller();
   if (searchParams.return) await syncStripeAccount(seller.makerId);
-  const [maker, stats, orders] = await Promise.all([
-    getSellerMaker(seller),
-    getSellerStats(seller),
-    getSellerOrders(seller),
-  ]);
+  const [p, shop] = await Promise.all([getPayouts(seller), getStudioShop(seller.makerId)]);
+
+  // "How a sale pays out", with this shop's current rate.
+  const piece = 30000;
+  const shipping = 1200;
+  const pct = commissionPctAt(shop.foundingUntil);
+  const commission = Math.round((piece * pct) / 100);
+  const fee = processingEstimateCents(piece + shipping);
+
   return (
-    <div className="space-y-8">
-      <h1 className="text-[40px] leading-none md:text-[48px]">Payouts</h1>
-      {searchParams.unavailable && (
-        <p className="bg-stone-light px-3 py-2.5 text-[13px]" role="status">
-          Payout setup opens shortly before launch. We’ll email you when it’s ready.
-        </p>
-      )}
-      <section className="card flex flex-wrap items-center justify-between gap-4 p-5">
-        <div>
-          <p className="font-medium">Stripe Express account</p>
-          <p className="text-sm text-ink-muted">
-            {maker.stripeOnboardingComplete
-              ? maker.stripePayoutsEnabled
-                ? 'Connected — payouts go to your bank on Stripe’s schedule.'
-                : 'Connected — Stripe is verifying your details.'
-              : 'Connect a Stripe Express account so we can pay you for each order.'}
-          </p>
-        </div>
-        {maker.stripeOnboardingComplete ? (
+    <div className="space-y-10">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <h1 className="text-[40px] leading-none md:text-[56px]">Payouts</h1>
+        {p.stripeAccountId && (
           <form action={openStripeDashboardAction}>
-            <SubmitButton variant="secondary" pendingLabel="Opening…">
-              Open Stripe Express dashboard
-            </SubmitButton>
-          </form>
-        ) : (
-          <form action={startPayoutOnboardingAction}>
-            <SubmitButton pendingLabel="Opening Stripe…">
-              {maker.stripeAccountId ? 'Continue payout setup' : 'Set up payouts'}
-            </SubmitButton>
+            <button
+              className="min-h-[44px] text-[11px] uppercase tracking-label underline underline-offset-[6px]"
+              data-testid="stripe-dashboard"
+            >
+              Bank details &amp; tax info in Stripe ↗
+            </button>
           </form>
         )}
-      </section>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-        <Stat label="Gross sales (incl. shipping)" value={formatPrice(stats.grossCents)} />
-        <Stat label="Platform commission (15%)" value={`−${formatPrice(stats.commissionCents)}`} />
-        <Stat label="Stripe fees" value="A$0" hint="Card fees are paid by the platform" />
-        <Stat label="Refunds" value={`−${formatPrice(stats.refundsCents)}`} />
-        <Stat
-          label="Net payout"
-          value={formatPrice(stats.netCents)}
-          hint="After commission and refund reversals"
-        />
       </div>
-      <section>
-        <h2 className="mb-4 text-[28px] leading-none">Transfers by order</h2>
-        <div className="overflow-x-auto rounded-2xl border border-stone/70 bg-white">
-          <table className="w-full min-w-[560px] text-left text-sm">
-            <thead className="border-b border-stone/70 text-xs text-ink-muted">
-              <tr>
-                <th className="px-4 py-3 font-medium">Order</th>
-                <th className="px-4 py-3 font-medium">Gross</th>
-                <th className="px-4 py-3 font-medium">Commission</th>
-                <th className="px-4 py-3 font-medium">Net</th>
-                <th className="px-4 py-3 font-medium">Transfer</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-stone/60">
-              {orders.map((o) => (
-                <tr key={o.id}>
-                  <td className="px-4 py-2.5">{o.orderNumber}</td>
-                  <td className="px-4 py-2.5">{formatPrice(o.subtotalCents + o.shippingCents)}</td>
-                  <td className="px-4 py-2.5 text-ink-muted">
-                    −{formatPrice(o.platformCommissionCents)}
-                  </td>
-                  <td className="px-4 py-2.5">{formatPrice(o.sellerNetCents)}</td>
-                  <td className="px-4 py-2.5">
-                    <StatusPill
-                      status={o.transferStatus === 'created' ? 'paid' : o.transferStatus}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+
+      {!p.connected && (
+        <div className="border border-ink p-4 text-[14px]" data-testid="payouts-connect">
+          Connect your bank with Stripe to get paid.{' '}
+          <form action={startPayoutOnboardingAction} className="mt-3">
+            <button className="glass-dark min-h-[48px] px-5 text-[11px] uppercase tracking-[0.18em]">
+              Connect with Stripe
+            </button>
+          </form>
         </div>
-        <p className="mt-2 text-xs text-ink-muted">
-          Payouts from your Stripe balance to your bank are managed by Stripe. Refunds reverse the
-          matching share of a transfer.
-        </p>
-      </section>
+      )}
+
+      <div className="grid gap-3 md:grid-cols-3">
+        <section
+          className="glass-dark relative overflow-hidden p-6 text-ground"
+          data-testid="next-payout"
+        >
+          <Monogram className="pointer-events-none absolute -right-8 -top-6 h-[170px] w-[170px] text-ground opacity-[0.07]" />
+          <p className="text-[10px] uppercase tracking-[0.2em] text-ground/70">
+            Next payout · {day(p.next.date)}
+          </p>
+          <p className="mt-3 font-display text-[44px] leading-none">
+            {formatPrice(p.next.amountCents)}
+          </p>
+          <p className="mt-3 text-[12px] text-ground/70">
+            {p.next.orders} {p.next.orders === 1 ? 'order' : 'orders'}
+            {p.bank ? ` · to ${p.bank}` : ''}
+          </p>
+        </section>
+        <section className="border border-line bg-surface p-6" data-testid="on-the-way">
+          <p className="text-[11px] uppercase tracking-label text-muted-2">On the way</p>
+          <p className="mt-3 font-display text-[40px] leading-none">
+            {formatPrice(p.onTheWay.amountCents)}
+          </p>
+          <p className="mt-3 text-[12px] text-muted">
+            {p.onTheWay.orders} {p.onTheWay.orders === 1 ? 'order' : 'orders'}. Released{' '}
+            {TERMS.releaseDaysAfterDelivery} days after delivery, then paid out the next {weekday}.
+          </p>
+        </section>
+        <section className="border border-line bg-surface p-6" data-testid="paid-all-time">
+          <p className="text-[11px] uppercase tracking-label text-muted-2">Paid out, all time</p>
+          <p className="mt-3 font-display text-[40px] leading-none">{formatPrice(p.paidAllTime)}</p>
+          {p.founding && p.foundingSaved > 0 && (
+            <p className="mt-3 text-[12px] text-muted">
+              You’ve saved {formatPrice(p.foundingSaved)} in commission as a founding maker.
+            </p>
+          )}
+        </section>
+      </div>
+
+      <div className="grid grid-cols-1 gap-10 md:grid-cols-[minmax(0,1fr)_340px]">
+        <section aria-labelledby="history-title" className="min-w-0">
+          <h2 id="history-title" className="mb-3 text-[32px] leading-none">
+            Payout history
+          </h2>
+          {p.history.length === 0 ? (
+            <p className="text-[13px] text-muted">
+              Your first payout lands the {weekday} after your first order is released.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table
+                className="w-full min-w-[520px] text-left text-[13px]"
+                data-testid="payout-history"
+              >
+                <thead>
+                  <tr className="border-b border-line text-[10px] uppercase tracking-label text-muted-2">
+                    <th scope="col" className="py-3 font-normal">
+                      Date
+                    </th>
+                    <th scope="col" className="py-3 text-right font-normal">
+                      Orders
+                    </th>
+                    <th scope="col" className="py-3 text-right font-normal">
+                      Sales
+                    </th>
+                    <th scope="col" className="py-3 text-right font-normal">
+                      Fees
+                    </th>
+                    <th scope="col" className="py-3 text-right font-normal">
+                      Paid
+                    </th>
+                    <th scope="col" className="py-3 pl-6 font-normal">
+                      Status
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {p.history.map((h) => (
+                    <tr key={h.id} className="border-b border-line">
+                      <td className="py-3">
+                        {day(h.arrivalDate, { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </td>
+                      <td className="py-3 text-right tabular-nums">{h.orders}</td>
+                      <td className="py-3 text-right tabular-nums">
+                        {h.salesCents !== null ? formatPrice(h.salesCents) : '—'}
+                      </td>
+                      <td className="py-3 text-right tabular-nums text-muted">
+                        {h.feesCents !== null ? `−${formatPrice(h.feesCents)}` : '—'}
+                      </td>
+                      <td className="py-3 text-right tabular-nums">{formatPrice(h.amountCents)}</td>
+                      <td className={`py-3 pl-6 ${h.status === 'failed' ? 'text-alert' : ''}`}>
+                        {STATUS[h.status] ?? h.status}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
+        <aside
+          className="bg-stone p-5"
+          aria-labelledby="example-title"
+          data-testid="payout-example"
+        >
+          <h2 id="example-title" className="text-[26px] leading-none">
+            How a sale pays out
+          </h2>
+          <dl className="mt-4 space-y-1.5 text-[13px]">
+            <div className="flex justify-between">
+              <dt>Piece</dt>
+              <dd>{formatPrice(piece)}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt>Shipping the buyer paid</dt>
+              <dd>{formatPrice(shipping)}</dd>
+            </div>
+            <div className="flex justify-between text-muted">
+              <dt>
+                Commission ({pct}% of the piece
+                {pct === TERMS.foundingCommissionPct ? ', founding' : ''})
+              </dt>
+              <dd>−{formatPrice(commission)}</dd>
+            </div>
+            <div className="flex justify-between text-muted">
+              <dt>Card processing (about 1.75% + 30c)</dt>
+              <dd>−{formatPrice(fee)}</dd>
+            </div>
+            <div className="flex justify-between border-t border-line-strong pt-2 font-display text-[22px]">
+              <dt>You get</dt>
+              <dd>{formatPrice(piece + shipping - commission - fee)}</dd>
+            </div>
+          </dl>
+          <ol className="mt-5 space-y-2 text-[12px] text-muted">
+            <li>1. The buyer pays; the money waits with One Off.</li>
+            <li>2. You ship; it’s delivered.</li>
+            <li>
+              3. {TERMS.releaseDaysAfterDelivery} days later (if there’s no problem reported) it’s
+              released to your Stripe balance.
+            </li>
+            <li>4. Stripe pays your balance to your bank every {weekday}.</li>
+          </ol>
+          {pct !== TERMS.standardCommissionPct && (
+            <p className="mt-3 text-[12px] text-muted">
+              After your founding period, commission is {TERMS.standardCommissionPct}%.
+            </p>
+          )}
+        </aside>
+      </div>
     </div>
   );
 }
