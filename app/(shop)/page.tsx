@@ -246,7 +246,7 @@ export default async function DiscoverPage({ searchParams }: { searchParams: Sea
         <section
           data-hero
           aria-labelledby="hero-title"
-          className="relative z-0 -mt-[var(--header-h)] flex h-[min(88vh,860px)] min-h-[560px] items-center justify-center overflow-hidden text-ground md:sticky md:top-0"
+          className="relative z-0 -mt-[var(--header-h)] flex h-[100svh] min-h-[560px] items-center justify-center overflow-hidden text-ground md:sticky md:top-0"
         >
           {hero.imageUrl && (
             <Image
