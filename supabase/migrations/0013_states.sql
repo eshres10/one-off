@@ -44,3 +44,6 @@ create policy listing_requests_read on public.listing_requests for select
   using (maker_id = public.my_maker_id() or public.is_admin());
 grant select on public.listing_requests to authenticated;
 grant all on public.listing_requests to service_role;
+
+-- When the maker first copied their shop link (ticks "Share your shop link" on the first-order checklist).
+alter table public.makers add column if not exists shop_link_copied_at timestamptz;

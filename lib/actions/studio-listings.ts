@@ -1,5 +1,6 @@
 'use server';
 
+import { createListingRequest, markShopLinkCopied } from '@/lib/services/studio-states';
 import { sendRestockAlerts } from '@/lib/services/restock';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
@@ -101,4 +102,32 @@ export async function setPieceLiveAction(productId: string, live: boolean): Prom
   } catch (err) {
     return toFormState(err);
   }
+}
+
+/** Ticks "Share your shop link" on the first-order checklist. */
+export async function shopLinkCopiedAction(): Promise<void> {
+  const seller = await requireSeller();
+  await markShopLinkCopied(seller.makerId!);
+  revalidatePath('/studio/orders');
+}
+
+/** "Send us photos, we'll list it". */
+export async function listingRequestAction(_prev: FormState, form: FormData): Promise<FormState> {
+  const seller = await requireSeller();
+  try {
+    await createListingRequest(
+      { id: seller.id, makerId: seller.makerId! },
+      {
+        photoUrls: form.getAll('photoUrls').map(String),
+        note: String(form.get('note') ?? ''),
+      },
+    );
+  } catch (err) {
+    return toFormState(err);
+  }
+  return {
+    ok: true,
+    message:
+      'Thanks! We’ll list it and let you know when it’s up, usually within two business days.',
+  };
 }

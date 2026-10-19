@@ -647,6 +647,19 @@ export const emails = {
     related: { type: 'maker', id: shop.id },
   }),
 
+  listingRequest: (
+    to: string,
+    r: { id: string; shop: string; slug: string; photos: number; note: string | null },
+  ): EmailMessage => ({
+    to,
+    template: 'listing_request',
+    subject: `${r.shop} sent ${r.photos} ${r.photos === 1 ? 'photo' : 'photos'} to list`,
+    text:
+      `${r.shop} would like us to list a piece for them.\n\n${r.note ? `Their note: “${r.note}”\n\n` : ''}` +
+      `Photos and details: ${url(`/admin/listing-requests`)}\nTheir shop: ${url(`/makers/${r.slug}`)}${sign}`,
+    related: { type: 'listing_request', id: r.id },
+  }),
+
   restockAlert: (
     to: string,
     a: { productId: string; slug: string; title: string; size: string; makerName: string },

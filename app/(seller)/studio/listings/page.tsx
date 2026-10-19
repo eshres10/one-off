@@ -9,6 +9,8 @@ import { ListingCard } from '@/components/studio/ListingCard';
 import { RouteSheet } from '@/components/studio/RouteSheet';
 import { QuickViewContent } from '@/components/quickview/QuickViewContent';
 import { PlusIcon } from '@/components/ui/icons';
+import { NoPiecesYet } from '@/components/studio/states/NoPiecesYet';
+import { firstOrderChecklist } from '@/lib/services/studio-states';
 
 export const metadata = { title: 'Listings · Studio' };
 
@@ -50,7 +52,13 @@ export default async function StudioListingsPage({
           <PlusIcon width={14} height={14} /> Add a piece
         </Link>
       </div>
-      <ul className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4" role="list">
+      {pieces.length === 0 && (
+        <NoPiecesYet canSendPhotos={(await firstOrderChecklist(seller.makerId!)).canSendPhotos} />
+      )}
+      <ul
+        className={`mt-6 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 ${pieces.length === 0 ? 'hidden' : ''}`}
+        role="list"
+      >
         <li className="md:hidden">
           <Link
             href="/studio/listings/new"

@@ -16,6 +16,9 @@ import { RouteSheet } from '@/components/studio/RouteSheet';
 import { OrderStatusPill } from '@/components/studio/StatusPill';
 import { Img as Image } from '@/components/ui/Img';
 import { countClaimsNeedingAttention } from '@/lib/services/claims';
+import { firstOrderChecklist } from '@/lib/services/studio-states';
+import { NoOrdersYet } from '@/components/studio/states/NoOrdersYet';
+import { env } from '@/lib/env';
 
 export const metadata = { title: 'Orders · Studio' };
 
@@ -59,6 +62,9 @@ export default async function StudioOrdersPage({
     countStudioOrders(seller),
     orderId.success ? getStudioOrder(seller, orderId.data) : Promise.resolve(null),
   ]);
+  // Before the first ever order: the checklist that helps get one.
+  const everOrdered = Object.values(counts).some((n) => n > 0);
+  const checklist = everOrdered ? null : await firstOrderChecklist(seller.makerId!);
   const href = (id?: string) => `/studio/orders?tab=${tab}${id ? `&order=${id}` : ''}`;
 
   return (
@@ -88,7 +94,9 @@ export default async function StudioOrdersPage({
         </Link>
       </nav>
 
-      {rows.length === 0 ? (
+      {rows.length === 0 && checklist ? (
+        <NoOrdersYet list={checklist} shopUrl={`${env().APP_URL}/makers/${checklist.slug}`} />
+      ) : rows.length === 0 ? (
         <p className="py-16 text-center text-[14px] text-muted">
           {tab === 'to-ship' ? 'Nothing to ship. Nice work.' : 'No orders here yet.'}
         </p>
