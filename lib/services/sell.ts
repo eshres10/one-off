@@ -124,29 +124,31 @@ export async function saveLabel(
   return (await mySellShop(user))!;
 }
 
+/** Shop statuses whose pieces can be published (buyers see them once the shop is live). */
+export const SHOP_CAN_PUBLISH = ['approved', 'live', 'holiday'];
+export const PUBLISH_BLOCKED = 'You can publish pieces once your shop is approved.';
+
 /**
- * A self-sign-up shop goes live by itself once payouts are connected and a piece has been
- * published (pieces published before that wait as `pending`). Safe to call any time.
+ * An approved shop goes live by itself once payouts are connected (Stripe charges enabled) and
+ * its first piece is published. Founding time starts then. Safe to call any time.
  */
 export async function goLiveIfReady(makerId: string): Promise<boolean> {
   const live = await sql().begin(async (tx) => {
     const [m] = await tx<{ ready: boolean }[]>`
-      select (m.shop_status = 'draft' and m.self_signup and m.stripe_payouts_enabled
-        and exists (select 1 from public.products p where p.maker_id = m.id and p.status = 'pending')) as ready
+      select (m.shop_status = 'approved' and m.stripe_charges_enabled
+        and exists (select 1 from public.products p where p.maker_id = m.id and p.status = 'approved')) as ready
       from public.makers m where m.id = ${makerId} for update`;
-    if (!m?.ready) return 0;
+    if (!m?.ready) return false;
     await tx`
       update public.makers set shop_status = 'live', status = 'approved', approved_at = coalesce(approved_at, now()),
         went_live_at = now(),
         founding_until = case when founding_number is not null
           then now() + make_interval(months => ${TERMS.foundingMonths}) else founding_until end
       where id = ${makerId}`;
-    const rows = await tx`
-      update public.products set status = 'approved' where maker_id = ${makerId} and status = 'pending' returning id`;
-    return rows.length;
+    return true;
   });
   if (!live) return false;
-  await logShopEvent(makerId, 'went_live', { pieces: live, selfSignup: true });
-  await audit('shop.went_live', { type: 'maker', id: makerId }, { pieces: live }, null);
+  await logShopEvent(makerId, 'went_live', { source: 'application' });
+  await audit('shop.went_live', { type: 'maker', id: makerId }, {}, null);
   return true;
 }

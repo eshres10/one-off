@@ -13,9 +13,12 @@ export interface SessionUser {
   makerId: string | null;
   makerSlug: string | null;
   makerStatus: 'draft' | 'pending' | 'approved' | 'paused' | null;
-  /** Studio state of the maker's shop: draft, invited, live, holiday or closed. */
+  /**
+   * Studio state of the maker's shop: draft, applied, changes_requested, approved, live, holiday,
+   * declined, closed or invited.
+   */
   shopStatus: string | null;
-  /** The maker set their shop up themselves (/sell/start) rather than claiming an invite. */
+  /** The maker applied (/sell/apply) rather than claiming an invite. */
   selfSignup: boolean | null;
 }
 
@@ -51,16 +54,20 @@ export async function requireUser(next = '/account'): Promise<SessionUser> {
   return user;
 }
 
+/** Shop statuses that can use Studio: approved (setting up), live, on holiday or closed. */
+export const STUDIO_STATUSES = ['approved', 'live', 'holiday', 'closed'];
+
 /**
- * Studio pages: a seller whose shop is live (or on holiday), or a self-sign-up maker whose
- * draft shop goes live from Studio. A maker claiming an invite goes back to their claim flow;
- * anyone without a shop goes to the waitlist.
+ * Studio pages: a seller whose shop has been approved. A maker claiming an invite goes back to
+ * their claim flow; an applicant goes to their application; anyone without a shop goes to apply.
  */
 export async function requireSeller(): Promise<SessionUser & { makerId: string }> {
   const user = await requireUser('/studio');
-  if (user.role !== 'seller' || !user.makerId) redirect('/waitlist');
-  const open = ['live', 'holiday', 'closed'].includes(user.shopStatus ?? '');
-  if (!open && !(user.selfSignup && user.shopStatus === 'draft')) redirect('/claim/continue');
+  if (user.role !== 'seller' || !user.makerId) redirect('/sell/apply');
+  if (!STUDIO_STATUSES.includes(user.shopStatus ?? '')) {
+    if (user.shopStatus === 'invited' || !user.selfSignup) redirect('/claim/continue');
+    redirect('/sell/apply');
+  }
   return user as SessionUser & { makerId: string };
 }
 

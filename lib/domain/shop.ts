@@ -22,7 +22,7 @@ export function shopBuyable(s: ShopSaleState): Buyable {
       message: `${until}. You can still save pieces and message the maker.`,
     };
   }
-  if (s.shopStatus === 'closed' || s.shopStatus === 'draft' || s.shopStatus === 'invited')
+  if (s.shopStatus !== 'live')
     return {
       ok: false,
       kind: 'closed',

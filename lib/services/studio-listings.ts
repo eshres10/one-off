@@ -15,7 +15,7 @@ import {
 } from '@/lib/studio/pieces';
 import { TERMS, leadDaysFor } from '@/lib/studio/terms';
 import { UserError } from './errors';
-import { goLiveIfReady } from './sell';
+import { PUBLISH_BLOCKED, SHOP_CAN_PUBLISH, goLiveIfReady } from './sell';
 
 type Actor = Pick<SessionUser, 'id' | 'role' | 'makerId'>;
 
@@ -239,10 +239,11 @@ export async function savePiece(
   if (input.intent === 'publish' && !check.ready)
     throw new UserError(`Finish the checklist first (${check.passed}/${check.items.length}).`);
 
-  const [shop] = await sql()<{ shopStatus: string; selfSignup: boolean }[]>`
-    select shop_status, self_signup from public.makers where id = ${makerId}`;
+  const [shop] = await sql()<{ shopStatus: string }[]>`
+    select shop_status from public.makers where id = ${makerId}`;
   if (!shop) throw new UserError('Shop not found.');
-  const shopLive = shop.shopStatus === 'live' || shop.shopStatus === 'holiday';
+  const canPublish = SHOP_CAN_PUBLISH.includes(shop.shopStatus);
+  if (input.intent === 'publish' && !asAdmin && !canPublish) throw new UserError(PUBLISH_BLOCKED);
 
   const result = await withUser(actor, async (db) => {
     let id = input.id;
@@ -270,13 +271,10 @@ export async function savePiece(
     }
     await writePiece(db, id, p);
     if (input.intent === 'publish' && status !== 'approved') {
-      if (shopLive && !asAdmin) {
+      if (canPublish && !asAdmin) {
+        // In an approved shop the piece is published now and seen by buyers once the shop is live.
         await db`update public.products set status = 'approved' where id = ${id}`;
         status = 'approved';
-      } else if (shop.selfSignup && !asAdmin) {
-        // Ready, waiting for the shop: it goes live with the shop once payouts are connected.
-        await db`update public.products set status = 'pending' where id = ${id}`;
-        status = 'pending';
       } else {
         await db`update public.products set keep_on_claim = true where id = ${id}`;
       }
@@ -290,7 +288,7 @@ export async function savePiece(
       { asAdmin },
       actor.id,
     );
-  if (result.status === 'pending' && (await goLiveIfReady(makerId))) result.status = 'approved';
+  if (result.status === 'approved' && shop.shopStatus === 'approved') await goLiveIfReady(makerId);
   return { ...result, live: result.status === 'approved' };
 }
 
@@ -300,6 +298,10 @@ export async function setPieceLive(actor: Actor, productId: string, live: boolea
   if (!piece) throw new UserError('Piece not found.');
   if (live && !publishChecklist(piece).ready)
     throw new UserError('Finish this piece’s checklist before it goes live.');
+  const [shop] = await sql()<{ shopStatus: string }[]>`
+    select shop_status from public.makers where id = ${actor.makerId!}`;
+  if (live && !SHOP_CAN_PUBLISH.includes(shop?.shopStatus ?? ''))
+    throw new UserError(PUBLISH_BLOCKED);
   await withUser(
     actor,
     (db) => db`
@@ -312,6 +314,7 @@ export async function setPieceLive(actor: Actor, productId: string, live: boolea
     {},
     actor.id,
   );
+  if (live && shop?.shopStatus === 'approved') await goLiveIfReady(actor.makerId!);
 }
 
 export interface ListingCard {

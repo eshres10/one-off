@@ -93,7 +93,7 @@ describe('row level security: sellers', () => {
     expect(own).toHaveLength(1);
   });
 
-  it('a seller publishes only in a live shop and cannot change platform-managed fields', async () => {
+  it('a seller publishes only in an approved shop and cannot change platform-managed fields', async () => {
     const [p] = await sql()<
       { id: string }[]
     >`select id from public.products where maker_id = ${a.makerId} and status = 'approved' and not is_featured limit 1`;
@@ -108,19 +108,27 @@ describe('row level security: sellers', () => {
       a,
       (db) => db`update public.products set status = 'approved' where id = ${draft!.id}`,
     );
-    // Not live (e.g. closed): publishing is refused.
-    await sql()`update public.makers set shop_status = 'closed' where id = ${a.makerId}`;
+    // Not approved (an application waiting for review, or closed): publishing is refused.
     try {
+      for (const status of ['applied', 'changes_requested', 'declined', 'closed']) {
+        await sql()`update public.makers set shop_status = ${status} where id = ${a.makerId}`;
+        await withUser(
+          a,
+          (db) => db`update public.products set status = 'archived' where id = ${draft!.id}`,
+        );
+        await expect(
+          withUser(
+            a,
+            (db) => db`update public.products set status = 'approved' where id = ${draft!.id}`,
+          ),
+        ).rejects.toThrow(/shop is approved/);
+      }
+      // Approved (setting up, not yet visible to buyers): publishing works.
+      await sql()`update public.makers set shop_status = 'approved' where id = ${a.makerId}`;
       await withUser(
         a,
-        (db) => db`update public.products set status = 'archived' where id = ${draft!.id}`,
+        (db) => db`update public.products set status = 'approved' where id = ${draft!.id}`,
       );
-      await expect(
-        withUser(
-          a,
-          (db) => db`update public.products set status = 'approved' where id = ${draft!.id}`,
-        ),
-      ).rejects.toThrow(/shop is live/);
     } finally {
       await sql()`update public.makers set shop_status = 'live' where id = ${a.makerId}`;
     }

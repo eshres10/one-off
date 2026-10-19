@@ -54,11 +54,11 @@ export async function createShop(admin: Admin, input: NewShopInput): Promise<str
   if (taken) throw new UserError('That shop link is taken.');
   const [row] = await sql()<{ id: string }[]>`
     insert into public.makers (slug, display_name, tagline, story, location, city, state, instagram, avatar_url, cover_url,
-      status, shop_status, created_by_admin, invite_email)
+      status, shop_status, created_by_admin, invite_email, source)
     values (${slug}, ${name}, ${sanitizeText(input.tagline).slice(0, 80) || null}, ${sanitizeText(input.story) || null},
       ${sanitizeText(input.suburb).slice(0, 60) || null}, 'Melbourne', ${STATES.includes(input.state) ? input.state : 'VIC'},
       ${input.instagram.replace(/^@/, '').trim() || null}, ${input.avatarUrl || null}, ${input.bannerUrl || null},
-      'draft', 'draft', true, ${email})
+      'draft', 'draft', true, ${email}, 'invite')
     returning id`;
   await sql()`
     insert into public.maker_shipping_rates (maker_id, region, standard_cents, express_cents, enabled)

@@ -178,6 +178,9 @@ export async function stripeOnboardingLink(
   backTo = '/claim/continue?step=3',
 ): Promise<string> {
   const shop = await ownShop(user);
+  // Payouts are set up only once a shop is approved (invited shops are pre-approved).
+  if (!['invited', 'approved', 'live', 'holiday'].includes(shop.shopStatus))
+    throw new UserError('You can connect payouts once your shop is approved.');
   let accountId = shop.stripeAccountId;
   if (!accountId) {
     const acct = await payments().createExpressAccount({

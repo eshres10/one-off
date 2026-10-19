@@ -213,7 +213,7 @@ export async function seedStudio(
       custom_blurb = 'Slips cut to your measurements in a fabric you choose from our swatch book.',
       care_default = 'Hand wash cold or dry clean. Dry flat in the shade. Cool iron on the reverse.',
       bank_name = ${mockPayments ? 'Commonwealth Bank' : null}, bank_last4 = ${mockPayments ? '4821' : null},
-      shop_status = 'live', claim_step = 5
+      shop_status = 'live', claim_step = 5, source = 'invite'
     where id = ${halde.id}`;
   for (const [region, standard, express, enabled] of [
     ['same_state', 900, 1600, true],
@@ -362,11 +362,12 @@ export async function seedStudio(
   const mira = DEMO_INVITED_SHOP;
   await db`
     insert into public.makers (id, user_id, slug, display_name, tagline, story, location, city, state, avatar_url, cover_url,
-      status, shop_status, created_by_admin, invite_email, founding_number, instagram, lead_time_days, dispatch_days)
+      status, shop_status, created_by_admin, invite_email, founding_number, instagram, lead_time_days, dispatch_days,
+      source)
     values (${mira.id}, null, ${mira.slug}, ${mira.displayName}, 'Draped satin for long evenings.',
       'Mira drapes every piece on the stand in her Footscray studio before a single cut is made.',
       'Footscray, Melbourne', 'Melbourne', 'VIC', '/seed/maker-mara-kovac.jpg', '/seed/draped-satin-midi.jpg',
-      'draft', 'invited', true, ${mira.email}, 8, 'mira.atelier', 14, 3)
+      'draft', 'invited', true, ${mira.email}, 8, 'mira.atelier', 14, 3, 'invite')
     on conflict (id) do update set shop_status = 'invited', user_id = null, status = 'draft', claimed_at = null,
       went_live_at = null, founding_until = null, claim_step = 0, stripe_account_id = null,
       stripe_charges_enabled = false, stripe_payouts_enabled = false, stripe_onboarding_complete = false`;

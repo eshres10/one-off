@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, describe, expect, it } from 'vitest';
 import { closeDb, sql } from '@/lib/db';
-import { goLiveIfReady, mySellShop, saveLabel } from '@/lib/services/sell';
+import { goLiveIfReady, mySellShop } from '@/lib/services/sell';
 
 afterAll(closeDb);
 
@@ -13,60 +13,53 @@ async function newUser() {
   return { id, email, role: 'buyer' as const, makerId: null };
 }
 
-describe('self sign-up shops', () => {
-  it('start as a draft and go live only once payouts are on and a piece is published', async () => {
-    const user = await newUser();
-    const shop = await saveLabel(user, {
-      name: 'Test Label',
-      suburb: 'Thornbury',
-      instagram: '@testlabel',
-      makes: ['Slips', 'Dresses'],
-      modes: ['ready_to_ship', 'custom'],
-    });
-    expect(shop.shopStatus).toBe('draft');
-    const [u] = await sql()<
-      { role: string }[]
-    >`select role from public.users where id = ${user.id}`;
-    expect(u!.role).toBe('seller');
-    const [m] = await sql()<{ selfSignup: boolean; custom: boolean; status: string }[]>`
-      select self_signup, custom_commissions_enabled as custom, status from public.makers where id = ${shop.id}`;
-    expect(m).toEqual({ selfSignup: true, custom: true, status: 'draft' });
+async function newShop(status: string) {
+  const user = await newUser();
+  const [m] = await sql()<{ id: string }[]>`
+    insert into public.makers (user_id, slug, display_name, status, shop_status, self_signup, source, spot_checks_left)
+    values (${user.id}, ${`apply-${user.id.slice(0, 8)}`}, 'Test Label', 'draft', ${status}, true, 'application',
+      ${status === 'approved' ? 3 : 0})
+    returning id`;
+  return { user, makerId: m!.id };
+}
 
-    // A piece published before payouts waits as pending; the shop stays a draft.
-    await sql()`
-      insert into public.products (maker_id, slug, title, category, price_cents, product_type, status)
-      values (${shop.id}, ${`test-${shop.id.slice(0, 8)}`}, 'Test Slip', 'dresses', 29000, 'ready_to_ship', 'pending')`;
-    expect(await goLiveIfReady(shop.id)).toBe(false);
-    expect((await mySellShop(user))!.shopStatus).toBe('draft');
+const addPiece = async (makerId: string, n: number, status = 'approved') =>
+  sql()`
+    insert into public.products (maker_id, slug, title, category, price_cents, product_type, status)
+    values (${makerId}, ${`piece-${makerId.slice(0, 8)}-${n}`}, ${`Piece ${n}`}, 'dresses', 29000, 'ready_to_ship',
+      ${status}::product_status)`;
 
-    // Payouts connected: live, and the waiting piece is published.
-    await sql()`update public.makers set stripe_payouts_enabled = true where id = ${shop.id}`;
-    expect(await goLiveIfReady(shop.id)).toBe(true);
-    const after = await sql()<{ shopStatus: string; status: string; founding: boolean }[]>`
-      select m.shop_status, p.status, m.founding_until is not null or m.founding_number is null as founding
-      from public.makers m join public.products p on p.maker_id = m.id where m.id = ${shop.id}`;
-    expect(after[0]).toEqual({ shopStatus: 'live', status: 'approved', founding: true });
-    expect(await goLiveIfReady(shop.id)).toBe(false); // idempotent
+describe('applied shops', () => {
+  it('never go live before approval, even with payouts and a piece', async () => {
+    const { makerId } = await newShop('applied');
+    await sql()`update public.makers set stripe_charges_enabled = true where id = ${makerId}`;
+    await addPiece(makerId, 1, 'draft');
+    expect(await goLiveIfReady(makerId)).toBe(false);
+    const [m] = await sql()<{ shopStatus: string; status: string }[]>`
+      select shop_status, status from public.makers where id = ${makerId}`;
+    expect(m).toEqual({ shopStatus: 'applied', status: 'draft' });
   });
 
-  it('a live shop can’t be relabelled through sign-up', async () => {
-    const user = await newUser();
-    const shop = await saveLabel(user, {
-      name: 'Another Label',
-      suburb: 'Fitzroy',
-      instagram: '',
-      makes: ['Tops'],
-      modes: ['made_to_order'],
-    });
-    await sql()`update public.makers set shop_status = 'live' where id = ${shop.id}`;
-    await expect(
-      saveLabel(user, {
-        name: 'Renamed',
-        suburb: 'Fitzroy',
-        instagram: '',
-        makes: ['Tops'],
-        modes: ['made_to_order'],
-      }),
-    ).rejects.toThrow(/already set up/);
+  it('go live once approved, payouts are connected and the first piece is published', async () => {
+    const { user, makerId } = await newShop('approved');
+    await addPiece(makerId, 1);
+    // Published but payouts not connected yet: still approved, not visible to buyers.
+    expect(await goLiveIfReady(makerId)).toBe(false);
+    expect((await mySellShop(user))!.shopStatus).toBe('approved');
+
+    await sql()`update public.makers set stripe_charges_enabled = true where id = ${makerId}`;
+    expect(await goLiveIfReady(makerId)).toBe(true);
+    const [m] = await sql()<{ shopStatus: string; status: string }[]>`
+      select shop_status, status from public.makers where id = ${makerId}`;
+    expect(m).toEqual({ shopStatus: 'live', status: 'approved' });
+    expect(await goLiveIfReady(makerId)).toBe(false); // idempotent
+  });
+
+  it('flag the first three pieces of a newly approved shop for a spot check', async () => {
+    const { makerId } = await newShop('approved');
+    for (const n of [1, 2, 3, 4]) await addPiece(makerId, n);
+    const rows = await sql()<{ title: string; spotCheck: boolean }[]>`
+      select title, spot_check from public.products where maker_id = ${makerId} order by title`;
+    expect(rows.map((r) => r.spotCheck)).toEqual([true, true, true, false]);
   });
 });
