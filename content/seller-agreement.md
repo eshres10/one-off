@@ -26,8 +26,13 @@ You make, pack and ship your pieces by the ship-by date and add tracking.
 
 ## 5. Returns
 
-There are no change-of-mind returns. If a piece is faulty or not as described, you'll repair,
-replace or refund it. Australian Consumer Law applies.
+Ready-to-ship pieces can be returned for a change of mind within 14 days of delivery, unworn with
+tags and original packaging. The buyer pays return postage, and the item price is refunded once you
+mark the return received (or automatically if you haven't confirmed within 3 business days of
+tracking showing it delivered). If you've already been paid for it, the refunded amount (less
+One Off's commission, which is refunded to you) comes back out of your Stripe balance or your next
+payout. Made-to-order, custom and one-of-one pieces have no change-of-mind returns. If any piece is
+faulty or not as described, you'll repair, replace or refund it. Australian Consumer Law applies.
 
 ## 6. Photos and content
 

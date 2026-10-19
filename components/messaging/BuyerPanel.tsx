@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { acceptQuoteAction } from '@/lib/actions/messages';
 import { RETURNS } from '@/lib/content/returns';
+import { getReturnPolicy } from '@/lib/returns/policy';
 import { formatPrice } from '@/lib/domain/money';
 import type { PieceInfo, QuoteView, ThreadDetail } from '@/lib/services/messaging';
 import { buttonClass } from '@/components/ui/Button';
@@ -214,7 +215,9 @@ export function BuyerPanel({
           )}
         </section>
       )}
-      <p className="shrink-0 px-1 text-[12px] text-muted">{RETURNS.short}</p>
+      <p className="shrink-0 px-1 text-[12px] text-muted">
+        {piece ? getReturnPolicy(piece.productType).summary : RETURNS.short}
+      </p>
     </div>
   );
 }

@@ -22,7 +22,7 @@ export function dealTerms(foundingNumber: number | null): Array<[string, string]
     ['You make and ship', 'You send each order by its ship-by date and add tracking.'],
     [
       'Faulty means fixed',
-      'No change-of-mind returns. Faulty or not as described: you repair, replace or refund.',
+      'Ready-to-ship pieces can be returned within 14 days if unworn, with tags. No change-of-mind returns on made-to-order, custom or one-of-one pieces. Faulty or not as described: you repair, replace or refund.',
     ],
     ['Your photos stay yours', 'We show them on One Off and to promote your pieces.'],
     ['Leave any time', 'Close your shop whenever you like; open orders still get sent.'],

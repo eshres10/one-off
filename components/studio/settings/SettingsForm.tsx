@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useTransition } from 'react';
 import { MAKER_TIMEZONES } from '@/lib/site/config';
 import { closeShopAction, saveSettingsAction } from '@/lib/actions/settings';
-import { RETURNS_SUMMARY } from '@/lib/studio/policy';
+import { RETURNS_TABLE } from '@/lib/studio/policy';
 import type { ShopSettings } from '@/lib/services/settings';
 import type { Channels, NotifyEvent } from '@/lib/services/notifications';
 import { TERMS } from '@/lib/studio/terms';
@@ -542,9 +542,38 @@ export function SettingsForm({
         </Section>
 
         <Section id="returns" title="Returns & care">
-          <p className="bg-stone p-4 text-[13px] leading-relaxed" data-testid="platform-policy">
-            {RETURNS_SUMMARY}
-          </p>
+          <div className="bg-stone p-4 text-[13px] leading-relaxed" data-testid="platform-policy">
+            <p>
+              One Off’s returns policy applies to every shop, so buyers get the same promise
+              wherever they shop.
+            </p>
+            <table className="mt-3 w-full text-left">
+              <tbody>
+                {RETURNS_TABLE.map(([type, rule]) => (
+                  <tr key={type} className="border-t border-ink/10 align-top">
+                    <th scope="row" className="py-2 pr-4 font-medium">
+                      {type}
+                    </th>
+                    <td className="py-2">{rule}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <Field
+            id="set-return-address"
+            label="Return address"
+            hint="Where buyers post ready-to-ship returns. Only shown to a buyer once they start a return."
+          >
+            <textarea
+              id="set-return-address"
+              className="input min-h-[90px]"
+              maxLength={400}
+              value={s.returnAddress}
+              onChange={(e) => set('returnAddress', e.target.value)}
+              data-testid="return-address"
+            />
+          </Field>
           <Field
             id="set-policy-extra"
             label="Anything to add (shown on your pieces)"

@@ -242,6 +242,7 @@ async function sendOrderEmails(orderId: string, buyerEmail: string) {
       quantity: number;
       makerName: string;
       makerEmail: string;
+      returnSummary: string | null;
       fulfilmentId: string;
       sellerNetCents: number;
       from: Date;
@@ -249,6 +250,7 @@ async function sendOrderEmails(orderId: string, buyerEmail: string) {
     }[]
   >`
     select oi.product_title, oi.variant_label, oi.quantity, m.display_name as maker_name, u.email as maker_email,
+           oi.return_policy->>'summary' as return_summary,
            f.id as fulfilment_id, f.seller_net_cents, f.estimated_delivery_from as from, f.estimated_delivery_to as to
     from public.order_items oi join public.fulfilments f on f.id = oi.fulfilment_id
     join public.makers m on m.id = oi.maker_id join public.users u on u.id = m.user_id
@@ -263,6 +265,7 @@ async function sendOrderEmails(orderId: string, buyerEmail: string) {
         maker: i.makerName,
         quantity: i.quantity,
         estimate: `Estimated delivery ${formatDateRange(new Date(i.from), new Date(i.to))}`,
+        returns: i.returnSummary,
       })),
     ),
   );

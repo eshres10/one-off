@@ -162,7 +162,7 @@ export function QuickViewContent({
             <div className="grid grid-cols-[84px_1fr]">
               <dt className="text-muted-2">Returns</dt>
               <dd>
-                <ReturnsPolicy productType={p.productType} testId="qv-returns" />
+                <ReturnsPolicy itemType={p.productType} short testId="qv-returns" />
               </dd>
             </div>
           </dl>

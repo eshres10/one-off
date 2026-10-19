@@ -250,10 +250,9 @@ test.describe.serial('seller applications', () => {
     await expect(admin.getByTestId('pipeline')).toContainText('Invite');
   });
 
-  test('6. no product page, quick view or checkout promises 14-day or unworn returns', async ({
+  test('6. product page, quick view and bag show the returns line for the piece type', async ({
     browser,
   }) => {
-    const banned = /return unworn|within 14 days/i;
     const [p] = await db<{ slug: string; variant: string; size: string }[]>`
       select p.slug, v.id as variant, v.size from public.products p
       join public.makers m on m.id = p.maker_id
@@ -264,8 +263,9 @@ test.describe.serial('seller applications', () => {
     for (const opts of [DESK, PHONE]) {
       const page = await (await browser.newContext(opts)).newPage();
       await page.goto(`/products/${p!.slug}`);
-      await expect(page.getByTestId('returns-row')).toContainText('No change-of-mind returns');
-      expect(await page.locator('body').innerText()).not.toMatch(banned);
+      await expect(page.getByTestId('returns-row')).toContainText(
+        'Return it unworn, with tags, within 14 days of delivery',
+      );
     }
     const page = await (await browser.newContext(DESK)).newPage();
     await page.goto('/discover');
@@ -273,8 +273,9 @@ test.describe.serial('seller applications', () => {
     await card.hover();
     await card.getByRole('link', { name: /Quick view/ }).click();
     await expect(page.getByTestId('quick-view')).toBeVisible();
-    await expect(page.getByTestId('qv-returns')).toContainText('No change-of-mind returns');
-    expect(await page.locator('body').innerText()).not.toMatch(banned);
+    await expect(page.getByTestId('qv-returns')).toHaveText(
+      /^(Return within 14 days of delivery if unworn, with tags\.|No change-of-mind returns on (made-to-order pieces|one-of-ones|custom pieces)\.)$/,
+    );
 
     await page.goto(`/products/${p!.slug}`);
     await page.getByRole('button', { name: `Size ${p!.size}`, exact: true }).click();
@@ -283,10 +284,9 @@ test.describe.serial('seller applications', () => {
       .filter({ visible: true })
       .click();
     await page.getByTestId('view-bag').click();
-    await expect(page.getByTestId('bag-returns-note').first()).toContainText(
-      'No change-of-mind returns',
+    await expect(page.getByTestId('bag-returns-note').first()).toHaveText(
+      'Return within 14 days of delivery if unworn, with tags.',
     );
-    expect(await page.locator('body').innerText()).not.toMatch(banned);
   });
 
   test('7. with founding spots full, the 0% offer disappears and new shops get no founding panel', async ({

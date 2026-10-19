@@ -60,6 +60,8 @@ export interface ShopSettings {
   customReplyWithin: string;
   customBlurb: string;
   policyExtra: string;
+  /** Where buyers post ready-to-ship returns; shown to a buyer only once they start one. */
+  returnAddress: string;
   careDefault: string;
   holidayOn: boolean;
   holidayFrom: string;
@@ -130,6 +132,7 @@ export async function getSettings(seller: Seller): Promise<ShopSettings> {
     customReplyWithin: String(m.customReplyWithin ?? REPLY_WITHIN[1]),
     customBlurb: String(m.customBlurb ?? ''),
     policyExtra: String(m.policyExtra ?? ''),
+    returnAddress: String(m.returnAddress ?? ''),
     careDefault: String(m.careDefault ?? ''),
     holidayOn: m.shopStatus === 'holiday' || Boolean(m.holidayFrom && d(m.holidayUntil) > today()),
     holidayFrom: d(m.holidayFrom),
@@ -252,6 +255,7 @@ export async function saveSettings(seller: Seller, s: ShopSettings) {
         custom_deposit_pct = ${s.customDepositPct}, custom_reply_within = ${s.customReplyWithin.slice(0, 20) || null},
         custom_blurb = ${sanitizeText(s.customBlurb).slice(0, 600) || null},
         policy_extra = ${sanitizeText(s.policyExtra).slice(0, 300) || null},
+        return_address = ${sanitizeText(s.returnAddress ?? '').slice(0, 400) || null},
         care_default = ${sanitizeText(s.careDefault).slice(0, 500) || null},
         holiday_from = ${holidayFrom}, holiday_until = ${holidayUntil},
         holiday_note = ${s.holidayOn ? sanitizeText(s.holidayNote).slice(0, 280) || null : null},

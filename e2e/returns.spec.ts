@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import postgres from 'postgres';
-import { RETURNS } from '../lib/content/returns';
+import { getReturnPolicy } from '../lib/returns/policy';
 import { checkoutAsGuest } from './checkout-steps';
 import { BUYERS, PASSWORD, PRODUCTS } from '../scripts/seed-data';
 
@@ -31,12 +31,11 @@ test.describe.serial('returns policy', () => {
     await page.goto(`/products/${mto.slug}`);
     const row = page.getByTestId('returns-row');
     await expect(row).toBeVisible(); // open by default for made-to-order
-    await expect(row).toContainText(RETURNS.short);
-    await expect(row).toContainText(RETURNS.madeToOrder);
+    await expect(row).toContainText(getReturnPolicy('made_to_order').detail);
     await page.goto(`/products/${ready.slug}`);
     await expect(page.locator('details#returns')).not.toHaveAttribute('open', '');
-    await expect(page.getByTestId('returns-row')).toHaveText(
-      new RegExp(`^${RETURNS.short.replace(/[.?]/g, '\\$&')}`),
+    await expect(page.getByTestId('returns-row')).toContainText(
+      getReturnPolicy('ready_to_ship').detail,
     );
   });
 
@@ -54,7 +53,9 @@ test.describe.serial('returns policy', () => {
       .filter({ visible: true })
       .click();
     await page.getByTestId('view-bag').click();
-    await expect(page.getByTestId('bag-returns-note').first()).toHaveText(RETURNS.short);
+    await expect(page.getByTestId('bag-returns-note').first()).toHaveText(
+      getReturnPolicy('ready_to_ship').summary,
+    );
     await checkoutAsGuest(page, 'returns-ack@buyer.test', 'Returns Ack');
     const [order] = await db<{ returnsAckAt: Date | null; returnsPolicyVersion: string | null }[]>`
       select returns_ack_at as "returnsAckAt", returns_policy_version as "returnsPolicyVersion"

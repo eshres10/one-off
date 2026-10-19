@@ -1,4 +1,4 @@
-import { PAYMENT_HELD, RETURNS } from '@/lib/content/returns';
+import { PAYMENT_HELD, RETURNS, RETURNS_FAQ, RETURNS_IN_SHORT } from '@/lib/content/returns';
 import { BRAND } from '@/lib/brand';
 import { SITE } from '@/lib/site/config';
 import { TERMS } from '@/lib/studio/terms';
@@ -64,6 +64,11 @@ export const HELP: Record<string, HelpTopic> = {
         body: [
           'Some makers accept custom commissions. Send a brief, get a quote with price, deposit and timing, and our team sends a secure payment link if you accept. This is a pilot.',
         ],
+      },
+      {
+        id: 'returns',
+        heading: 'Fair, and clear up front.',
+        body: RETURNS_IN_SHORT,
       },
       {
         id: 'buyer-protection',
@@ -156,6 +161,7 @@ export const HELP: Record<string, HelpTopic> = {
     intro: `Email ${BRAND.supportEmail} and we’ll reply within one business day.`,
     sections: [],
     faqs: [
+      ...RETURNS_FAQ.map(({ q, a }) => ({ q, a })),
       {
         q: 'Where is my order?',
         a: 'Each maker ships separately. Your order page shows the status and tracking for each parcel. Made-to-order pieces ship after production.',

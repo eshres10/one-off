@@ -154,7 +154,8 @@ export default async function BagPage({ searchParams }: { searchParams: { cancel
                   Estimated delivery {line.deliveryEstimate}
                 </p>
                 <ReturnsPolicy
-                  productType={line.productType}
+                  itemType={line.productType}
+                  short
                   className="mt-1 text-[12px] text-muted-2"
                   testId="bag-returns-note"
                 />

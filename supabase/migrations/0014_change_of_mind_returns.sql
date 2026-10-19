@@ -63,3 +63,8 @@ create policy returns_read on public.returns for select
 grant select on public.returns to authenticated;
 grant all on public.returns to service_role;
 grant usage on sequence public.return_number_seq to service_role;
+
+-- The shop-level policy text set by 0011 now reads per piece type.
+update public.makers set return_policy = 'Ready-to-ship pieces can be returned within 14 days if unworn, with tags. Made-to-order, custom and one-of-one pieces can''t be returned for a change of mind. Faulty or not as described? We''ll make it right.'
+  where return_policy = 'No change-of-mind returns. Faulty or not as described? We''ll make it right.';
+alter table public.makers alter column return_policy set default 'Ready-to-ship pieces can be returned within 14 days if unworn, with tags. Made-to-order, custom and one-of-one pieces can''t be returned for a change of mind. Faulty or not as described? We''ll make it right.';

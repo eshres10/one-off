@@ -29,6 +29,8 @@ export const emails = {
       maker: string;
       quantity: number;
       estimate: string;
+      /** The policy stored on the item: "Return within 14 days…" or "No change-of-mind returns on made-to-order pieces". */
+      returns?: string | null;
     }>,
   ): EmailMessage => ({
     to,
@@ -39,11 +41,12 @@ export const emails = {
       lines
         .map(
           (l) =>
-            `• ${l.title} (${l.variant}) × ${l.quantity}\n  Ships from ${l.maker} · ${l.estimate}`,
+            `• ${l.title} (${l.variant}) × ${l.quantity}\n  Ships from ${l.maker} · ${l.estimate}` +
+            (l.returns ? `\n  ${l.returns}` : ''),
         )
         .join('\n') +
       `\n\nTotal paid: ${formatPrice(order.totalCents)}\n\nView your order: ${url(`/orders/${order.id}`)}` +
-      `\n\n${RETURNS.short} ${RETURNS.aclNote}\nReturns & faults: ${url('/returns')}${sign}`,
+      `\n\nFaulty or not as described? We’ll make it right. ${RETURNS.aclNote}\nReturns & faults: ${url('/returns')}${sign}`,
     related: { type: 'order', id: order.id },
   }),
 

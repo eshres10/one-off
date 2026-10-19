@@ -20,6 +20,10 @@ export interface ReportItem {
   imageUrl: string | null;
   makerName: string;
   isMto: boolean;
+  /** The piece’s change-of-mind line from lib/returns/policy (summary). */
+  returnSummary: string;
+  /** Set when the piece can be returned for a change of mind instead. */
+  returnHref?: string | null;
 }
 
 const label = (v: string) => CLAIM_REASONS.find((r) => r.value === v)?.label ?? v;
@@ -201,8 +205,20 @@ export function ReportFlow({
           ))}
         </div>
         <p className="mt-6 bg-stone px-4 py-3 text-[13px] leading-relaxed">
-          Changed your mind? We can’t take change-of-mind returns, but you can message the maker.
-          Many are happy to help.
+          {item.returnHref ? (
+            <>
+              Changed your mind? This piece is ready to ship, so you can{' '}
+              <a href={item.returnHref} className="underline underline-offset-[3px]">
+                return it instead
+              </a>
+              .
+            </>
+          ) : (
+            <>
+              Changed your mind? {item.returnSummary.replace(/\.$/, '')}, but you can message the
+              maker. Many are happy to help.
+            </>
+          )}
         </p>
         <div className="mt-8">{next}</div>
       </fieldset>

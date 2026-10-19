@@ -164,7 +164,7 @@ export function SellingCards({
       points: [
         `Paid weekly, ${payout.releaseDays} days after delivery.`,
         'You keep shipping in full.',
-        'Faulty items are repaired, replaced or refunded. No change-of-mind returns.',
+        'Ready-to-ship pieces can come back within 14 days if unworn; made-to-order and one-of-ones can’t. Faults are always made right.',
       ],
     },
   ];

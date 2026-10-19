@@ -2,6 +2,7 @@
 
 import { PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import Link from 'next/link';
+import { RETURNS } from '@/lib/content/returns';
 import { useState, useTransition } from 'react';
 import { mockPayAction, preparePaymentAction, setSaveDetailsAction } from '@/lib/actions/checkout';
 import { formatPrice } from '@/lib/domain/money';
@@ -287,7 +288,7 @@ function PaymentForm({
         <Link href="/terms" className="underline underline-offset-2">
           Terms
         </Link>
-        . Pieces are made or chosen for you, so there are no change-of-mind returns.
+        . {RETURNS.checkoutFinePrint}
       </p>
 
       {error && (

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { requireUser } from '@/lib/auth/session';
 import { BRAND } from '@/lib/brand';
 import { RETURNS, isCustomType } from '@/lib/content/returns';
+import { getReturnPolicy } from '@/lib/returns/policy';
 import { canReportProblem } from '@/lib/domain/claims';
 import { getReportableItem } from '@/lib/services/claims';
 import { ReportFlow } from '@/components/claims/ReportFlow';
@@ -38,6 +39,8 @@ export default async function ReportProblemPage({
           imageUrl: item.imageUrl,
           makerName: item.makerName,
           isMto: isCustomType(item.productType),
+          returnSummary: getReturnPolicy(item.productType).summary,
+          returnHref: null,
         }}
         closed={
           open ? undefined : (

@@ -4,6 +4,7 @@ import { getSessionUser } from '@/lib/auth/session';
 import { sql } from '@/lib/db';
 import { log } from '@/lib/log';
 import { formatArrival } from '@/lib/shipping/estimate';
+import { getReturnPolicy } from '@/lib/returns/policy';
 import { onPaymentIntentSucceeded } from '@/lib/services/webhook';
 import { Img as Image } from '@/components/ui/Img';
 import { Monogram } from '@/components/ui/Monogram';
@@ -91,9 +92,11 @@ export default async function ConfirmedPage({ params }: { params: { number: stri
       from: Date | null;
       to: Date | null;
       fulfilmentId: string;
+      returnSummary: string | null;
     }[]
   >`
     select oi.id, oi.product_title as title, m.display_name as maker, oi.product_type, oi.image_url,
+      oi.return_policy->>'summary' as return_summary,
       f.estimated_delivery_from as from, f.estimated_delivery_to as to, f.id as fulfilment_id
     from public.order_items oi join public.fulfilments f on f.id = oi.fulfilment_id
     join public.makers m on m.id = oi.maker_id
@@ -136,6 +139,9 @@ export default async function ConfirmedPage({ params }: { params: { number: stri
                   Arrives {formatArrival(new Date(i.from), new Date(i.to))}
                 </span>
               )}
+              <span className="mt-1 block text-[12px] text-muted-2" data-testid="confirmed-returns">
+                {i.returnSummary ?? getReturnPolicy(i.productType).summary}
+              </span>
             </span>
           </li>
         ))}
