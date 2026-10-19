@@ -33,8 +33,8 @@ export default async function AdminWaitlistPage({ searchParams }: { searchParams
         <Link href="/waitlist" className="link">
           waitlist page
         </Link>
-        . Makers who join here are leads only; create their seller account from Makers once
-        approved.
+        . Makers who join here are leads: “Set up a shop” starts their draft shop in the concierge
+        pipeline (Shops).
       </p>
       <nav aria-label="Filter" className="mb-6 flex gap-6">
         {TABS.map((t) => (
@@ -62,7 +62,10 @@ export default async function AdminWaitlistPage({ searchParams }: { searchParams
                 <th className="py-2 pr-4 font-normal">Label</th>
                 <th className="py-2 pr-4 font-normal">Instagram</th>
                 <th className="py-2 pr-4 font-normal">Source</th>
-                <th className="py-2 font-normal">Joined</th>
+                <th className="py-2 pr-4 font-normal">Joined</th>
+                <th className="py-2 font-normal">
+                  <span className="sr-only">Set up</span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -91,6 +94,16 @@ export default async function AdminWaitlistPage({ searchParams }: { searchParams
                       dateStyle: 'short',
                       timeStyle: 'short',
                     })}
+                  </td>
+                  <td className="whitespace-nowrap py-2 pl-4">
+                    {r.kind === 'maker' && (
+                      <Link
+                        className="link"
+                        href={`/admin/shops/new?${new URLSearchParams({ name: r.name ?? '', instagram: r.instagram ?? '', email: r.email })}`}
+                      >
+                        Set up a shop →
+                      </Link>
+                    )}
                   </td>
                 </tr>
               ))}

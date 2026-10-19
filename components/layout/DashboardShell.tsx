@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { logoutAction } from '@/lib/actions/auth';
 import { Wordmark } from '@/components/ui/Wordmark';
 import { StudioTabBar } from './StudioTabBar';
+import { ToastHost } from '@/components/studio/ToastHost';
 
 type NavLink = { href: string; label: string; count?: number };
 
@@ -74,6 +75,7 @@ export function DashboardShell({
         {children}
       </main>
       {mobileTabs && <StudioTabBar tabs={mobileTabs} />}
+      <ToastHost />
     </div>
   );
 }

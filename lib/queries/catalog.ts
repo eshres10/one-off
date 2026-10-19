@@ -394,22 +394,26 @@ export interface MakerProfile {
   returnPolicy: string;
   followerCount: number;
   approvedAt: Date | null;
-  userId: string;
+  /** Null until a shop set up by One Off is claimed. */
+  userId: string | null;
 }
 
 export async function getMaker(
   slug: string,
+  opts: { preview?: boolean } = {},
 ): Promise<{ maker: MakerProfile; products: ProductCard[] } | null> {
   const [maker] = await sql()<MakerProfile[]>`
     select m.id, m.slug, m.display_name, m.tagline, m.story, m.location, m.city, m.state, m.process, m.materials, m.sizing_notes,
            m.avatar_url, m.cover_url, m.lead_time_days, m.response_time_hours, m.rating::float as rating, m.review_count,
            m.completed_orders, m.custom_commissions_enabled, m.return_policy, m.user_id, m.approved_at,
            (select count(*) from public.maker_follows f where f.maker_id = m.id)::int as follower_count
-    from public.makers m where m.slug = ${slug} and m.status = 'approved'`;
+    from public.makers m where m.slug = ${slug} ${opts.preview ? sql()`` : sql()`and m.status = 'approved'`}`;
   if (!maker) return null;
+  // Preview (admins and the owner) shows the draft shop with the pieces it would launch with.
   const rows = await sql()<CardRow[]>`
     select ${cardColumns()} from public.products p ${cardJoins()}
-    where ${VISIBLE()} and p.maker_id = ${maker.id}
+    where ${opts.preview ? sql()`p.status in ('approved', 'draft', 'pending') and p.keep_on_claim` : VISIBLE()}
+      and p.maker_id = ${maker.id}
     order by (coalesce(st.total_stock, 0) > 0) desc, p.is_featured desc, p.approved_at desc`;
   return { maker, products: rows.map(toCard) };
 }
@@ -540,4 +544,12 @@ export async function getNextSlot(productId: string): Promise<string | null> {
     month: 'short',
     timeZone: 'UTC',
   });
+}
+
+/** Where an old shop link now points (after a rename), if anywhere. */
+export async function makerSlugRedirect(slug: string): Promise<string | null> {
+  const [row] = await sql()<{ slug: string }[]>`
+    select m.slug from public.maker_slug_redirects r join public.makers m on m.id = r.maker_id
+    where r.old_slug = ${slug}`;
+  return row?.slug ?? null;
 }

@@ -2,10 +2,16 @@ import { openMakerThreadAction } from '@/lib/actions/messages';
 import { DEFAULT_MAKER_BANNER } from '@/lib/editorial';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { Img as Image } from '@/components/ui/Img';
 import { getSessionUser } from '@/lib/auth/session';
-import { getMaker, getReviews, getSavedProductIds, isFollowing } from '@/lib/queries/catalog';
+import {
+  getMaker,
+  getReviews,
+  getSavedProductIds,
+  isFollowing,
+  makerSlugRedirect,
+} from '@/lib/queries/catalog';
 import { FollowButton } from '@/components/maker/FollowButton';
 import { ProductGrid } from '@/components/product/ProductCard';
 import { Reviews } from '@/components/product/Reviews';
@@ -36,12 +42,25 @@ export default async function MakerPage({
   searchParams,
 }: {
   params: { slug: string };
-  searchParams: { type?: string };
+  searchParams: { type?: string; preview?: string };
 }) {
-  const data = await getMaker(params.slug);
-  if (!data) notFound();
-  const { maker, products } = data;
   const user = await getSessionUser();
+  let data = await getMaker(params.slug);
+  let preview = false;
+  // "Preview, not live": One Off (and the shop's owner) can see a shop before it launches.
+  if (!data && searchParams.preview === '1' && user) {
+    const draft = await getMaker(params.slug, { preview: true });
+    if (draft && (user.role === 'admin' || draft.maker.userId === user.id)) {
+      data = draft;
+      preview = true;
+    }
+  }
+  if (!data) {
+    const moved = await makerSlugRedirect(params.slug);
+    if (moved) permanentRedirect(`/makers/${moved}`);
+    notFound();
+  }
+  const { maker, products } = data;
   const [following, saved, reviews] = await Promise.all([
     isFollowing(user?.id ?? null, maker.id),
     getSavedProductIds(user?.id ?? null),
@@ -68,7 +87,7 @@ export default async function MakerPage({
       value:
         maker.responseTimeHours < 24
           ? `Within ${maker.responseTimeHours} hrs`
-          : `Within ${Math.round(maker.responseTimeHours / 24)} days`,
+          : `Within ${Math.round(maker.responseTimeHours / 24)} ${Math.round(maker.responseTimeHours / 24) === 1 ? 'day' : 'days'}`,
     },
     { label: 'Made to order in', value: `${maker.leadTimeDays} days` },
   ];
@@ -82,6 +101,15 @@ export default async function MakerPage({
 
   return (
     <div>
+      {preview && (
+        <p
+          className="fixed inset-x-0 top-[var(--header-h)] z-40 bg-ink px-4 py-2 text-center text-[11px] uppercase tracking-label text-ground"
+          role="status"
+          data-testid="preview-banner-shop"
+        >
+          Preview, not live
+        </p>
+      )}
       <section
         data-hero
         className="relative -mt-[var(--header-h)] flex min-h-[520px] items-center justify-center overflow-hidden bg-ink text-ground md:min-h-[620px]"

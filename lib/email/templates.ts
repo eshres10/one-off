@@ -256,6 +256,19 @@ export const emails = {
     text: `A payment dispute was opened. Reason: ${reason}.\n\nRespond in the Stripe dashboard. Dispute: ${disputeId}\n${url('/admin/orders')}`,
   }),
 
+  shopInvite: (
+    to: string,
+    shop: { makerId: string; shop: string; url: string; pieces: number; bannerUrl: string | null },
+  ): EmailMessage => ({
+    to,
+    template: 'shop_invite',
+    subject: `Your One Off shop is ready, ${shop.shop}`,
+    text:
+      `Hi! It’s Ena from One Off. I’ve set up your shop, listed ${shop.pieces} of your pieces and written your maker page, so it’s ready for you to look over.\n\n` +
+      `See your shop: ${shop.url}\n\nThis link is just for you and works for 7 days.${sign}`,
+    related: { type: 'maker', id: shop.makerId },
+  }),
+
   payoutSent: (
     to: string,
     makerId: string,

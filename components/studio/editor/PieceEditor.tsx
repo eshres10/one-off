@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { savePieceAction } from '@/lib/actions/studio-listings';
 import { COLOURS } from '@/lib/discover/params';
@@ -111,7 +110,6 @@ export function PieceEditor({
   backHref?: string;
   onSaved?: () => void;
 }) {
-  const router = useRouter();
   const [draft, setDraft] = useState<PieceDraft>(initial);
   const [id, setId] = useState(initial.id);
   const [slug, setSlug] = useState(initial.slug);
@@ -176,7 +174,7 @@ export function PieceEditor({
           resolve(true);
         }),
       ),
-    [id, draft, mode, shop.makerId, embedded, router],
+    [id, draft, mode, shop.makerId, embedded],
   );
 
   // Autosave: drafts always; a live piece only while it still passes the checklist.
@@ -858,9 +856,13 @@ export function PieceEditor({
     <button
       type="button"
       onClick={() =>
-        void (live && mode !== 'admin'
-          ? save('draft').then((ok) => ok && showToast('Saved.'))
-          : publish())
+        void (mode === 'admin'
+          ? save('draft').then(
+              (ok) => ok && showToast('Saved to the shop. It goes live when the maker does.'),
+            )
+          : live
+            ? save('draft').then((ok) => ok && showToast('Saved.'))
+            : publish())
       }
       disabled={saving || (mode !== 'admin' && !check.ready)}
       className="glass-dark min-h-[48px] px-6 text-[11px] uppercase tracking-[0.18em] disabled:cursor-not-allowed disabled:opacity-50"
