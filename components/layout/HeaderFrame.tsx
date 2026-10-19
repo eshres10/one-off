@@ -1,5 +1,6 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { useHideOnScroll } from '@/lib/hooks/useHideOnScroll';
 import { useScrolled } from '@/lib/hooks/useScrolled';
@@ -20,8 +21,16 @@ export const useHeaderMenu = () => useContext(MenuState);
  * white while transparent (for full-bleed heroes); `auto` does the same only when the page
  * renders a `[data-hero]` section, so the server-rendered first paint is already right.
  * It slides away while scrolling down and comes back on the way up; sticky bars below it
- * follow `--header-offset`, which drops to 0 while it's hidden.
+ * follow `--header-offset`, which drops to 0 while it's hidden. Two pages differ: on the
+ * homepage it stays pinned, and on Discover it isn't fixed at all (it scrolls off with the
+ * page, so the filter bar has the top of the screen).
  */
+function scrollModeFor(pathname: string): 'hide' | 'pinned' | 'static' {
+  if (pathname === '/') return 'pinned';
+  if (pathname === '/discover') return 'static';
+  return 'hide';
+}
+
 export function HeaderFrame({
   variant = 'auto',
   children,
@@ -33,7 +42,8 @@ export function HeaderFrame({
   const [open, setOpen] = useState(false);
   const glass = scrolled || open;
   const [focused, setFocused] = useState(false);
-  const hidden = useHideOnScroll({ disabled: open || focused });
+  const mode = scrollModeFor(usePathname() ?? '/');
+  const hidden = useHideOnScroll({ disabled: open || focused || mode !== 'hide' });
   useEffect(() => {
     const root = document.documentElement;
     if (hidden) root.setAttribute('data-header-hidden', '');
@@ -48,6 +58,7 @@ export function HeaderFrame({
         data-scrolled={glass ? '' : undefined}
         data-menu-open={open ? '' : undefined}
         data-hidden={hidden ? '' : undefined}
+        data-static={mode === 'static' ? '' : undefined}
         data-testid="site-header"
         // Keyboard users tabbing into the header always see it.
         onFocus={() => setFocused(true)}

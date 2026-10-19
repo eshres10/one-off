@@ -40,6 +40,20 @@ test.describe.serial('app shell', () => {
       .toBe('rgba(246, 244, 240, 0.55)');
   });
 
+  test('the header stays pinned on the homepage and scrolls away on Discover', async ({ page }) => {
+    const headerTopAfterScroll = async (url: string) => {
+      await page.goto(url);
+      for (let i = 0; i < 6; i++) await page.mouse.wheel(0, 300);
+      await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(1000);
+      await page.waitForTimeout(500);
+      return page
+        .getByTestId('site-header')
+        .evaluate((el) => Math.round(el.getBoundingClientRect().top));
+    };
+    expect(await headerTopAfterScroll('/')).toBe(0);
+    expect(await headerTopAfterScroll('/discover')).toBeLessThan(-1000);
+  });
+
   test('rail arrows scroll the track', async ({ page }) => {
     await page.goto('/');
     const rail = page.getByTestId('rail-under-300');
