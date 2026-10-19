@@ -382,12 +382,14 @@ test.describe.serial('Studio', () => {
       select shop_status from public.makers where slug = 'halde-studio'`;
     expect(shop!.shopStatus).toBe('live');
     await shopper.reload();
+    await expect(shopper.getByText(/Away until/)).toHaveCount(0);
+    await shopper.getByRole('button', { name: `Size ${piece.size}`, exact: true }).click();
     await expect(
       shopper
         .getByRole('button', { name: /^Add to bag/ })
         .filter({ visible: true })
         .first(),
-    ).toBeVisible();
+    ).toBeEnabled();
   });
 });
 
