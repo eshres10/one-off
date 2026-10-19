@@ -35,6 +35,13 @@ test.describe.serial('discover', () => {
     expect(await page.evaluate(() => window.scrollY)).toBe(0);
     await expect(header).toHaveClass(/glass-nav/);
 
+    // Moving from the trigger down into the panel keeps it open, and its links work.
+    const link = page.getByTestId('mega-panel').getByRole('link', { name: 'Weddings' });
+    const box = (await link.boundingBox())!;
+    await page.mouse.move(box.x + 10, box.y + box.height / 2, { steps: 12 });
+    await page.waitForTimeout(400);
+    await expect(page.getByTestId('mega-panel')).toBeVisible();
+
     // Moving off the trigger and panel closes it.
     await page.mouse.move(640, 840);
     await expect(page.getByTestId('mega-panel')).toHaveCount(0);

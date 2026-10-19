@@ -88,11 +88,22 @@ export function MegaMenu({ panels }: { panels: MegaPanel[] }) {
   useEffect(() => {
     const header = root.current?.closest('header');
     if (!header) return;
+    // Moving between the header and the panel (rendered at the end of <body>) isn't leaving.
+    const onLeave = (e: MouseEvent) => {
+      if (panelRef.current?.contains(e.relatedTarget as Node | null)) return;
+      scheduleClose();
+    };
+    // Anything under the pointer inside the panel keeps it open.
+    const onOver = (e: MouseEvent) => {
+      if (panelRef.current?.contains(e.target as Node)) cancelClose();
+    };
     header.addEventListener('mouseenter', cancelClose);
-    header.addEventListener('mouseleave', scheduleClose);
+    header.addEventListener('mouseleave', onLeave);
+    document.addEventListener('mouseover', onOver);
     return () => {
       header.removeEventListener('mouseenter', cancelClose);
-      header.removeEventListener('mouseleave', scheduleClose);
+      header.removeEventListener('mouseleave', onLeave);
+      document.removeEventListener('mouseover', onOver);
     };
   }, [cancelClose, scheduleClose]);
 
@@ -246,7 +257,11 @@ export function MegaMenu({ panels }: { panels: MegaPanel[] }) {
               data-testid="mega-panel"
               className="glass-nav mega-panel fixed inset-x-0 top-[var(--header-h)] z-[45]"
               onMouseEnter={cancelClose}
-              onMouseLeave={scheduleClose}
+              onMouseLeave={(e) => {
+                const header = root.current?.closest('header');
+                if (header?.contains(e.relatedTarget as Node | null)) return;
+                scheduleClose();
+              }}
               onKeyDown={onPanelKey}
             >
               <div
