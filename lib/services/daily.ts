@@ -1,5 +1,6 @@
 import { reportError } from '@/lib/log';
 import { escalateOverdueClaims } from './claims';
+import { holidayTransitions } from './settings';
 import { autoMarkDelivered, pollCarrierDeliveries, releaseDueTransfers } from './payouts';
 
 /** Hour of the day in Melbourne for `at`. */
@@ -21,6 +22,7 @@ export async function runDailyJobs(now: Date) {
     ['carrierDelivered', () => pollCarrierDeliveries()],
     ['autoDelivered', () => autoMarkDelivered(now)],
     ['transfers', () => releaseDueTransfers(now)],
+    ['holidays', () => holidayTransitions(now)],
   ];
   for (const [name, job] of jobs) {
     try {

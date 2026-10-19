@@ -269,6 +269,17 @@ export const emails = {
     related: { type: 'maker', id: shop.makerId },
   }),
 
+  shopBack: (
+    to: string,
+    shop: { id: string; displayName: string; slug: string },
+  ): EmailMessage => ({
+    to,
+    template: 'shop_back',
+    subject: `${shop.displayName} is back`,
+    text: `${shop.displayName} is back from their break, and the pieces you saved can be bought again.\n\n${url(`/makers/${shop.slug}`)}${sign}`,
+    related: { type: 'maker', id: shop.id },
+  }),
+
   payoutSent: (
     to: string,
     makerId: string,
