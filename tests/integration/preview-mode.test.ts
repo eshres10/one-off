@@ -4,7 +4,7 @@ import { closeDb, sql } from '@/lib/db';
 import { env, resetEnvCache } from '@/lib/env';
 import { mockStripe } from '@/lib/payments/mock';
 import { addToCart } from '@/lib/services/cart';
-import { createCheckout } from '@/lib/services/checkout';
+import { openCheckout } from '@/lib/services/checkout';
 import { POST as webhookPOST } from '@/app/api/webhooks/stripe/route';
 import { pickVariant } from './helpers';
 
@@ -53,9 +53,9 @@ describe('preview mode (browse-only launch)', () => {
     await expect(
       addToCart({ sessionId, userId: null, productId: product.id, variantId, quantity: 1 }),
     ).rejects.toThrow(/Opening soon. Join the waitlist/);
-    await expect(
-      createCheckout({ sessionId, userId: null, email: 'x@y.test', returnsAck: true }),
-    ).rejects.toThrow(/Opening soon. Join the waitlist/);
+    await expect(openCheckout({ sessionId, userId: null })).rejects.toThrow(
+      /Opening soon. Join the waitlist/,
+    );
   });
 
   it('does not accept mock-signed webhooks', async () => {

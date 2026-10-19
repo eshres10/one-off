@@ -3,7 +3,13 @@ import { sql } from '@/lib/db';
 import { mockStripe } from '@/lib/payments/mock';
 import { handleStripeEvent } from '@/lib/services/webhook';
 import { addToCart } from '@/lib/services/cart';
-import { createCheckout } from '@/lib/services/checkout';
+import {
+  openCheckout,
+  preparePayment,
+  saveCheckoutDelivery,
+  saveCheckoutDetails,
+  setSaveDetails,
+} from '@/lib/services/checkout';
 import type { Role } from '@/lib/db';
 import { ADMIN, BUYERS, MAKERS, PRODUCTS } from '../../scripts/seed-data';
 
@@ -37,13 +43,27 @@ export async function pickVariant(predicate: (p: (typeof PRODUCTS)[number]) => b
   throw new Error('No in-stock variant found');
 }
 
-/** Builds a cart, creates the Stripe (mock) checkout, pays it and delivers the signed webhook. */
+/** Test delivery address (Fitzroy, VIC). */
+export const TEST_ADDRESS = {
+  name: 'Integration Buyer',
+  line1: '1 Test St',
+  line2: '',
+  suburb: 'Fitzroy',
+  state: 'VIC',
+  postcode: '3065',
+};
+
+/**
+ * Builds a cart, goes through checkout (details, delivery, payment), "pays" the PaymentIntent
+ * with the mock driver and delivers the signed payment_intent.succeeded webhook.
+ */
 export async function buyAndPay(
   lines: Array<{ productId: string; variantId: string; quantity?: number }>,
   email = 'integration@buyer.test',
   userId: string | null = null,
+  opts: { saveDetails?: boolean; sessionId?: string } = {},
 ) {
-  const sessionId = randomUUID();
+  const sessionId = opts.sessionId ?? randomUUID();
   for (const l of lines)
     await addToCart({
       sessionId,
@@ -52,20 +72,24 @@ export async function buyAndPay(
       variantId: l.variantId,
       quantity: l.quantity ?? 1,
     });
-  const { orderId } = await createCheckout({ sessionId, userId, email, returnsAck: true });
-  const [order] = await sql()<
-    { stripeCheckoutSessionId: string }[]
-  >`select stripe_checkout_session_id from public.orders where id = ${orderId}`;
-  const csId = order!.stripeCheckoutSessionId;
-  await mockStripe.markSessionPaid(csId, {
-    email,
-    name: 'Integration Buyer',
-    address: { line1: '1 Test St', city: 'Fitzroy', state: 'VIC', postal_code: '3065' },
-  });
-  const event = mockStripe.event('checkout.session.completed', {
-    id: csId,
-    object: 'checkout.session',
+  const owner = { sessionId, userId, email: userId ? email : null };
+  const opened = await openCheckout(owner);
+  await saveCheckoutDetails(owner, { email, phone: '0400 000 000' });
+  await setSaveDetails(owner, opts.saveDetails ?? false);
+  await saveCheckoutDelivery(owner, { address: TEST_ADDRESS, speeds: {} });
+  const prepared = await preparePayment(owner);
+  await mockStripe.succeedPaymentIntent(prepared.paymentIntentId, 'card');
+  const event = mockStripe.event('payment_intent.succeeded', {
+    id: prepared.paymentIntentId,
+    object: 'payment_intent',
   });
   const outcome = await handleStripeEvent(event as never);
-  return { orderId, sessionId, csId, event, outcome };
+  return {
+    orderId: opened.orderId,
+    orderNumber: opened.orderNumber,
+    sessionId,
+    paymentIntentId: prepared.paymentIntentId,
+    event,
+    outcome,
+  };
 }

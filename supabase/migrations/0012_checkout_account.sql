@@ -14,7 +14,14 @@ alter type claim_reason add value if not exists 'other';
 alter table public.orders add column if not exists buyer_phone text;
 alter table public.orders add column if not exists transfer_group text;
 alter table public.orders add column if not exists save_details boolean not null default false;
+alter table public.orders add column if not exists account_created boolean not null default false;
 alter table public.orders add column if not exists checkout_step smallint not null default 1;
+-- The bag this checkout came from, and the browser session that owns it (guests have no account).
+alter table public.orders add column if not exists cart_id uuid references public.carts (id) on delete set null;
+alter table public.orders add column if not exists checkout_session text;
+-- The Stripe Customer a card is saved to (a guest's becomes their account's on sign-up).
+alter table public.orders add column if not exists stripe_customer_id text;
+create index if not exists orders_cart_pending_idx on public.orders (cart_id) where status = 'pending';
 update public.orders set transfer_group = id::text where transfer_group is null;
 
 -- ---------------------------------------------------------------------------

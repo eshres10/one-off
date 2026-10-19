@@ -52,6 +52,36 @@ export interface CheckoutSessionInfo {
   metadata: Record<string, string>;
 }
 
+/** A PaymentIntent as checkout needs it. */
+export interface PaymentIntentInfo {
+  id: string;
+  clientSecret: string | null;
+  status:
+    | 'requires_payment_method'
+    | 'requires_confirmation'
+    | 'requires_action'
+    | 'processing'
+    | 'requires_capture'
+    | 'canceled'
+    | 'succeeded';
+  amount: number;
+  currency: string;
+  chargeId: string | null;
+  /** card, afterpay_clearpay, … (what the buyer actually paid with). */
+  paymentMethodType: string | null;
+  customerId: string | null;
+  receiptEmail: string | null;
+  metadata: Record<string, string>;
+}
+
+export interface SavedCard {
+  id: string;
+  brand: string;
+  last4: string;
+  expMonth: number;
+  expYear: number;
+}
+
 export interface AccountInfo {
   id: string;
   detailsSubmitted: boolean;
@@ -69,6 +99,37 @@ export interface PaymentsDriver {
   createCheckoutSession(input: CreateCheckoutInput): Promise<{ id: string; url: string }>;
   createDepositSession(input: CreateDepositInput): Promise<{ id: string; url: string }>;
   retrieveCheckoutSession(id: string): Promise<CheckoutSessionInfo>;
+  /**
+   * The order's one PaymentIntent on the platform account (separate charges and transfers):
+   * transfer_group = order id, so each maker's transfer links back to it. Methods come from
+   * the Stripe Dashboard (automatic payment methods), so only enabled ones are offered.
+   */
+  createPaymentIntent(input: {
+    orderId: string;
+    orderNumber: string;
+    amountCents: number;
+    email: string | null;
+    customerId: string | null;
+    /** Keep the card on the buyer's Stripe Customer for next time. */
+    savePaymentMethod: boolean;
+    idempotencyKey: string;
+  }): Promise<PaymentIntentInfo>;
+  updatePaymentIntent(
+    id: string,
+    input: {
+      amountCents: number;
+      email: string | null;
+      customerId: string | null;
+      savePaymentMethod: boolean;
+      metadata: Record<string, string>;
+    },
+  ): Promise<PaymentIntentInfo>;
+  retrievePaymentIntent(id: string): Promise<PaymentIntentInfo>;
+  createCustomer(input: { email: string; name: string | null; userId: string }): Promise<{
+    id: string;
+  }>;
+  listCards(customerId: string): Promise<SavedCard[]>;
+  detachPaymentMethod(paymentMethodId: string): Promise<void>;
   createTransfer(input: {
     amountCents: number;
     destination: string;

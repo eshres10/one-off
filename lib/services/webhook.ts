@@ -12,6 +12,7 @@ import { recordProcessingFees, upsertPayout } from './payouts';
 import { notifyLowStock, notifyNewOrder } from './notifications';
 import { bumpTaste } from './taste';
 import { goLiveIfReady } from './sell';
+import { createAccountIfSaved } from '@/lib/auth/accounts';
 
 export type WebhookOutcome = 'processed' | 'duplicate' | 'ignored';
 
@@ -43,10 +44,7 @@ export async function handleStripeEvent(event: Stripe.Event): Promise<WebhookOut
         await onCheckoutExpired((event.data.object as Stripe.Checkout.Session).id);
         break;
       case 'payment_intent.succeeded':
-        await audit('payment_intent.succeeded', {
-          type: 'payment_intent',
-          id: (event.data.object as Stripe.PaymentIntent).id,
-        });
+        await onPaymentIntentSucceeded((event.data.object as Stripe.PaymentIntent).id);
         break;
       case 'payment_intent.payment_failed':
         await onPaymentFailed(event.data.object as Stripe.PaymentIntent);
@@ -98,19 +96,76 @@ export async function onCheckoutCompleted(sessionId: string): Promise<void> {
     return;
   }
 
+  const [row] = await sql()<{ id: string }[]>`
+    select id from public.orders where stripe_checkout_session_id = ${sessionId}`;
+  if (!row) throw new Error(`No order for checkout session ${sessionId}`);
+  await finalizePaidOrder(row.id, {
+    paymentIntentId: session.paymentIntentId,
+    chargeId: session.chargeId,
+    amount: session.amountTotal,
+    currency: session.currency,
+    email: session.customerEmail,
+    name: session.customerName,
+    address: session.shippingAddress,
+    cartId: session.metadata.cart_id ?? null,
+    source: sessionId,
+  });
+}
+
+/**
+ * Embedded checkout: the order's PaymentIntent succeeded. Re-fetched from Stripe (never trusted
+ * from the event), then the order is finalised exactly once.
+ */
+export async function onPaymentIntentSucceeded(paymentIntentId: string): Promise<void> {
+  const pi = await payments().retrievePaymentIntent(paymentIntentId);
+  if (pi.status !== 'succeeded') return;
+  const orderId = pi.metadata.order_id;
+  if (!orderId) return; // not a One Off order (e.g. a commission deposit's own intent)
+  await finalizePaidOrder(orderId, {
+    paymentIntentId: pi.id,
+    chargeId: pi.chargeId,
+    amount: pi.amount,
+    currency: pi.currency,
+    email: null,
+    name: null,
+    address: null,
+    cartId: null,
+    source: pi.id,
+  });
+}
+
+interface PaidDetails {
+  paymentIntentId: string | null;
+  chargeId: string | null;
+  amount: number;
+  currency: string;
+  /** From hosted Checkout; embedded checkout already saved these on the order. */
+  email: string | null;
+  name: string | null;
+  address: Record<string, unknown> | null;
+  cartId: string | null;
+  source: string;
+}
+
+/**
+ * Marks a pending order paid (once): one-of-ones and other stock are taken (sold only now), the
+ * bag and any holds are cleared, each maker's payout is held until delivery, receipts and new
+ * order emails go out, and a guest who chose "Save my details" gets an account.
+ */
+async function finalizePaidOrder(orderId: string, paid: PaidDetails): Promise<void> {
   const result = await sql().begin(async (tx) => {
     const db = tx as unknown as Db;
-    const [order] = await db<OrderRow[]>`
-      select id, order_number, status, total_cents, buyer_user_id from public.orders
-      where stripe_checkout_session_id = ${sessionId} for update`;
-    if (!order) throw new Error(`No order for checkout session ${sessionId}`);
+    const [order] = await db<(OrderRow & { buyerEmail: string; cartId: string | null })[]>`
+      select id, order_number, status, total_cents, buyer_user_id, buyer_email, cart_id from public.orders
+      where id = ${orderId} for update`;
+    if (!order) throw new Error(`No order ${orderId}`);
     if (order.status !== 'pending') return null; // already processed
 
-    if (session.amountTotal !== order.totalCents || session.currency.toLowerCase() !== 'aud') {
+    if (paid.amount !== order.totalCents || paid.currency.toLowerCase() !== 'aud') {
       await audit(
         'payment.amount_mismatch',
         { type: 'order', id: order.id },
-        { expected: order.totalCents, got: session.amountTotal },
+        { expected: order.totalCents, got: paid.amount },
         null,
         db,
       );
@@ -128,24 +183,26 @@ export async function onCheckoutCompleted(sessionId: string): Promise<void> {
       if (!stock?.ok) oversold.push(item);
     }
 
-    const email = session.customerEmail ?? 'unknown@checkout.invalid';
+    const email = paid.email ?? (order.buyerEmail || 'unknown@checkout.invalid');
     await db`
-      update public.orders set status = 'paid', paid_at = now(), stripe_payment_intent_id = ${session.paymentIntentId},
-        stripe_charge_id = ${session.chargeId}, buyer_email = ${email}, buyer_name = ${session.customerName},
-        shipping_address = ${session.shippingAddress ? db.json(session.shippingAddress as never) : null}
+      update public.orders set status = 'paid', paid_at = now(), stripe_payment_intent_id = coalesce(${paid.paymentIntentId}, stripe_payment_intent_id),
+        stripe_charge_id = ${paid.chargeId}, buyer_email = ${email}, buyer_name = coalesce(${paid.name}, buyer_name),
+        shipping_address = coalesce(${paid.address ? db.json(paid.address as never) : null}, shipping_address)
       where id = ${order.id}`;
+    await db`update public.fulfilments set payout_status = 'held' where order_id = ${order.id}`;
     // Signed-in buyers keep their order; guests are linked if an account with this email exists.
     if (!order.buyerUserId) {
       await db`
         update public.orders o set buyer_user_id = u.id from public.users u
         where o.id = ${order.id} and lower(u.email) = lower(${email})`;
     }
-    if (session.metadata.cart_id)
-      await db`delete from public.cart_items where cart_id = ${session.metadata.cart_id}`;
+    const cartId = paid.cartId ?? order.cartId;
+    if (cartId) await db`delete from public.cart_items where cart_id = ${cartId}`;
+    await db`delete from public.reservations where order_id = ${order.id}`;
     await audit(
       'payment.succeeded',
       { type: 'order', id: order.id },
-      { sessionId, total: session.amountTotal },
+      { source: paid.source, total: paid.amount },
       null,
       db,
     );
@@ -165,7 +222,10 @@ export async function onCheckoutCompleted(sessionId: string): Promise<void> {
 
   // Makers are paid later, once the order is delivered (see releaseDueTransfers); for now
   // record Stripe's processing fee so each maker's net is final.
-  await recordProcessingFees(order.id, session.chargeId);
+  await recordProcessingFees(order.id, paid.chargeId);
+  await createAccountIfSaved(order.id).catch((err) =>
+    reportError(err, { orderId: order.id, where: 'save details account' }),
+  );
   await sendOrderEmails(order.id, email);
   await bumpPurchaseTaste(order.id);
   await notifyLowStock(soldVariants).catch((err) => reportError(err, { where: 'low stock' }));

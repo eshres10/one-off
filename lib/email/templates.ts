@@ -445,6 +445,27 @@ export const emails = {
     };
   },
 
+  accountReady: (
+    to: string,
+    a: { firstName: string | null; link: string; orderNumber: string },
+  ): EmailMessage => {
+    const lines = [
+      `${a.firstName ? `Hi ${a.firstName}, your` : 'Your'} One Off account is ready. Track every parcel from order ${a.orderNumber}, message makers and save your sizes in one place.`,
+      'No password needed: this link signs you in. It works once and expires in 15 minutes; you can always ask for a new one from the sign-in page.',
+    ];
+    return {
+      to,
+      template: 'account_ready',
+      subject: 'Your One Off account is ready',
+      text: `${lines.join('\n\n')}\n\nSign in: ${a.link}${sign}`,
+      html: renderEmail({
+        heading: 'Your account is ready',
+        paragraphs: lines,
+        button: { label: 'Track your order', url: a.link },
+      }),
+    };
+  },
+
   applicationNew: (
     to: string,
     a: {

@@ -7,7 +7,8 @@ import { updateCartAction } from '@/lib/actions/cart';
 import { getCartSessionId } from '@/lib/actions/util';
 import { getCart } from '@/lib/services/cart';
 import { PREVIEW_MESSAGE, checkoutEnabled } from '@/lib/features';
-import { CheckoutForm } from '@/components/cart/CheckoutForm';
+import { PAYMENT_HELD } from '@/lib/content/returns';
+import { bagDeliveryEstimate } from '@/lib/services/checkout';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ButtonLink } from '@/components/ui/Button';
 import { ProductBadgePill } from '@/components/ui/Badge';
@@ -88,6 +89,8 @@ export default async function BagPage({ searchParams }: { searchParams: { cancel
     );
   }
   const { totals } = cart;
+  const delivery = await bagDeliveryEstimate(cart.lines, user?.id ?? null);
+  const total = totals.subtotalCents + delivery.cents;
   return (
     <div className="container-page pt-8 md:pt-12">
       <h1 className="text-center text-[40px] leading-none md:text-left md:text-[56px]">
@@ -191,34 +194,43 @@ export default async function BagPage({ searchParams }: { searchParams: { cancel
             </div>
             <div className="flex justify-between">
               <dt>
-                Shipping{' '}
+                Standard delivery{' '}
                 <span className="text-muted-2">
-                  (from {totals.groups.length} maker{totals.groups.length === 1 ? '' : 's'})
+                  (from {delivery.makers} maker{delivery.makers === 1 ? '' : 's'}, est.)
                 </span>
               </dt>
-              <dd>{totals.shippingCents ? formatPrice(totals.shippingCents) : 'Free'}</dd>
+              <dd data-testid="bag-delivery">
+                {delivery.cents
+                  ? `${delivery.from ? 'from ' : ''}${formatPrice(delivery.cents)}`
+                  : 'Free'}
+              </dd>
             </div>
             <div className="flex justify-between border-t border-ink pt-3 text-[17px] font-normal">
               <dt>Total (AUD, incl. GST)</dt>
-              <dd data-testid="bag-total">{formatPrice(totals.totalCents)}</dd>
+              <dd data-testid="bag-total">{formatPrice(total)}</dd>
             </div>
           </dl>
           <p className="mt-3 text-[13px] text-muted">
             One payment, one order. Each maker ships their piece separately and you’ll get tracking
             for each.
           </p>
-          <div className="mt-5">
-            <CheckoutForm
-              signedInEmail={user?.email ?? null}
-              disabled={cart.hasProblems}
-              total={formatPrice(totals.totalCents)}
-            />
-          </div>
+          {cart.hasProblems ? (
+            <p className="mt-5 bg-error-bg px-3 py-2.5 text-[13px] text-error" role="alert">
+              Some pieces in your bag are no longer available. Remove them to check out.
+            </p>
+          ) : (
+            <Link
+              href="/checkout"
+              className="glass-dark mt-5 flex min-h-[52px] w-full items-center justify-center text-[11px] uppercase tracking-[0.18em] text-ground"
+              data-testid="checkout-button"
+            >
+              Checkout · {formatPrice(total)}
+            </Link>
+          )}
           <InfoPanel className="mt-5 flex gap-3">
             <ShieldIcon width={16} height={16} className="mt-0.5 shrink-0" />
-            <span>
-              Buyer protection: if a piece doesn’t arrive or isn’t as described, we’ll make it
-              right.
+            <span data-testid="bag-reassurance">
+              {PAYMENT_HELD} Faulty or not as described? We’ll make it right.
             </span>
           </InfoPanel>
         </aside>

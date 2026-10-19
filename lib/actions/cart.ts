@@ -6,14 +6,7 @@ import { redirect } from 'next/navigation';
 import { getSessionUser } from '@/lib/auth/session';
 import { rateLimit } from '@/lib/rate-limit';
 import { addToCart, updateCartItem } from '@/lib/services/cart';
-import { createCheckout } from '@/lib/services/checkout';
-import {
-  addToCartSchema,
-  emailSchema,
-  fieldErrors,
-  updateCartSchema,
-  type FormState,
-} from '@/lib/validation';
+import { addToCartSchema, fieldErrors, updateCartSchema, type FormState } from '@/lib/validation';
 import { clientIp, ensureCartSessionId, getCartSessionId, toFormState } from './util';
 
 const MEASURES = ['bust', 'waist', 'hips', 'height'] as const;
@@ -62,29 +55,4 @@ export async function updateCartAction(form: FormData): Promise<void> {
     // Quantity beyond stock: leave the line unchanged; the bag shows the limit.
   }
   revalidatePath('/', 'layout');
-}
-
-export async function checkoutAction(_prev: FormState, form: FormData): Promise<FormState> {
-  const sessionId = getCartSessionId();
-  if (!sessionId) return { ok: false, message: 'Your bag is empty.' };
-  const user = await getSessionUser();
-  const rawEmail = String(form.get('email') ?? '').trim();
-  const email = user?.email ?? (rawEmail ? emailSchema.safeParse(rawEmail) : null);
-  if (email && typeof email !== 'string' && !email.success)
-    return { ok: false, errors: { email: 'Enter a valid email address' } };
-  let url: string;
-  try {
-    await rateLimit('checkout', clientIp());
-    const result = await createCheckout({
-      sessionId,
-      userId: user?.id ?? null,
-      email: typeof email === 'string' ? email : email?.success ? email.data : null,
-      returnsAck: form.get('returnsAck') === 'on',
-      giftNote: String(form.get('giftNote') ?? '').slice(0, 300),
-    });
-    url = result.url;
-  } catch (err) {
-    return toFormState(err);
-  }
-  redirect(url);
 }

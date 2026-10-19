@@ -186,24 +186,20 @@ describe('webhook security & idempotency', () => {
   it('never marks an order paid when Stripe reports it unpaid', async () => {
     const { randomUUID } = await import('node:crypto');
     const { addToCart } = await import('@/lib/services/cart');
-    const { createCheckout } = await import('@/lib/services/checkout');
+    const checkout = await import('@/lib/services/checkout');
+    const { TEST_ADDRESS } = await import('./helpers');
     const { product, variantId } = await pickVariant((p) => p.productType === 'ready_to_ship', 5);
-    const sessionId = randomUUID();
-    await addToCart({ sessionId, userId: null, productId: product.id, variantId, quantity: 1 });
-    const { orderId } = await createCheckout({
-      sessionId,
-      userId: null,
-      email: 'unpaid@buyer.test',
-      returnsAck: true,
-    });
-    const [o] = await sql()<
-      { cs: string }[]
-    >`select stripe_checkout_session_id as cs from public.orders where id = ${orderId}`;
-    // Forged "completed" event without payment: handler re-fetches the session and sees it unpaid.
+    const owner = { sessionId: randomUUID(), userId: null };
+    await addToCart({ ...owner, productId: product.id, variantId, quantity: 1 });
+    const { orderId } = await checkout.openCheckout(owner);
+    await checkout.saveCheckoutDetails(owner, { email: 'unpaid@buyer.test', phone: '' });
+    await checkout.saveCheckoutDelivery(owner, { address: TEST_ADDRESS, speeds: {} });
+    const { paymentIntentId } = await checkout.preparePayment(owner);
+    // Forged "succeeded" event without payment: the handler re-fetches the intent and sees it unpaid.
     await handleStripeEvent(
-      mockStripe.event('checkout.session.completed', {
-        id: o!.cs,
-        payment_status: 'paid',
+      mockStripe.event('payment_intent.succeeded', {
+        id: paymentIntentId,
+        status: 'succeeded',
       }) as never,
     );
     const [after] = await sql()<

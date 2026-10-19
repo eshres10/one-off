@@ -1,5 +1,5 @@
 import Stripe from 'stripe';
-import type { AccountInfo, CheckoutSessionInfo, PaymentsDriver } from './types';
+import type { AccountInfo, CheckoutSessionInfo, PaymentIntentInfo, PaymentsDriver } from './types';
 
 /**
  * Real Stripe driver. Marketplace model: the platform is merchant of record and uses
@@ -82,6 +82,65 @@ export function createStripeDriver(secretKey: string): PaymentsDriver {
       );
       if (!session.url) throw new Error('Stripe did not return a Checkout URL');
       return { id: session.id, url: session.url };
+    },
+
+    async createPaymentIntent(input) {
+      const pi = await stripe.paymentIntents.create(
+        {
+          amount: input.amountCents,
+          currency: 'aud',
+          automatic_payment_methods: { enabled: true },
+          transfer_group: input.orderId,
+          receipt_email: input.email ?? undefined,
+          customer: input.customerId ?? undefined,
+          setup_future_usage:
+            input.customerId && input.savePaymentMethod ? 'on_session' : undefined,
+          description: `One Off order ${input.orderNumber}`,
+          metadata: { order_id: input.orderId, order_number: input.orderNumber },
+        },
+        { idempotencyKey: input.idempotencyKey },
+      );
+      return intentInfo(pi);
+    },
+
+    async updatePaymentIntent(id, input) {
+      const pi = await stripe.paymentIntents.update(id, {
+        amount: input.amountCents,
+        receipt_email: input.email ?? undefined,
+        ...(input.customerId ? { customer: input.customerId } : {}),
+        setup_future_usage: input.customerId && input.savePaymentMethod ? 'on_session' : '',
+        metadata: input.metadata,
+      });
+      return intentInfo(pi);
+    },
+
+    async retrievePaymentIntent(id) {
+      return intentInfo(
+        await stripe.paymentIntents.retrieve(id, { expand: ['latest_charge', 'payment_method'] }),
+      );
+    },
+
+    async createCustomer(input) {
+      const c = await stripe.customers.create(
+        { email: input.email, name: input.name ?? undefined, metadata: { user_id: input.userId } },
+        { idempotencyKey: `customer:${input.userId}` },
+      );
+      return { id: c.id };
+    },
+
+    async listCards(customerId) {
+      const list = await stripe.paymentMethods.list({ customer: customerId, type: 'card' });
+      return list.data.map((pm) => ({
+        id: pm.id,
+        brand: pm.card?.brand ?? 'card',
+        last4: pm.card?.last4 ?? '••••',
+        expMonth: pm.card?.exp_month ?? 0,
+        expYear: pm.card?.exp_year ?? 0,
+      }));
+    },
+
+    async detachPaymentMethod(paymentMethodId) {
+      await stripe.paymentMethods.detach(paymentMethodId);
     },
 
     async createDepositSession(input) {
@@ -256,6 +315,24 @@ export function createStripeDriver(secretKey: string): PaymentsDriver {
     constructEvent(rawBody, signature, secret) {
       return stripe.webhooks.constructEvent(rawBody, signature, secret);
     },
+  };
+}
+
+function intentInfo(pi: Stripe.PaymentIntent): PaymentIntentInfo {
+  const charge = pi.latest_charge;
+  const method = pi.payment_method;
+  return {
+    id: pi.id,
+    clientSecret: pi.client_secret,
+    status: pi.status,
+    amount: pi.amount,
+    currency: pi.currency,
+    chargeId: typeof charge === 'string' ? charge : (charge?.id ?? null),
+    paymentMethodType:
+      typeof method === 'object' && method ? method.type : (pi.payment_method_types[0] ?? null),
+    customerId: typeof pi.customer === 'string' ? pi.customer : (pi.customer?.id ?? null),
+    receiptEmail: pi.receipt_email,
+    metadata: pi.metadata ?? {},
   };
 }
 

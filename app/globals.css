@@ -410,3 +410,38 @@ html {
     display: none;
   }
 }
+
+/* Checkout: a step slides in; Thank you lines fade up one after another (90ms apart). */
+@keyframes checkout-step-in {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes confirm-item-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.checkout-step-in {
+  /* backwards, not both: a finished transform animation would trap position:fixed children. */
+  animation: checkout-step-in 450ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+.confirm-item {
+  animation: confirm-item-in 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .checkout-step-in,
+  .confirm-item {
+    animation: none;
+  }
+}

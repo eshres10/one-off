@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import Stripe from 'stripe';
 import { sql } from '@/lib/db';
 import { env } from '@/lib/env';
-import type { CheckoutSessionInfo, PaymentsDriver } from './types';
+import type { CheckoutSessionInfo, PaymentIntentInfo, PaymentsDriver, SavedCard } from './types';
 
 // Only used for signature helpers; never makes network calls.
 const offline = new Stripe('sk_test_offline_mock', { typescript: true });
@@ -106,6 +106,73 @@ export function createMockDriver(): PaymentsDriver {
       return { id, url: `${env().APP_URL}/dev/checkout/${id}` };
     },
 
+    async createPaymentIntent(input) {
+      const existing = await get<{ id: string }>(`idem:${input.idempotencyKey}`);
+      if (existing) return (await get<PaymentIntentInfo>(existing.id))!;
+      const id = `pi_mock_${randomUUID().replace(/-/g, '').slice(0, 20)}`;
+      const pi: PaymentIntentInfo & { transferGroup: string; savePaymentMethod: boolean } = {
+        id,
+        clientSecret: `${id}_secret_mock`,
+        status: 'requires_payment_method',
+        amount: input.amountCents,
+        currency: 'aud',
+        chargeId: null,
+        paymentMethodType: null,
+        customerId: input.customerId,
+        receiptEmail: input.email,
+        metadata: { order_id: input.orderId, order_number: input.orderNumber },
+        transferGroup: input.orderId,
+        savePaymentMethod: input.savePaymentMethod,
+      };
+      await put(id, 'payment_intent', pi as unknown as Record<string, unknown>);
+      await put(`idem:${input.idempotencyKey}`, 'idempotency', { id });
+      return pi;
+    },
+
+    async updatePaymentIntent(id, input) {
+      const pi = await get<PaymentIntentInfo & Record<string, unknown>>(id);
+      if (!pi) throw new Error(`No such payment intent: ${id}`);
+      if (pi.status === 'succeeded') throw new Error('This payment has already succeeded.');
+      const next = {
+        ...pi,
+        amount: input.amountCents,
+        receiptEmail: input.email,
+        customerId: input.customerId ?? pi.customerId,
+        savePaymentMethod: input.savePaymentMethod,
+        metadata: { ...pi.metadata, ...input.metadata },
+      };
+      await put(id, 'payment_intent', next);
+      return next;
+    },
+
+    async retrievePaymentIntent(id) {
+      const pi = await get<PaymentIntentInfo>(id);
+      if (!pi) throw new Error(`No such payment intent: ${id}`);
+      return pi;
+    },
+
+    async createCustomer(input) {
+      const existing = await get<{ id: string }>(`idem:customer:${input.userId}`);
+      if (existing) return existing;
+      const id = `cus_mock_${randomUUID().replace(/-/g, '').slice(0, 14)}`;
+      await put(id, 'customer', { id, email: input.email, cards: [] });
+      await put(`idem:customer:${input.userId}`, 'idempotency', { id });
+      return { id };
+    },
+
+    async listCards(customerId) {
+      const c = await get<{ cards: SavedCard[] }>(customerId);
+      return c?.cards ?? [];
+    },
+
+    async detachPaymentMethod(paymentMethodId) {
+      await sql()`
+        update public.mock_stripe_objects
+        set data = jsonb_set(data, '{cards}', coalesce((
+          select jsonb_agg(c) from jsonb_array_elements(data->'cards') c where c->>'id' <> ${paymentMethodId}), '[]'::jsonb))
+        where type = 'customer' and data->'cards' @> ${sql().json([{ id: paymentMethodId }] as never)}`;
+    },
+
     async retrieveCheckoutSession(id) {
       const s = await get<CheckoutSessionInfo>(id);
       if (!s) throw new Error(`No such checkout session: ${id}`);
@@ -183,8 +250,8 @@ export function createMockDriver(): PaymentsDriver {
     /** Stripe's AU domestic card rate (1.75% + 30c) on the mock charge's amount. */
     async getChargeFee(chargeId) {
       const [row] = await sql()<{ amount: number | null }[]>`
-        select (data->>'amountTotal')::int as amount from public.mock_stripe_objects
-        where type = 'checkout.session' and data->>'chargeId' = ${chargeId} limit 1`;
+        select coalesce((data->>'amountTotal')::int, (data->>'amount')::int) as amount from public.mock_stripe_objects
+        where type in ('checkout.session', 'payment_intent') and data->>'chargeId' = ${chargeId} limit 1`;
       const amount = row?.amount ?? 0;
       return amount ? Math.round(amount * 0.0175) + 30 : 0;
     },
@@ -215,6 +282,36 @@ export const mockStripe = {
       shippingAddress: { name: details.name, ...details.address, country: 'AU' },
     };
     await put(id, 'checkout.session', paid as unknown as Record<string, unknown>);
+    return paid;
+  },
+
+  /** "Pays" a PaymentIntent: it succeeds with a charge, and a card can be saved to the customer. */
+  async succeedPaymentIntent(id: string, method: string) {
+    const pi = await get<PaymentIntentInfo & { savePaymentMethod?: boolean }>(id);
+    if (!pi) throw new Error('Unknown payment intent');
+    const paid: PaymentIntentInfo = {
+      ...pi,
+      status: 'succeeded',
+      chargeId: `ch_mock_${id.slice(-16)}`,
+      paymentMethodType: method,
+    };
+    await put(id, 'payment_intent', paid as unknown as Record<string, unknown>);
+    if (pi.customerId && pi.savePaymentMethod && method === 'card') {
+      const c = (await get<{ cards: SavedCard[] }>(pi.customerId)) ?? { cards: [] };
+      if (!c.cards.length)
+        await put(pi.customerId, 'customer', {
+          ...c,
+          cards: [
+            {
+              id: `pm_mock_${id.slice(-10)}`,
+              brand: 'visa',
+              last4: '4242',
+              expMonth: 12,
+              expYear: 2030,
+            },
+          ],
+        });
+    }
     return paid;
   },
 
