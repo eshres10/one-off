@@ -2,6 +2,8 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { BRAND } from '@/lib/brand';
 import { WaitlistForm } from '@/components/forms/WaitlistForm';
+import { BoxButtonGroup, boxButtonClass } from '@/components/ui/Button';
+import { Img as Image } from '@/components/ui/Img';
 import { Wordmark } from '@/components/ui/Wordmark';
 
 export const metadata: Metadata = {
@@ -11,6 +13,7 @@ export const metadata: Metadata = {
     title: `${BRAND.name} — opening soon`,
     description: BRAND.tagline,
     url: '/waitlist',
+    images: [{ url: '/waitlist/hero.jpg', width: 1024, height: 1536 }],
   },
 };
 
@@ -39,29 +42,57 @@ export default function WaitlistPage({ searchParams }: { searchParams: SearchPar
   const ref = typeof searchParams.ref === 'string' ? searchParams.ref.slice(0, 60) : undefined;
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="container-page flex items-center justify-between py-6">
-        <Wordmark />
-        <p className="eyebrow">Opening soon</p>
-      </header>
-
       <main id="main" className="flex-1">
-        <section className="container-page grid gap-12 pb-16 pt-8 md:pt-16 lg:grid-cols-[1.1fr_1fr] lg:gap-20 lg:pb-24">
-          <div className="flex flex-col justify-center">
-            <p className="eyebrow">Independent Australian fashion</p>
-            <h1 className="mt-4 max-w-[14ch] text-[48px] leading-[0.95] md:text-[80px]">
-              Pieces nobody else is wearing.
-            </h1>
-            <p className="mt-6 max-w-[46ch] text-[16px] text-muted md:text-[17px]">
-              {BRAND.name} is a new marketplace for original fashion from independent Australian
-              makers. Join the waitlist for first access to the launch collection.
-            </p>
+        <section aria-labelledby="hero-title" className="grid lg:min-h-screen lg:grid-cols-2">
+          <div className="relative flex h-[min(82vh,760px)] min-h-[520px] flex-col justify-between overflow-hidden text-ground lg:h-auto lg:min-h-screen">
+            <Image
+              src="/waitlist/hero.jpg"
+              alt="A model wearing a white flower earring and a pastel silk halter top"
+              fill
+              priority
+              sizes="(min-width: 1024px) 50vw, 100vw"
+              className="object-cover object-[35%_20%]"
+            />
+            <span
+              aria-hidden
+              className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,0,0,0.22),rgba(0,0,0,0)_28%,rgba(0,0,0,0)_40%,rgba(0,0,0,0.62))]"
+            />
+            <header className="bleed relative flex items-center justify-between py-6">
+              <Wordmark />
+              <p className="text-[11px] uppercase tracking-label">Opening soon</p>
+            </header>
+            <div className="bleed relative pb-10 md:pb-14">
+              <p className="text-[11px] uppercase tracking-wide2">Independent Australian fashion</p>
+              <h1
+                id="hero-title"
+                className="mt-4 max-w-[12ch] text-[clamp(52px,7vw,104px)] leading-[0.92]"
+              >
+                Pieces nobody else is wearing.
+              </h1>
+              <BoxButtonGroup className="mt-8 lg:hidden">
+                <a href="#join" className={boxButtonClass('min-w-[200px]')}>
+                  Join the waitlist
+                </a>
+              </BoxButtonGroup>
+            </div>
           </div>
-          <div className="card p-6 md:p-10">
-            <h2 className="text-[28px] leading-tight md:text-[32px]">Get first access</h2>
-            <p className="mb-8 mt-2 text-[14px] text-muted">
-              Shoppers hear first when we open. Makers can apply to launch with us.
-            </p>
-            <WaitlistForm source={ref} />
+          <div
+            id="join"
+            className="flex scroll-mt-4 flex-col justify-center px-gutter py-12 md:py-16 lg:px-16 xl:px-24"
+          >
+            <div className="mx-auto w-full max-w-[480px]">
+              <p className="text-[16px] text-muted md:text-[17px]">
+                {BRAND.name} is a new marketplace for original fashion from independent Australian
+                makers. Join the waitlist for first access to the launch collection.
+              </p>
+              <div className="card mt-8 p-6 md:p-10">
+                <h2 className="text-[28px] leading-tight md:text-[32px]">Get first access</h2>
+                <p className="mb-8 mt-2 text-[14px] text-muted">
+                  Shoppers hear first when we open. Makers can apply to launch with us.
+                </p>
+                <WaitlistForm source={ref} />
+              </div>
+            </div>
           </div>
         </section>
 
