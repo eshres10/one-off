@@ -87,6 +87,12 @@ export default defineConfig({
       dependencies: ['discover'],
       use: { browserName: 'chromium', viewport: { width: 1280, height: 860 } },
     },
+    {
+      name: 'onboarding',
+      testMatch: 'onboarding.spec.ts',
+      dependencies: ['studio'],
+      use: { browserName: 'chromium', viewport: { width: 1280, height: 860 } },
+    },
   ],
   webServer: {
     command:
