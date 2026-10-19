@@ -30,7 +30,8 @@ test.describe.serial('returns policy', () => {
     await page.goto(`/products/${mto.slug}`);
     const row = page.getByTestId('returns-row');
     await expect(row).toBeVisible(); // open by default for made-to-order
-    await expect(row).toContainText(RETURNS.shortCustom);
+    await expect(row).toContainText(RETURNS.short);
+    await expect(row).toContainText(RETURNS.madeToOrder);
     await page.goto(`/products/${ready.slug}`);
     await expect(page.locator('details#returns')).not.toHaveAttribute('open', '');
     await expect(page.getByTestId('returns-row')).toHaveText(

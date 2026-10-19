@@ -9,6 +9,8 @@ import {
   submitApplication,
 } from '@/lib/services/apply';
 import { stripeOnboardingLink } from '@/lib/services/claim';
+import { savePiece } from '@/lib/services/studio-listings';
+import { newPiece } from '@/lib/studio/pieces';
 
 afterAll(closeDb);
 
@@ -78,6 +80,27 @@ describe('maker applications', () => {
     await expect(
       sql()`update public.shop_applications set answers = '{}' where maker_id = ${draft.makerId}`,
     ).rejects.toThrow(/can’t be changed/);
+
+    // Under review: publishing is refused by the publish service (and by RLS, see access.test).
+    await expect(
+      savePiece(
+        { id: user.id, role: 'seller', makerId: draft.makerId },
+        {
+          id: null,
+          draft: newPiece({
+            makerId: draft.makerId,
+            name: 'Saltbush Studio',
+            foundingUntil: null,
+            careDefault: null,
+            dispatchDays: 3,
+            ratesSummary: '',
+            mtoDefaultLead: null,
+            shopLive: false,
+          }),
+          intent: 'publish',
+        },
+      ),
+    ).rejects.toThrow(/once your shop is approved/);
 
     // Under review: no edits, and no Stripe account.
     await expect(saveApplicationLabel(user, label)).rejects.toThrow(/with us/);

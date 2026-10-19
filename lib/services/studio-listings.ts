@@ -238,16 +238,16 @@ export async function savePiece(
   const asAdmin = actor.role === 'admin';
   const makerId = asAdmin ? input.makerId : actor.makerId;
   if (!makerId) throw new UserError('Shop not found.');
-  const p = clean(input.draft);
-  const check = publishChecklist(p);
-  if (input.intent === 'publish' && !check.ready)
-    throw new UserError(`Finish the checklist first (${check.passed}/${check.items.length}).`);
-
   const [shop] = await sql()<{ shopStatus: string }[]>`
     select shop_status from public.makers where id = ${makerId}`;
   if (!shop) throw new UserError('Shop not found.');
   const canPublish = SHOP_CAN_PUBLISH.includes(shop.shopStatus);
   if (input.intent === 'publish' && !asAdmin && !canPublish) throw new UserError(PUBLISH_BLOCKED);
+
+  const p = clean(input.draft);
+  const check = publishChecklist(p);
+  if (input.intent === 'publish' && !check.ready)
+    throw new UserError(`Finish the checklist first (${check.passed}/${check.items.length}).`);
 
   const result = await withUser(actor, async (db) => {
     let id = input.id;

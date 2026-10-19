@@ -127,6 +127,18 @@ export function PieceEditor({
   const [measuresOpen, setMeasuresOpen] = useState(false);
   const [published, setPublished] = useState(false);
   const [shopLive, setShopLive] = useState(shop.shopLive);
+  useEffect(() => {
+    if (!initial.id) return;
+    try {
+      const key = `piece-published:${initial.id}`;
+      if (sessionStorage.getItem(key)) {
+        sessionStorage.removeItem(key);
+        setPublished(true);
+      }
+    } catch {
+      // Storage blocked: show the editor.
+    }
+  }, [initial.id]);
   const [now, setNow] = useState(Date.now());
   const fileInput = useRef<HTMLInputElement>(null);
   const dragFrom = useRef<number | null>(null);
@@ -290,6 +302,12 @@ export function PieceEditor({
       if (mode === 'admin') {
         showToast('Saved to the shop. It goes live when the maker does.');
         return;
+      }
+      // A refresh after saving can remount the editor at its new address; keep the success screen.
+      try {
+        sessionStorage.setItem(`piece-published:${idRef.current}`, '1');
+      } catch {
+        // Storage blocked: the screen still shows until the next remount.
       }
       setPublished(true);
     }
@@ -947,7 +965,13 @@ export function PieceEditor({
               data-testid="save-state"
             >
               <span className="text-ink">
-                {live ? 'Live' : mode === 'admin' ? 'Draft · set up by One Off' : 'Draft'}
+                {live
+                  ? shopLive || mode === 'admin'
+                    ? 'Live'
+                    : 'Published · shows when your shop goes live'
+                  : mode === 'admin'
+                    ? 'Draft · set up by One Off'
+                    : 'Draft'}
               </span>{' '}
               ·{' '}
               {saving ? 'saving…' : dirty && savedAt ? 'unsaved changes' : savedLabel(savedAt, now)}
