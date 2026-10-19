@@ -16,6 +16,8 @@ import {
 import { confirmReceivedAction } from '@/lib/actions/studio-orders';
 import { openOrderThreadAction } from '@/lib/actions/messages';
 import { ReviewForm } from './ReviewForm';
+import { policySnapshot, returnBlocker, returnDeadline } from '@/lib/returns/policy';
+import { RETURN_STATUS_LABEL } from '@/lib/returns/status';
 
 export function StatusDot({
   stage,
@@ -100,42 +102,102 @@ function ProgressLine({ facts }: { facts: ShipmentFacts }) {
   );
 }
 
+const shortDate = (d: Date) =>
+  d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', timeZone: 'Australia/Sydney' });
+
+/**
+ * Change of mind: "Return this piece" on a ready-to-ship piece inside its window, the return's
+ * status once one's started, or "Not returnable for change of mind" on made-to-order and
+ * one-of-one pieces.
+ */
+function ReturnRow({ item, orderNumber }: { item: BuyerOrderItem; orderNumber: string }) {
+  const href = `/account/orders/${orderNumber}/return/${item.id}`;
+  const live =
+    item.returnId && item.returnStatus && !['cancelled', 'rejected'].includes(item.returnStatus);
+  if (live)
+    return (
+      <Link
+        href={href}
+        className="mt-3 inline-block text-[13px] underline underline-offset-[3px]"
+        data-testid="return-status"
+      >
+        Return {item.returnNumber} · {RETURN_STATUS_LABEL[item.returnStatus!]}
+      </Link>
+    );
+  const policy = item.returnPolicy ?? policySnapshot(item.productType);
+  const deliveredAt = item.deliveredAt ? new Date(item.deliveredAt) : null;
+  const blocker = returnBlocker({
+    returnPolicy: policy,
+    productType: item.productType,
+    deliveredAt,
+    hasReturn: false,
+    hasOpenCase:
+      !!item.claimStatus && ['open', 'seller_responded', 'escalated'].includes(item.claimStatus),
+    refunded: item.refundedCents >= item.lineTotalCents,
+  });
+  if (!blocker && deliveredAt)
+    return (
+      <div className="mt-3" data-testid="return-offer">
+        <Link
+          href={href}
+          className="inline-flex min-h-[44px] items-center border border-ink px-5 text-[11px] uppercase tracking-[0.18em] hover:bg-ink hover:text-ground"
+          data-testid="return-piece"
+        >
+          Return this piece
+        </Link>
+        <p className="mt-1.5 text-[12px] text-muted">
+          Ready to ship · return by {shortDate(returnDeadline(deliveredAt, policy.windowDays ?? 0))}
+        </p>
+      </div>
+    );
+  if (!policy.changeOfMind && isDelivered(item.fulfilmentStatus))
+    return (
+      <p className="mt-2 text-[12px] text-muted" data-testid="not-returnable">
+        Not returnable for change of mind
+      </p>
+    );
+  return null;
+}
+
 function ItemActions({ item, orderNumber }: { item: BuyerOrderItem; orderNumber: string }) {
   const delivered = isDelivered(item.fulfilmentStatus);
   return (
-    <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-[13px]">
-      {item.claimId && item.claimStatus ? (
-        <Link
-          href={`/account/claims/${item.claimId}`}
-          className="underline underline-offset-[3px]"
-          data-testid="item-claim-link"
-        >
-          Problem reported · {CLAIM_STATUS_LABEL[item.claimStatus]}
-        </Link>
-      ) : canReportProblem(item.deliveredAt ? new Date(item.deliveredAt) : null) ? (
-        <Link
-          href={`/account/orders/${orderNumber}/report/${item.id}`}
-          className="underline underline-offset-[3px]"
-          data-testid="report-problem"
-        >
-          Report a problem
-        </Link>
-      ) : delivered ? (
-        <Link
-          href="/help/contact"
-          className="text-muted underline underline-offset-[3px]"
-          data-testid="contact-us"
-        >
-          Need help? Contact us
-        </Link>
-      ) : null}
-      {delivered &&
-        (item.reviewed ? (
-          <span className="text-muted">Reviewed, thank you</span>
-        ) : (
-          <ReviewForm orderItemId={item.id} productTitle={item.productTitle} />
-        ))}
-    </div>
+    <>
+      <ReturnRow item={item} orderNumber={orderNumber} />
+      <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-[13px]">
+        {item.claimId && item.claimStatus ? (
+          <Link
+            href={`/account/claims/${item.claimId}`}
+            className="underline underline-offset-[3px]"
+            data-testid="item-claim-link"
+          >
+            Problem reported · {CLAIM_STATUS_LABEL[item.claimStatus]}
+          </Link>
+        ) : canReportProblem(item.deliveredAt ? new Date(item.deliveredAt) : null) ? (
+          <Link
+            href={`/account/orders/${orderNumber}/report/${item.id}`}
+            className="underline underline-offset-[3px]"
+            data-testid="report-problem"
+          >
+            Report a problem
+          </Link>
+        ) : delivered ? (
+          <Link
+            href="/help/contact"
+            className="text-muted underline underline-offset-[3px]"
+            data-testid="contact-us"
+          >
+            Need help? Contact us
+          </Link>
+        ) : null}
+        {delivered &&
+          (item.reviewed ? (
+            <span className="text-muted">Reviewed, thank you</span>
+          ) : (
+            <ReviewForm orderItemId={item.id} productTitle={item.productTitle} />
+          ))}
+      </div>
+    </>
   );
 }
 

@@ -1,3 +1,4 @@
+import { processReturns } from './returns';
 import { reportError } from '@/lib/log';
 import { SITE } from '@/lib/site/config';
 import { applicationsDigest } from './applications';
@@ -32,6 +33,7 @@ export async function runDailyJobs(now: Date) {
     ['escalatedClaims', () => escalateOverdueClaims(now)],
     ['carrierDelivered', () => pollCarrierDeliveries()],
     ['autoDelivered', () => autoMarkDelivered(now)],
+    ['returns', () => processReturns(now)],
     ['transfers', () => releaseDueTransfers(now)],
     ['holidays', () => holidayTransitions(now)],
     ['restockAlerts', () => sendRestockAlerts()],

@@ -816,4 +816,87 @@ export const emails = {
       `\n\nDetails: ${url(`/account/claims/${claim.id}`)}\n\nNot happy with the outcome? Reply to this email. ${RETURNS.aclNote}${sign}`,
     related: { type: 'return_claim', id: claim.id },
   }),
+
+  returnStartedBuyer: (
+    to: string,
+    r: {
+      id: string;
+      number: string;
+      orderNumber: string;
+      itemId: string;
+      productTitle: string;
+      makerName: string;
+      address: string | null;
+      sendWithinDays: number;
+      confirmDays: number;
+    },
+  ): EmailMessage => ({
+    to,
+    template: 'return_started',
+    subject: `Return ${r.number} started: ${r.productTitle}`,
+    text:
+      `You’ve started a return for ${r.productTitle}.\n\n` +
+      (r.address
+        ? `Post it to:\n${r.address}\n\n`
+        : `${r.makerName} will message you their return address shortly.\n\n`) +
+      `1. Send it back with tracking within ${r.sendWithinDays} days, unworn, with tags and original packaging.\n` +
+      `2. ${r.makerName} confirms it’s arrived (within ${r.confirmDays} business days).\n` +
+      `3. You’re refunded the item price to your original payment method. Original shipping isn’t refunded.\n\n` +
+      `Add tracking: ${url(`/account/orders/${r.orderNumber}/return/${r.itemId}`)}${sign}`,
+    related: { type: 'return', id: r.id },
+  }),
+
+  returnRefundedBuyer: (
+    to: string,
+    r: { id: string; number: string; productTitle: string; amountCents: number },
+  ): EmailMessage => ({
+    to,
+    template: 'return_refunded',
+    subject: `Refund on its way: ${r.productTitle}`,
+    text:
+      `Your return ${r.number} has arrived, and ${formatPrice(r.amountCents)} is on its way back to how you paid. ` +
+      `Banks usually take 5–10 business days to show it.${sign}`,
+    related: { type: 'return', id: r.id },
+  }),
+
+  returnIncomingMaker: (
+    to: string,
+    r: {
+      id: string;
+      number: string;
+      productTitle: string;
+      variant: string;
+      buyerFirstName: string;
+      tracking: string | null;
+      hasAddress: boolean;
+      confirmDays: number;
+    },
+  ): EmailMessage => ({
+    to,
+    template: 'return_incoming',
+    subject: `A return is on its way to you: ${r.productTitle}`,
+    text:
+      `${r.buyerFirstName} is returning ${r.productTitle} (${r.variant}), a ready-to-ship piece, within the 14-day change-of-mind window.\n\n` +
+      (r.tracking ? `Tracking: ${r.tracking}\n\n` : 'They’ll add tracking when they post it.\n\n') +
+      (r.hasAddress
+        ? ''
+        : `You haven’t added a return address yet. Add one in Shop settings → Returns & care, or message them yours.\n\n`) +
+      `When it arrives, mark it received and they’re refunded the item price. If it isn’t unworn with tags, tell us instead and we’ll decide. ` +
+      `If tracking shows it delivered and you haven’t confirmed within ${r.confirmDays} business days, it’s refunded automatically.\n\n` +
+      `Returns: ${url('/studio/orders?tab=returns')}${sign}`,
+    related: { type: 'return', id: r.id },
+  }),
+
+  returnAutoRefundedMaker: (
+    to: string,
+    r: { id: string; number: string; productTitle: string; amountCents: number },
+  ): EmailMessage => ({
+    to,
+    template: 'return_auto_refunded',
+    subject: `Return ${r.number} refunded automatically`,
+    text:
+      `Tracking showed ${r.productTitle} delivered back to you, and it wasn’t confirmed in time, so the buyer has been refunded ${formatPrice(r.amountCents)}. ` +
+      `If something’s wrong with it, reply to this email and we’ll look into it.\n\n${url('/studio/orders?tab=returns')}${sign}`,
+    related: { type: 'return', id: r.id },
+  }),
 };

@@ -397,7 +397,11 @@ export async function refundOrderItem(input: {
   actorUserId: string | null;
   /** The case this refund settles, for the maker adjustment if the reversal fails. */
   claimId?: string;
-}): Promise<{ refundId: string; amountCents: number }> {
+  /** The change-of-mind return this refund settles (same purpose). */
+  returnId?: string;
+  /** Shown on the maker's payouts when the amount comes off a later payout. */
+  adjustmentReason?: string;
+}): Promise<{ refundId: string; amountCents: number; reversal: 'none' | 'reversed' | 'deferred' }> {
   const [item] = await sql()<
     {
       id: string;
@@ -428,21 +432,26 @@ export async function refundOrderItem(input: {
     idempotencyKey: `refund:${item.id}:${item.refundedCents}:${amount}`,
   });
 
-  // Claw back the maker's proportional share of what they were transferred for this item.
+  // Claw back the maker's proportional share of what they were transferred for this item. That's
+  // their net (item price less One Off's commission), so the commission is refunded to them.
+  let reversalOutcome: 'none' | 'reversed' | 'deferred' = 'none';
   if (item.transferId) {
     const reversal = Math.round((amount * item.sellerNetCents) / item.lineTotalCents);
     if (reversal > 0) {
       try {
         await payments().reverseTransfer(item.transferId, reversal, `reversal:${refund.id}`);
         await sql()`update public.fulfilments set payout_status = 'reversed' where id = ${item.fulfilmentId}`;
+        reversalOutcome = 'reversed';
       } catch (err) {
         // Usually not enough balance on the connected account: take it from the next payouts.
         reportError(err, { where: 'reverseTransfer', transferId: item.transferId });
         await sql()`
-          insert into public.maker_adjustments (maker_id, amount_cents, reason, claim_id, fulfilment_id)
-          select f.maker_id, ${reversal}, ${`Refund ${refund.id} couldn’t be reversed from the transfer`},
-            ${input.claimId ?? null}, f.id
+          insert into public.maker_adjustments (maker_id, amount_cents, reason, claim_id, fulfilment_id, return_id)
+          select f.maker_id, ${reversal},
+            ${input.adjustmentReason ?? `Refund ${refund.id} couldn’t be reversed from the transfer`},
+            ${input.claimId ?? null}, f.id, ${input.returnId ?? null}
           from public.fulfilments f where f.id = ${item.fulfilmentId}`;
+        reversalOutcome = 'deferred';
         await audit(
           'transfer.reversal_deferred',
           { type: 'fulfilment', id: item.fulfilmentId },
@@ -481,7 +490,7 @@ export async function refundOrderItem(input: {
       db,
     );
   });
-  return { refundId: refund.id, amountCents: amount };
+  return { refundId: refund.id, amountCents: amount, reversal: reversalOutcome };
 }
 
 /** Purchases count most towards a shopper's taste (+3 per piece). */

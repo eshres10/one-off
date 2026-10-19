@@ -16,6 +16,7 @@ export const LIMITS = {
   checkout: { windowSeconds: 60, max: 10 },
   upload: { windowSeconds: 300, max: 30 },
   claim: { windowSeconds: 86_400, max: 10 },
+  returnStart: { windowSeconds: 86_400, max: 10 },
   question: { windowSeconds: 3600, max: 10 },
   waitlist: { windowSeconds: 3600, max: 10 },
   clientError: { windowSeconds: 300, max: 20 },

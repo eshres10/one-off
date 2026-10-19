@@ -68,6 +68,8 @@ export const CLAIM_REASONS = [
   // Older reports may carry these.
   { value: 'damaged', label: 'Damaged on arrival' },
   { value: 'wrong_item', label: 'Wrong item, size or colour sent' },
+  // Opened by a maker from a change-of-mind return that came back worn or damaged.
+  { value: 'return_condition', label: 'Returned piece isn’t as it was sent' },
 ] as const;
 
 /** What "Report a problem" offers, in order. "Wasn't made to my measurements" is made to order only. */

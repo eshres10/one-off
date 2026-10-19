@@ -30,6 +30,7 @@ import {
 } from '@/lib/domain/claims';
 import { verifyClaimPhotos } from '@/lib/claim-photos';
 import { refundOrderItem } from './webhook';
+import { settleDisputedReturn } from './returns';
 import { openOrderThread } from './messaging';
 import { reportError } from '@/lib/log';
 import { timeIn } from '@/lib/studio/format';
@@ -431,6 +432,13 @@ export async function resolveClaim(
       and f.payout_status = 'paused'
       and not exists (select 1 from public.return_claims c
         where c.fulfilment_id = f.id and c.paused_payout and c.status in ('open', 'seller_responded', 'escalated'))`;
+  // A case opened from a change-of-mind return settles that return too.
+  await settleDisputedReturn(
+    claimId,
+    input.resolution === 'refund' ? 'refunded' : 'rejected',
+    refundCents,
+    note,
+  );
   if (input.internalNote && isAdmin) await addCaseNote(actor, claimId, input.internalNote);
   const [buyer] = await sql()<{ email: string }[]>`
     select o.buyer_email as email from public.orders o where o.id = ${claim.orderId}`;

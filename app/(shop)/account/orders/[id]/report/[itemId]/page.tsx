@@ -6,6 +6,7 @@ import { RETURNS, isCustomType } from '@/lib/content/returns';
 import { getReturnPolicy } from '@/lib/returns/policy';
 import { canReportProblem } from '@/lib/domain/claims';
 import { getReportableItem } from '@/lib/services/claims';
+import { blockerFor, getReturnableItem } from '@/lib/services/returns';
 import { ReportFlow } from '@/components/claims/ReportFlow';
 import OrderPage from '../../page';
 
@@ -24,6 +25,7 @@ export default async function ReportProblemPage({
   if (!item || (item.orderId !== ref && item.orderNumber.toUpperCase() !== ref.toUpperCase()))
     notFound();
   const open = canReportProblem(item.deliveredAt);
+  const returnable = await getReturnableItem(user, item.id);
   const backHref = `/account/orders/${item.orderNumber}`;
   return (
     <>
@@ -40,7 +42,10 @@ export default async function ReportProblemPage({
           makerName: item.makerName,
           isMto: isCustomType(item.productType),
           returnSummary: getReturnPolicy(item.productType).summary,
-          returnHref: null,
+          returnHref:
+            returnable && !blockerFor(returnable)
+              ? `/account/orders/${item.orderNumber}/return/${item.id}`
+              : null,
         }}
         closed={
           open ? undefined : (

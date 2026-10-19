@@ -3,6 +3,8 @@ import { withUser } from '@/lib/db';
 import type { SessionUser } from '@/lib/auth/session';
 import type { FulfilmentStatus, ProductType } from '@/lib/domain/types';
 import type { ClaimStatus } from '@/lib/domain/claims';
+import type { StoredReturnPolicy } from '@/lib/returns/policy';
+import type { ReturnStatus } from '@/lib/returns/status';
 
 type Actor = Pick<SessionUser, 'id' | 'role'>;
 
@@ -21,6 +23,13 @@ export interface BuyerOrderItem {
   deliveredAt: Date | null;
   claimId: string | null;
   claimStatus: ClaimStatus | null;
+  refundedCents: number;
+  /** The returns policy the piece was sold under (copied at checkout). */
+  returnPolicy: StoredReturnPolicy | null;
+  /** Its latest change-of-mind return, if any. */
+  returnId: string | null;
+  returnNumber: string | null;
+  returnStatus: ReturnStatus | null;
 }
 
 export interface BuyerFulfilment {
@@ -88,7 +97,8 @@ export async function getBuyerOrders(user: Actor, orderRef?: string): Promise<Bu
       select oi.id, oi.product_id, oi.fulfilment_id, oi.product_title, p.slug as product_slug, oi.variant_label, oi.quantity, oi.line_total_cents,
              oi.image_url, oi.product_type, oi.fulfilment_status,
              exists (select 1 from public.reviews r where r.order_item_id = oi.id) as reviewed,
-             coalesce(oi.delivered_at, f.delivered_at) as delivered_at, c.id as claim_id, c.status as claim_status
+             coalesce(oi.delivered_at, f.delivered_at) as delivered_at, c.id as claim_id, c.status as claim_status,
+             oi.refunded_cents, oi.return_policy, rt.id as return_id, rt.number as return_number, rt.status as return_status
       from public.order_items oi
       join public.fulfilments f on f.id = oi.fulfilment_id
       left join public.products p on p.id = oi.product_id
@@ -96,6 +106,10 @@ export async function getBuyerOrders(user: Actor, orderRef?: string): Promise<Bu
         select rc.id, rc.status from public.return_claims rc
         where rc.order_item_id = oi.id order by rc.created_at desc limit 1
       ) c on true
+      left join lateral (
+        select r.id, r.number, r.status from public.returns r
+        where r.order_item_id = oi.id order by r.requested_at desc limit 1
+      ) rt on true
       where oi.order_id in ${db(ids)}`;
     return orders.map((o) => ({
       ...o,
