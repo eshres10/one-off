@@ -126,6 +126,7 @@ export function PieceEditor({
   const [uploading, setUploading] = useState(0);
   const [measuresOpen, setMeasuresOpen] = useState(false);
   const [published, setPublished] = useState(false);
+  const [shopLive, setShopLive] = useState(shop.shopLive);
   const [now, setNow] = useState(Date.now());
   const fileInput = useRef<HTMLInputElement>(null);
   const dragFrom = useRef<number | null>(null);
@@ -169,6 +170,13 @@ export function PieceEditor({
               setSavedAt(Date.now());
               setStatus(res.result.status);
               setSlug(res.result.slug);
+              setShopLive(res.result.shopLive);
+              // This piece took an approved shop live: show the "You're live" screen.
+              if (res.result.wentLive && mode !== 'admin') {
+                window.location.assign('/studio/setup?live=1');
+                resolve(true);
+                return;
+              }
               if (!idRef.current) {
                 idRef.current = res.result.id;
                 setId(res.result.id);
@@ -294,15 +302,20 @@ export function PieceEditor({
       <div className="mx-auto max-w-md py-16 text-center" data-testid="piece-live">
         <p className="text-[11px] uppercase tracking-label text-muted-2">{shop.name}</p>
         <h1 className="mt-3 text-[56px] leading-none">
-          {status === 'approved' ? 'It’s live' : 'Ready to go'}
+          {status === 'approved' ? (shopLive ? 'It’s live' : 'Published') : 'Ready to go'}
         </h1>
         <p className="mt-3 text-[14px] text-muted">
           {status === 'approved'
-            ? `${draft.title} is in your shop now.`
-            : status === 'pending'
-              ? `${draft.title} goes live with your shop as soon as your payouts are connected.`
-              : `${draft.title} goes live with your shop.`}
+            ? shopLive
+              ? `${draft.title} is in your shop now.`
+              : `${draft.title} shows in your shop once your shop goes live.`
+            : `${draft.title} goes live with your shop.`}
         </p>
+        {status === 'approved' && !shopLive && (
+          <a href="/studio/setup" className="link mt-3 inline-block text-[13px]">
+            Finish setting up
+          </a>
+        )}
         {draft.images[0] && (
           <div className="relative mx-auto mt-8 aspect-4/5 w-48 overflow-hidden bg-stone">
             <Image src={draft.images[0].url} alt="" fill sizes="192px" className="object-cover" />
@@ -322,7 +335,7 @@ export function PieceEditor({
           >
             Add another piece
           </a>
-          {status === 'approved' && (
+          {status === 'approved' && shopLive && (
             <a href={`/products/${slug}`} className="link mt-2 text-[13px]">
               See it in your shop
             </a>
@@ -934,13 +947,7 @@ export function PieceEditor({
               data-testid="save-state"
             >
               <span className="text-ink">
-                {live
-                  ? 'Live'
-                  : status === 'pending'
-                    ? 'Ready · goes live with your shop'
-                    : mode === 'admin'
-                      ? 'Draft · set up by One Off'
-                      : 'Draft'}
+                {live ? 'Live' : mode === 'admin' ? 'Draft · set up by One Off' : 'Draft'}
               </span>{' '}
               ·{' '}
               {saving ? 'saving…' : dirty && savedAt ? 'unsaved changes' : savedLabel(savedAt, now)}

@@ -16,6 +16,7 @@ import {
 } from '@/lib/services/claim';
 import { getPiece } from '@/lib/services/studio-listings';
 import { sellerAgreementHtml } from '@/lib/studio/agreement';
+import { dealTerms } from '@/lib/studio/deal';
 import { TERMS } from '@/lib/studio/terms';
 import { goToStepAction, stripeLinkAction } from '@/lib/actions/claim';
 import { logoutAction } from '@/lib/actions/auth';
@@ -106,7 +107,11 @@ async function Welcome({ shop, children }: { shop: ClaimShop; children: React.Re
         </ul>
         <ul className="space-y-3 text-[14px]" role="list">
           {[
-            `${TERMS.foundingCommissionPct}% commission for your first ${TERMS.foundingMonths} months.`,
+            ...(shop.foundingNumber
+              ? [
+                  `${TERMS.foundingCommissionPct}% commission for your first ${TERMS.foundingMonths} months.`,
+                ]
+              : []),
             `Paid every ${TERMS.payoutWeekday[0]!.toUpperCase()}${TERMS.payoutWeekday.slice(1)}, straight to your bank.`,
             'You make it, we bring the buyers. Your photos stay yours.',
           ].map((b) => (
@@ -283,24 +288,7 @@ export default async function ClaimPage({
 
   if (step === 2) {
     const html = await sellerAgreementHtml();
-    const standard = TERMS.standardCommissionPct;
-    const lines = [
-      [
-        `${TERMS.foundingCommissionPct}% commission for ${TERMS.foundingMonths} months`,
-        `As a founding maker. Then ${standard}% of each piece’s price, never on shipping.`,
-      ],
-      [
-        'Paid weekly',
-        `Each order is released ${TERMS.releaseDaysAfterDelivery} days after delivery and paid out every ${TERMS.payoutWeekday[0]!.toUpperCase()}${TERMS.payoutWeekday.slice(1)}.`,
-      ],
-      ['You make and ship', 'You send each order by its ship-by date and add tracking.'],
-      [
-        'Faulty means fixed',
-        'No change-of-mind returns. Faulty or not as described: you repair, replace or refund.',
-      ],
-      ['Your photos stay yours', 'We show them on One Off and to promote your pieces.'],
-      ['Leave any time', 'Close your shop whenever you like; open orders still get sent.'],
-    ];
+    const lines = dealTerms(shop.foundingNumber);
     return (
       <Frame step={2}>
         <ul
@@ -408,8 +396,10 @@ export default async function ClaimPage({
     return (
       <Frame step={5}>
         <p className="text-[15px] leading-relaxed">
-          {kept} {kept === 1 ? 'piece goes' : 'pieces go'} live with your shop, and your{' '}
-          {TERMS.foundingMonths} months at {TERMS.foundingCommissionPct}% commission start today.
+          {kept} {kept === 1 ? 'piece goes' : 'pieces go'} live with your shop
+          {shop.foundingNumber
+            ? `, and your ${TERMS.foundingMonths} months at ${TERMS.foundingCommissionPct}% commission start today.`
+            : '.'}
         </p>
         {!shop.chargesEnabled && (
           <p className="mt-3 text-[13px] text-muted">

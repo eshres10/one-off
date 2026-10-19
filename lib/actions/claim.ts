@@ -19,6 +19,9 @@ import type { FormState } from '@/lib/validation';
 import { clientIp, toFormState } from './util';
 
 const next = (step: number) => redirect(`/claim/continue?step=${step}`);
+/** The agreement and shipping steps are shared with /studio/setup (steps 1 and 3 there). */
+const after = (form: FormData, claimStep: number, setupStep: number) =>
+  form.get('flow') === 'setup' ? redirect(`/studio/setup?step=${setupStep}`) : next(claimStep);
 
 /** "Take a look": claims the shop for the signed-in maker and moves on to checking pieces. */
 export async function claimAction(_prev: FormState, form: FormData): Promise<FormState> {
@@ -71,7 +74,7 @@ export async function agreeAction(_prev: FormState, form: FormData): Promise<For
   } catch (err) {
     return toFormState(err);
   }
-  next(3);
+  after(form, 3, 2);
   return { ok: true };
 }
 
@@ -98,7 +101,7 @@ export async function shippingAction(_prev: FormState, form: FormData): Promise<
   } catch (err) {
     return toFormState(err);
   }
-  next(5);
+  after(form, 5, 4);
   return { ok: true };
 }
 

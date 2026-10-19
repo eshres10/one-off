@@ -1,5 +1,6 @@
 import { requireSeller } from '@/lib/auth/session';
 import { getStudioCounts, getStudioShop } from '@/lib/queries/studio';
+import { setupProgress } from '@/lib/queries/setup';
 import { tourDue } from '@/lib/queries/tour';
 import { StudioShell } from '@/components/studio/StudioShell';
 import { HelpButton } from '@/components/studio/HelpButton';
@@ -14,8 +15,9 @@ export default async function StudioLayout({ children }: { children: React.React
     getStudioCounts(seller.makerId),
     tourDue(seller.id, 'studio'),
   ]);
+  const setup = shop.shopStatus === 'approved' ? await setupProgress(seller.makerId) : null;
   return (
-    <StudioShell shop={shop} counts={counts}>
+    <StudioShell shop={shop} counts={counts} setup={setup}>
       {children}
       <HelpButton />
       {tour && <StudioTour />}

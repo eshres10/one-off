@@ -50,12 +50,22 @@ export function TakeALook({ token }: { token: string }) {
 }
 
 /** Step 2: the agreement sheet, the tick box, and "Agree and continue". */
-export function AgreeForm({ agreementHtml }: { agreementHtml: string }) {
+/** Which flow a shared step belongs to: the invite claim, or setup after an approved application. */
+export type ShopFlow = 'claim' | 'setup';
+
+export function AgreeForm({
+  agreementHtml,
+  flow = 'claim',
+}: {
+  agreementHtml: string;
+  flow?: ShopFlow;
+}) {
   const [state, action] = useFormState<FormState, FormData>(agreeAction, undefined);
   const [ticked, setTicked] = useState(false);
   const [open, setOpen] = useState(false);
   return (
     <form action={action} className="space-y-5">
+      <input type="hidden" name="flow" value={flow} />
       <button
         type="button"
         onClick={() => setOpen(true)}
@@ -135,7 +145,9 @@ export function ShippingForm({
   mtoLead,
   dispatchOptions,
   leadOptions,
+  flow = 'claim',
 }: {
+  flow?: ShopFlow;
   standard: number;
   express: number | null;
   freeOver: boolean;
@@ -148,6 +160,7 @@ export function ShippingForm({
   const [free, setFree] = useState(freeOver);
   return (
     <form action={action} className="space-y-6" data-testid="shipping-form">
+      <input type="hidden" name="flow" value={flow} />
       <fieldset>
         <legend className="label">Australia-wide shipping</legend>
         <div className="grid grid-cols-2 gap-3">

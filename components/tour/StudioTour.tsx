@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { completeTourAction } from '@/lib/actions/tour';
 import { GUIDES } from '@/lib/studio/guide-list';
 import { TERMS } from '@/lib/studio/terms';
@@ -45,13 +46,15 @@ const STOPS: TourStop[] = [
 
 /** A maker's first desktop visit to Studio after claiming or setting up their shop. */
 export function StudioTour() {
+  // Only on the Studio home: setup, the editor and the rest stay uninterrupted.
+  if (usePathname() !== '/studio') return null;
   return (
     <Tour
       testId="studio-tour"
       onComplete={() => completeTourAction('studio')}
       welcome={{
         title: 'Welcome to Studio',
-        subtitle: 'Your shop is live. Let’s show you around.',
+        subtitle: 'Let’s show you around.',
         intro: 'Everything you need to list, ship and get paid lives here.',
         tiles: [
           { title: 'List', body: 'Photos, a price and your sizes.' },

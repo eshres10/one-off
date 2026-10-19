@@ -28,10 +28,13 @@ function Avatar({ shop, size }: { shop: StudioShop; size: number }) {
 export function StudioShell({
   shop,
   counts,
+  setup = null,
   children,
 }: {
   shop: StudioShop;
   counts: StudioCounts;
+  /** An approved shop that isn't live yet: how much of setup is done. */
+  setup?: { done: number; total: number } | null;
   children: ReactNode;
 }) {
   return (
@@ -71,6 +74,15 @@ export function StudioShell({
           </div>
         </div>
       </header>
+      {setup && (
+        <Link
+          href="/studio/setup"
+          className="block bg-stone px-4 py-2.5 text-center text-[12px] hover:underline"
+          data-testid="setup-banner"
+        >
+          Finish setting up to go live · {setup.done} of {setup.total} done →
+        </Link>
+      )}
       {shop.shopStatus === 'holiday' && (
         <p className="bg-stone px-4 py-2 text-center text-[12px]" role="status">
           Holiday mode is on. Buyers see “Away”{' '}

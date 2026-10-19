@@ -219,6 +219,10 @@ export interface SaveResult {
   status: string;
   /** The piece was published (or stayed live) with this save. */
   live: boolean;
+  /** The shop is live, so buyers can see published pieces. */
+  shopLive: boolean;
+  /** This save took an approved shop live. */
+  wentLive: boolean;
 }
 
 /**
@@ -288,8 +292,16 @@ export async function savePiece(
       { asAdmin },
       actor.id,
     );
-  if (result.status === 'approved' && shop.shopStatus === 'approved') await goLiveIfReady(makerId);
-  return { ...result, live: result.status === 'approved' };
+  const wentLive =
+    result.status === 'approved' &&
+    shop.shopStatus === 'approved' &&
+    (await goLiveIfReady(makerId));
+  return {
+    ...result,
+    live: result.status === 'approved',
+    shopLive: wentLive || shop.shopStatus === 'live' || shop.shopStatus === 'holiday',
+    wentLive,
+  };
 }
 
 /** Live/Hidden switch on the listings grid. Hidden pieces stay in Studio, off the shop. */
