@@ -10,7 +10,7 @@ export default function MockConnectPage({
   searchParams,
 }: {
   params: { id: string };
-  searchParams: { dashboard?: string };
+  searchParams: { dashboard?: string; return?: string };
 }) {
   if (!mockPaymentsReachable()) notFound();
   return (
@@ -36,9 +36,11 @@ export default function MockConnectPage({
             Stripe would collect your ABN, identity and bank details here.
           </p>
           <input type="hidden" name="accountId" value={params.id} />
+          <input type="hidden" name="returnUrl" value={searchParams.return ?? ''} />
           <button
             type="submit"
             className="h-11 w-full rounded-md bg-[#635BFF] font-medium text-white"
+            data-testid="mock-connect-complete"
           >
             Complete test onboarding
           </button>

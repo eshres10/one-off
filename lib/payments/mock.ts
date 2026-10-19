@@ -150,8 +150,11 @@ export function createMockDriver(): PaymentsDriver {
       return { id };
     },
 
-    async createAccountLink(accountId) {
-      return { url: `${env().APP_URL}/dev/connect/${accountId}` };
+    async createAccountLink(accountId, _refreshUrl, returnUrl) {
+      const back = returnUrl.startsWith(env().APP_URL) ? returnUrl.slice(env().APP_URL.length) : '';
+      return {
+        url: `${env().APP_URL}/dev/connect/${accountId}${back ? `?return=${encodeURIComponent(back)}` : ''}`,
+      };
     },
 
     async createLoginLink(accountId) {

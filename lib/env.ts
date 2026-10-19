@@ -55,6 +55,8 @@ const schema = z
       .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
       .default('info'),
     SENTRY_DSN: z.string().optional(),
+    /** Social sign-in through Supabase, e.g. "google,apple" (each enabled in Supabase Auth). */
+    AUTH_OAUTH_PROVIDERS: z.string().default(''),
     /** Carrier tracking (optional): with keys set, delivery is read from the carrier. */
     AUSPOST_API_KEY: z.string().optional(),
     AUSPOST_API_PASSWORD: z.string().optional(),

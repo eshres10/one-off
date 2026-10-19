@@ -84,9 +84,15 @@ export async function mockCompleteOnboardingAction(form: FormData) {
         details_submitted: true,
         charges_enabled: true,
         payouts_enabled: true,
+        external_accounts: {
+          object: 'list',
+          data: [{ object: 'bank_account', bank_name: 'Commonwealth Bank', last4: '4821' }],
+        },
       },
       accountId,
     ),
   );
-  redirect('/studio/payouts?onboarded=1');
+  // Back where Stripe would send the maker (the claim flow or payouts).
+  const back = String(form.get('returnUrl') ?? '');
+  redirect(back.startsWith('/') && !back.startsWith('//') ? back : '/studio/payouts?onboarded=1');
 }

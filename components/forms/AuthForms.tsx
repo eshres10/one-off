@@ -9,8 +9,22 @@ import { Field, FormAlert, Input } from '@/components/ui/Field';
 
 type Mode = 'password' | 'magic' | 'signup';
 
-export function AuthForms({ next, magicLinks = true }: { next: string; magicLinks?: boolean }) {
-  const [mode, setMode] = useState<Mode>('password');
+export function AuthForms({
+  next,
+  magicLinks = true,
+  defaultEmail,
+  initialMode = 'password',
+  oauth = [],
+}: {
+  next: string;
+  magicLinks?: boolean;
+  /** Prefilled email (e.g. from a shop invite). */
+  defaultEmail?: string;
+  initialMode?: Mode;
+  /** Social sign-in buttons to show ("google", "apple"). */
+  oauth?: string[];
+}) {
+  const [mode, setMode] = useState<Mode>(initialMode);
   const [loginState, login] = useFormState<FormState, FormData>(loginAction, undefined);
   const [magicState, magic] = useFormState<FormState, FormData>(magicLinkAction, undefined);
   const [signupState, signup] = useFormState<FormState, FormData>(signupAction, undefined);
@@ -45,6 +59,19 @@ export function AuthForms({ next, magicLinks = true }: { next: string; magicLink
 
   return (
     <div>
+      {oauth.length > 0 && (
+        <div className="mb-6 grid gap-2">
+          {oauth.map((p) => (
+            <a
+              key={p}
+              href={`/auth/oauth?provider=${p}&next=${encodeURIComponent(next)}`}
+              className="flex min-h-[48px] items-center justify-center border border-ink text-[11px] uppercase tracking-label"
+            >
+              Continue with {p === 'apple' ? 'Apple' : 'Google'}
+            </a>
+          ))}
+        </div>
+      )}
       <div role="tablist" aria-label="Sign in options" className="flex gap-6 border-b border-line">
         {tab('password', 'Sign in')}
         {magicLinks && tab('magic', 'Email me a link')}
@@ -55,7 +82,13 @@ export function AuthForms({ next, magicLinks = true }: { next: string; magicLink
         <form action={login} onSubmit={validate(loginSchema)} className="mt-6 space-y-4" noValidate>
           <input type="hidden" name="next" value={next} />
           <Field label="Email" name="email" error={clientErrors.email ?? loginState?.errors?.email}>
-            <Input name="email" type="email" autoComplete="email" required />
+            <Input
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              defaultValue={defaultEmail}
+            />
           </Field>
           <Field
             label="Password"
@@ -80,7 +113,13 @@ export function AuthForms({ next, magicLinks = true }: { next: string; magicLink
             error={magicState?.errors?.email}
             hint="We’ll email you a one-time sign-in link."
           >
-            <Input name="email" type="email" autoComplete="email" required />
+            <Input
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              defaultValue={defaultEmail}
+            />
           </Field>
           <FormAlert message={magicState?.message} tone={magicState?.ok ? 'success' : 'error'} />
           <SubmitButton size="lg" className="w-full" pendingLabel="Sending…">
@@ -105,7 +144,13 @@ export function AuthForms({ next, magicLinks = true }: { next: string; magicLink
             name="email"
             error={clientErrors.email ?? signupState?.errors?.email}
           >
-            <Input name="email" type="email" autoComplete="email" required />
+            <Input
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              defaultValue={defaultEmail}
+            />
           </Field>
           <Field
             label="Password"
