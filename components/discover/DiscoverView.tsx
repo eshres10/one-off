@@ -29,7 +29,11 @@ const LAYOUTS = [
   { cols: 5, className: 'hidden gap-3 xl:flex', col: 'gap-3' },
 ] as const;
 
+/** Placeholders match a typical card: a 2:3 photo plus the name and maker lines. */
+const SKELETON_HEIGHT = 1.5 + PIECE_TEXT;
+
 function itemHeight(item: DiscoverItem) {
+  if (item.id.startsWith('skeleton-')) return SKELETON_HEIGHT;
   if (item.kind === 'piece') return pieceRatio(item) + PIECE_TEXT;
   if (item.kind === 'edit') return 1.25;
   return 0.95;
@@ -178,15 +182,19 @@ export function DiscoverView({
   const go = (next: DiscoverParams) => router.push(discoverHref(next), { scroll: false });
   const pills = activePills(params);
   const filterCount = panelFilterCount(params);
-  const skeletons: DiscoverItem[] = loading
-    ? Array.from({ length: 6 }, (_, i) => ({
-        kind: 'edit' as const,
-        id: `skeleton-${i}`,
-        slug: '',
-        title: '',
-        image: '',
-      }))
-    : [];
+  // While more pages exist, two rows of placeholders sit under the feed. Next pages fill in
+  // where they are, so nothing on screen (the footer included) moves when they arrive.
+  const remaining = Math.max(0, total - items.filter((i) => i.kind === 'piece').length);
+  const skeletons = (cols: number): DiscoverItem[] =>
+    nextCursor
+      ? Array.from({ length: Math.min(cols * 2, remaining || cols) }, (_, i) => ({
+          kind: 'edit' as const,
+          id: `skeleton-${items.length}-${i}`,
+          slug: '',
+          title: '',
+          image: '',
+        }))
+      : [];
 
   return (
     <div className="pb-16">
@@ -337,34 +345,46 @@ export function DiscoverView({
             </div>
           </div>
         ) : (
-          <div onClickCapture={remember} data-qv-list>
+          <div onClickCapture={remember} data-qv-list data-feed-more={nextCursor ? '' : undefined}>
             {LAYOUTS.map((layout) => (
               <div key={layout.cols} className={layout.className} data-masonry={layout.cols}>
-                {placeInColumns([...items, ...skeletons], layout.cols, itemHeight).map((col, c) => (
-                  <div key={c} className={`flex min-w-0 flex-1 flex-col ${layout.col}`}>
-                    {col.map((item) =>
-                      item.id.startsWith('skeleton-') ? (
-                        <div key={item.id} className="skeleton aspect-4/5" aria-hidden />
-                      ) : item.kind === 'piece' ? (
-                        <PieceCard
-                          key={item.id}
-                          piece={item}
-                          saved={saved.has(item.id)}
-                          priority={layout.cols === 2 && items.indexOf(item) < 2}
-                        />
-                      ) : item.kind === 'edit' ? (
-                        <EditCard key={item.id} edit={item} />
-                      ) : (
-                        <MakerCard key={item.id} maker={item} following={following.has(item.id)} />
-                      ),
-                    )}
-                  </div>
-                ))}
+                {placeInColumns([...items, ...skeletons(layout.cols)], layout.cols, itemHeight).map(
+                  (col, c) => (
+                    <div key={c} className={`flex min-w-0 flex-1 flex-col ${layout.col}`}>
+                      {col.map((item) =>
+                        item.id.startsWith('skeleton-') ? (
+                          <div
+                            key={item.id}
+                            className="skeleton"
+                            style={{ aspectRatio: `1 / ${SKELETON_HEIGHT}` }}
+                            aria-hidden
+                          />
+                        ) : item.kind === 'piece' ? (
+                          <PieceCard
+                            key={item.id}
+                            piece={item}
+                            saved={saved.has(item.id)}
+                            priority={layout.cols === 2 && items.indexOf(item) < 2}
+                          />
+                        ) : item.kind === 'edit' ? (
+                          <EditCard key={item.id} edit={item} />
+                        ) : (
+                          <MakerCard
+                            key={item.id}
+                            maker={item}
+                            following={following.has(item.id)}
+                          />
+                        ),
+                      )}
+                    </div>
+                  ),
+                )}
               </div>
             ))}
             <div ref={sentinel} aria-hidden className="h-px" />
+            {/* Visually hidden until the end, so it never moves while pages load in. */}
             <p
-              className="py-10 text-center text-[12px] text-muted"
+              className={nextCursor ? 'sr-only' : 'py-10 text-center text-[12px] text-muted'}
               aria-live="polite"
               data-testid="discover-status"
             >

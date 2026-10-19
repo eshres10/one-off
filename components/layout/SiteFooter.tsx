@@ -27,7 +27,7 @@ const COLS = [
 
 export function SiteFooter() {
   return (
-    <footer className="mt-24 border-t border-line">
+    <footer data-site-footer className="mt-24 border-t border-line">
       <div className="container-page grid gap-10 py-14 md:grid-cols-[repeat(3,minmax(0,1fr))_minmax(0,1.6fr)]">
         {COLS.map((col, i) => (
           <ul key={i} className="space-y-3">

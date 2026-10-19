@@ -327,6 +327,11 @@ html {
   animation: qv-in 200ms ease both;
 }
 
+/* An endless feed has no reachable bottom: the footer shows once the last page is in. */
+:root:has([data-feed-more]) [data-site-footer] {
+  display: none;
+}
+
 @media (prefers-reduced-transparency: reduce) {
   .glass-nav,
   .glass-chip {

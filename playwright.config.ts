@@ -72,6 +72,12 @@ export default defineConfig({
       dependencies: ['visual-1280'],
       use: { browserName: 'chromium', viewport: { width: 1280, height: 860 } },
     },
+    {
+      name: 'discover',
+      testMatch: 'discover.spec.ts',
+      dependencies: ['app-shell'],
+      use: { browserName: 'chromium', viewport: { width: 1280, height: 860 } },
+    },
   ],
   webServer: {
     command:
