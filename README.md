@@ -142,6 +142,15 @@ See [`.env.example`](.env.example). Key variables:
 
 Set `EMAIL_DRIVER=resend`, `RESEND_API_KEY` and a verified `EMAIL_FROM` domain. Emails sent: order confirmation, maker new-order, shipped, delivered, new message, commission request/quote/status, seller invite, maker approved, listing decisions, magic links (local driver), dispute and payout-failure alerts.
 
+## Waitlist (pre-launch)
+
+`/waitlist` is a standalone landing page that collects shopper and maker sign-ups. Set `WAITLIST_MODE=true` to show it at the homepage too; every other page (including `/admin` and `/login`) still works.
+
+- Shoppers leave an email. Makers also leave their label name and, optionally, their Instagram handle.
+- Signing up again with the same email updates the details, and a shopper who later applies as a maker becomes a maker. Each email gets one welcome email (delivered once Resend is connected, otherwise logged at **Admin → Emails**).
+- Add `?ref=<name>` to links you share (e.g. `/waitlist?ref=instagram`) to see where sign-ups came from.
+- Review and export sign-ups as CSV at **Admin → Waitlist**.
+
 ## Preview mode (browse-only launch)
 
 Put shoponeoff.com.au live before Stripe and Resend are connected. With `PREVIEW_MODE=true`:
