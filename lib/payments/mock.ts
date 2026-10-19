@@ -182,6 +182,21 @@ export function createMockDriver(): PaymentsDriver {
     async createTransfer(input) {
       const existing = await get<{ id: string }>(`idem:${input.idempotencyKey}`);
       if (existing) return existing;
+      // Like Stripe: transfers funded from a charge (source_transaction) can't add up to more
+      // than the charge itself.
+      if (input.sourceTransaction) {
+        const [row] = await sql()<{ charged: number | null; sent: number }[]>`
+          select
+            (select coalesce((data->>'amountTotal')::int, (data->>'amount')::int) from public.mock_stripe_objects
+              where type in ('checkout.session', 'payment_intent') and data->>'chargeId' = ${input.sourceTransaction}
+              limit 1) as charged,
+            (select coalesce(sum((data->>'amountCents')::int), 0)::int from public.mock_stripe_objects
+              where type = 'transfer' and data->>'sourceTransaction' = ${input.sourceTransaction}) as sent`;
+        if (row?.charged != null && row.sent + input.amountCents > row.charged)
+          throw new Error(
+            `Transfer exceeds the source charge (${row.sent + input.amountCents} > ${row.charged})`,
+          );
+      }
       const id = `tr_mock_${randomUUID().slice(0, 12)}`;
       await put(id, 'transfer', { id, ...input });
       await put(`idem:${input.idempotencyKey}`, 'idempotency', { id });
@@ -191,6 +206,16 @@ export function createMockDriver(): PaymentsDriver {
     async reverseTransfer(transferId, amountCents, idempotencyKey) {
       const existing = await get<{ id: string }>(`idem:${idempotencyKey}`);
       if (existing) return existing;
+      // Like Stripe: a transfer can't be reversed by more than what's left of it.
+      const [row] = await sql()<{ amount: number | null; reversed: number }[]>`
+        select
+          (select (data->>'amountCents')::int from public.mock_stripe_objects where id = ${transferId}) as amount,
+          (select coalesce(sum((data->>'amountCents')::int), 0)::int from public.mock_stripe_objects
+            where type = 'transfer_reversal' and data->>'transferId' = ${transferId}) as reversed`;
+      if (row?.amount != null && row.reversed + amountCents > row.amount)
+        throw new Error(
+          `Reversal exceeds the transfer (${row.reversed + amountCents} > ${row.amount})`,
+        );
       const id = `trr_mock_${randomUUID().slice(0, 12)}`;
       await put(id, 'transfer_reversal', { id, transferId, amountCents });
       await put(`idem:${idempotencyKey}`, 'idempotency', { id });

@@ -206,6 +206,19 @@ The production URL is `https://shoponeoff.com.au` (apex). `www.shoponeoff.com.au
 - Makers have 2 business days (Sydney time, weekends skipped, public holidays not) to reply. A daily Vercel Cron (`vercel.json`, 9am Sydney) escalates overdue claims; set `CRON_SECRET` (16+ characters) in Vercel so the job is authorised. The admin and seller claim pages also escalate on load.
 - Database: run `supabase/updates/0006_returns.sql` in the SQL Editor on an existing project (new projects get it in `supabase/production-setup.sql`).
 
+## Shipping offer and bundle deals
+
+Each maker ships from their own studio at their own rate. Two things lower what buyers pay:
+
+- **Maker bundle deals** (maker-funded). In Studio → Settings → Shipping a maker can offer free or a percentage off standard shipping on 2+ pieces in one parcel. This lowers what the maker is paid for shipping, like their existing free-over threshold.
+- **One Off's shipping offer** (platform-funded, **off by default** until One Off can afford it). At **Admin → Shipping offer**: the dearest standard parcel is charged in full, each other maker adds at most A$5, the total never exceeds A$20, and it's free when the bag reaches A$300. Express parcels are never discounted. Defaults live in `lib/shipping/offer.ts`; the admin's values are stored in `site_settings` (`shipping_offer`).
+
+The maker is always paid their full shipping. One Off's part is stored per parcel as `fulfilments.shipping_subsidy_cents` (`shipping_cents` = what the maker gets, `buyer_shipping_cents` = what the buyer paid, `shipping_list_cents` = the maker's normal rate). At payout, what the maker is owed (net, less refunds and anything they owe) is split by `splitPayout`: the part funded by the buyer's charge (`source_transaction`) never includes the subsidy, so transfers from a charge can't exceed what the buyer paid, and the covered shipping follows as a second transfer from the platform balance (`releaseShippingSubsidies`). If the balance is short it's marked `failed` and retried on the next run with a fresh idempotency key. A refund after payout reverses what the main transfer holds; the rest comes off unpaid covered shipping first, then off the maker's next payouts. A checkout keeps the offer it was first priced with for 60 minutes, and payment is refused if the total the buyer saw no longer matches. Founding makers pay 0% commission, so on their parcels the subsidy is pure platform cost: keep the Stripe balance topped up, and use the monthly budget, which pauses the offer until the 1st once that much has been covered.
+
+The bag, checkout, order pages, receipt and confirmation email show the makers' real price crossed out next to what the buyer pays, the saving, and how far they are from free shipping.
+
+Database: run `supabase/updates/0015_shipping_offer.sql` in the SQL Editor on an existing project (new projects get it in `supabase/production-setup.sql`).
+
 ## Testing
 
 - **Unit** (`tests/unit`): cart totals, multi-maker splitting, commission, lead times, stock, review eligibility, moderation.

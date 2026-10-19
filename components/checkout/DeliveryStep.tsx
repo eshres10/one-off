@@ -337,6 +337,13 @@ export function DeliveryStep({
           Each maker sends their piece from their own studio, so you’ll get{' '}
           {view.parcels.length === 1 ? 'one parcel' : `${view.parcels.length} parcels`}, each with
           its own tracking.
+          {view.parcels.length > 1 && view.offer.enabled && view.offer.capCents !== null && (
+            <>
+              {' '}
+              You pay one price for standard shipping: never more than{' '}
+              {formatPrice(view.offer.capCents)}, however many makers.
+            </>
+          )}
         </p>
         <ul className="mt-4 space-y-3" role="list">
           {view.parcels.map((p) => (
@@ -392,7 +399,16 @@ export function DeliveryStep({
                     />
                     <span className="flex-1">
                       {s === 'standard' ? 'Standard' : 'Express'} ·{' '}
+                      {p.options[s].listCents > p.options[s].cents && (
+                        <s className="mr-1 text-muted-2">
+                          <span className="sr-only">Usually </span>
+                          {formatPrice(p.options[s].listCents)}
+                        </s>
+                      )}
                       {p.options[s].cents ? formatPrice(p.options[s].cents) : 'Free'}
+                      {p.options[s].deal === 'bundle' && (
+                        <span className="ml-1 text-[12px] text-muted">· bundle deal</span>
+                      )}
                       <span className="block text-[12px] text-muted">
                         Arrives {p.options[s].arrival}
                       </span>
@@ -406,6 +422,11 @@ export function DeliveryStep({
                 </p>
               )}
               {p.mtoNote && <p className="mt-3 bg-stone p-3 text-[13px]">{p.mtoNote}</p>}
+              {p.bundleNote && p.options.standard.deal !== 'bundle' && (
+                <p className="mt-3 text-[12px] text-muted" data-testid="parcel-bundle-note">
+                  {p.makerName}: {p.bundleNote}.
+                </p>
+              )}
             </li>
           ))}
         </ul>

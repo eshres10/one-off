@@ -50,6 +50,10 @@ export interface ShopSettings {
   rates: Rate[];
   freeShipping: boolean;
   freeOverCents: number;
+  /** Bundle deal on 2+ pieces in one parcel: free or a percentage off standard shipping. */
+  bundleShipping: 'none' | 'free' | 'percent';
+  bundlePercentOff: number;
+  bundleMinPieces: number;
   localPickup: boolean;
   dispatchOption: string;
   mtoDefaultLead: string;
@@ -122,6 +126,11 @@ export async function getSettings(seller: Seller): Promise<ShopSettings> {
     ],
     freeShipping: m.freeShippingOverCents !== null,
     freeOverCents: Number(m.freeShippingOverCents ?? 30000),
+    bundleShipping: (['free', 'percent'].includes(String(m.bundleShipping))
+      ? m.bundleShipping
+      : 'none') as ShopSettings['bundleShipping'],
+    bundlePercentOff: Number(m.bundlePercentOff ?? 20),
+    bundleMinPieces: Number(m.bundleMinPieces ?? 2),
     localPickup: Boolean(m.localPickup),
     dispatchOption: String(m.dispatchOption ?? TERMS.readyToShipDispatchOptions[1]),
     mtoDefaultLead: String(m.mtoDefaultLead ?? TERMS.mtoLeadOptions[1]),
@@ -199,6 +208,15 @@ export async function saveSettings(seller: Seller, s: ShopSettings) {
   if (!rates.find((r) => r.region === 'au')?.enabled)
     throw new UserError('Australia-wide shipping needs to stay on.');
   const au = rates.find((r) => r.region === 'au')!;
+  const bundleKind = ['free', 'percent'].includes(s.bundleShipping) ? s.bundleShipping : 'none';
+  const bundlePercent = Math.round(Number(s.bundlePercentOff));
+  if (bundleKind === 'percent' && !(bundlePercent >= 5 && bundlePercent <= 90))
+    throw new UserError('A bundle discount should be between 5% and 90%.');
+  const bundle = {
+    kind: bundleKind,
+    percent: bundleKind === 'percent' ? bundlePercent : null,
+    minPieces: Math.min(10, Math.max(2, Math.round(Number(s.bundleMinPieces) || 2))),
+  };
   const dispatch = (TERMS.readyToShipDispatchOptions as readonly string[]).includes(
     s.dispatchOption,
   )
@@ -247,6 +265,8 @@ export async function saveSettings(seller: Seller, s: ShopSettings) {
         avatar_url = ${s.avatarUrl || null}, cover_url = ${s.bannerUrl || null},
         shipping_standard_cents = ${au.standardCents},
         free_shipping_over_cents = ${s.freeShipping ? (cents(s.freeOverCents, 1_000_000) ?? 30000) : null},
+        bundle_shipping = ${bundle.kind}, bundle_percent_off = ${bundle.percent},
+        bundle_min_pieces = ${bundle.minPieces},
         local_pickup = ${s.localPickup}, dispatch_option = ${dispatch}, dispatch_days = ${dispatchDaysFor(dispatch)},
         mto_default_lead = ${lead}, lead_time_days = ${leadDaysFor(lead)},
         mto_weekly_capacity = ${s.mtoWeeklyCapacity && s.mtoWeeklyCapacity > 0 ? Math.min(500, Math.round(s.mtoWeeklyCapacity)) : null},

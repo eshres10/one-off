@@ -3,6 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { audit } from '@/lib/audit';
 import { sql, type Db } from '@/lib/db';
 import { sanitizeText } from '@/lib/domain/moderation';
+import { formatPrice } from '@/lib/domain/money';
 import { splitOrder } from '@/lib/domain/split';
 import type { ProductType } from '@/lib/domain/types';
 import { env } from '@/lib/env';
@@ -12,13 +13,23 @@ import {
   estimateArrival,
   formatArrival,
   latestArrival,
-  rateFor,
   stateFromPostcode,
   zoneFor,
   type MakerRates,
   type Speed,
   type Zone,
 } from '@/lib/shipping/estimate';
+import {
+  NO_BUNDLE,
+  applyShippingOffer,
+  makerParcelPrice,
+  parseShippingOffer,
+  type BundleDeal,
+  type MakerDeal,
+  type OfferResult,
+  type ShippingOffer,
+} from '@/lib/shipping/offer';
+import { activeShippingOffer } from '@/lib/shipping/settings';
 import { SITE } from '@/lib/site/config';
 import { RETURNS_POLICY_VERSION } from '@/lib/content/returns';
 import { policySnapshot } from '@/lib/returns/policy';
@@ -67,7 +78,23 @@ export interface CheckoutParcel {
   zone: Zone;
   speed: Speed;
   items: CheckoutItem[];
-  options: Record<Speed, { cents: number; arrival: string; from: string; to: string }>;
+  /**
+   * Each speed's price for this parcel: `cents` is the maker's price after their own deal,
+   * `listCents` their normal rate. One Off's cap applies across parcels, in the totals.
+   */
+  options: Record<
+    Speed,
+    {
+      cents: number;
+      listCents: number;
+      deal: MakerDeal | null;
+      arrival: string;
+      from: string;
+      to: string;
+    }
+  >;
+  /** "Free shipping on 2+ pieces" / "20% off shipping on 2+ pieces": the maker's bundle deal. */
+  bundleNote: string | null;
   /** Made to order: "Halde Studio starts once you pay and finishes in about 14 days." */
   mtoNote: string | null;
   /** The maker is on holiday but taking orders: the banner text. */
@@ -87,7 +114,17 @@ export interface CheckoutView {
   parcels: CheckoutParcel[];
   pieces: number;
   subtotalCents: number;
+  /** What the buyer pays for delivery. */
   shippingCents: number;
+  /** The makers' normal delivery prices, before any deal (shown crossed out when higher). */
+  shippingListCents: number;
+  /** shippingListCents − shippingCents. */
+  shippingSavingCents: number;
+  /** Which of One Off's offers lowered delivery ('cap' or 'free_over'), if any. */
+  shippingOffer: 'cap' | 'free_over' | null;
+  /** How much more in pieces gets free standard delivery (null when met or not offered). */
+  toFreeCents: number | null;
+  offer: Pick<ShippingOffer, 'enabled' | 'capCents' | 'freeOverCents'>;
   totalCents: number;
   gstCents: number;
   /** 1 details, 2 delivery, 3 payment: the first step not yet done. */
@@ -206,6 +243,29 @@ interface MakerRow {
   auExpress: number | null;
   shopStatus: string;
   holidayUntil: Date | null;
+  bundleShipping: 'none' | 'free' | 'percent';
+  bundlePercentOff: number | null;
+  bundleMinPieces: number;
+}
+
+/** A maker's bundle deal, from their Shop settings. */
+export function bundleOf(m: {
+  bundleShipping: string;
+  bundlePercentOff: number | null;
+  bundleMinPieces: number;
+}): BundleDeal {
+  if (m.bundleShipping === 'free') return { kind: 'free', minPieces: m.bundleMinPieces };
+  if (m.bundleShipping === 'percent' && m.bundlePercentOff)
+    return { kind: 'percent', percentOff: m.bundlePercentOff, minPieces: m.bundleMinPieces };
+  return NO_BUNDLE;
+}
+
+/** "Free shipping on 2+ pieces" or "20% off shipping on 2+ pieces". */
+export function bundleLabel(deal: BundleDeal): string | null {
+  if (deal.kind === 'free') return `Free shipping on ${deal.minPieces}+ pieces`;
+  if (deal.kind === 'percent')
+    return `${deal.percentOff}% off shipping on ${deal.minPieces}+ pieces`;
+  return null;
 }
 
 /** Pieces from a shop on holiday ship once it's back: estimates start then, not now. */
@@ -222,7 +282,7 @@ async function makerRows(makerIds: string[]): Promise<Map<string, MakerRow>> {
   if (!makerIds.length) return new Map();
   const rows = await sql()<MakerRow[]>`
     select m.id as maker_id, m.display_name as maker_name, m.city, m.state, m.dispatch_days, m.free_shipping_over_cents,
-      m.founding_until, m.shop_status, m.holiday_until,
+      m.founding_until, m.shop_status, m.holiday_until, m.bundle_shipping, m.bundle_percent_off, m.bundle_min_pieces,
       (select standard_cents from public.maker_shipping_rates r where r.maker_id = m.id and r.region = 'same_state' and r.enabled) as same_standard,
       (select express_cents from public.maker_shipping_rates r where r.maker_id = m.id and r.region = 'same_state' and r.enabled) as same_express,
       (select standard_cents from public.maker_shipping_rates r where r.maker_id = m.id and r.region = 'au' and r.enabled) as au_standard,
@@ -237,7 +297,7 @@ const ratesOf = (m: MakerRow): MakerRates => ({
   freeOverCents: m.freeShippingOverCents,
 });
 
-/** Price and arrival for one maker's parcel, at a speed. */
+/** Price and arrival for one maker's parcel, at a speed (the maker's price, after their deals). */
 function parcelQuote(
   m: MakerRow,
   lines: Array<Pick<CartLineView, 'productType' | 'leadTimeDays' | 'unitPriceCents' | 'quantity'>>,
@@ -247,7 +307,15 @@ function parcelQuote(
 ) {
   const zone = zoneFor(m.state, buyerState);
   const subtotal = lines.reduce((s, l) => s + l.unitPriceCents * l.quantity, 0);
-  const cents = rateFor(zone, speed, ratesOf(m), subtotal);
+  const price = makerParcelPrice({
+    zone,
+    speed,
+    rates: ratesOf(m),
+    makerSubtotalCents: subtotal,
+    pieces: lines.reduce((s, l) => s + l.quantity, 0),
+    bundle: bundleOf(m),
+  });
+  const cents = price.makerCents;
   const arrival = latestArrival(
     lines.map((l) =>
       estimateArrival(
@@ -262,7 +330,64 @@ function parcelQuote(
       ),
     ),
   );
-  return { zone, cents, arrival };
+  return { zone, cents, listCents: price.listCents, deal: price.makerDeal, arrival };
+}
+
+/** How long a checkout keeps the shipping offer it was first priced with. */
+export const OFFER_LOCK_MINUTES = 60;
+
+/**
+ * The shipping offer for a pending order: the one it was first priced with, for up to
+ * OFFER_LOCK_MINUTES, so the total can't change between what the buyer sees and what they pay
+ * (another order using up the budget, an admin edit, the month rolling over). After that, or on
+ * the first sync, the current offer is taken and kept.
+ */
+async function offerForOrder(orderId: string, now: Date, refresh: boolean): Promise<ShippingOffer> {
+  const [o] = await sql()<{ snapshot: unknown; lockedAt: Date | null }[]>`
+    select shipping_offer_snapshot as snapshot, shipping_offer_locked_at as locked_at
+    from public.orders where id = ${orderId}`;
+  const fresh =
+    o?.lockedAt &&
+    o.snapshot &&
+    now.getTime() - new Date(o.lockedAt).getTime() < OFFER_LOCK_MINUTES * 60_000;
+  if (fresh) return parseShippingOffer(o!.snapshot);
+  const offer = await activeShippingOffer(now);
+  if (refresh)
+    await sql()`
+      update public.orders set shipping_offer_snapshot = ${sql().json({ ...offer })}, shipping_offer_locked_at = ${now}
+      where id = ${orderId} and status = 'pending'`;
+  return offer;
+}
+
+/** One Off's offer across the bag's parcels (each maker's price at its chosen speed). */
+function offerFor(
+  quotes: Array<{ makerId: string; speed: Speed; cents: number; listCents: number }>,
+  subtotalCents: number,
+  offer: ShippingOffer,
+): OfferResult {
+  return applyShippingOffer(
+    quotes.map((q) => ({
+      makerId: q.makerId,
+      speed: q.speed,
+      makerCents: q.cents,
+      listCents: q.listCents,
+    })),
+    subtotalCents,
+    offer,
+  );
+}
+
+export interface BagDelivery {
+  /** What the buyer pays for standard delivery. */
+  cents: number;
+  /** The makers' normal prices, before any deal. */
+  listCents: number;
+  makers: number;
+  /** The buyer's state is unknown: interstate prices, shown as "from". */
+  from: boolean;
+  applied: 'cap' | 'free_over' | null;
+  toFreeCents: number | null;
+  offer: Pick<ShippingOffer, 'enabled' | 'capCents' | 'freeOverCents'>;
 }
 
 /**
@@ -272,17 +397,34 @@ function parcelQuote(
 export async function bagDeliveryEstimate(
   lines: CartLineView[],
   userId: string | null,
-): Promise<{ cents: number; makers: number; from: boolean }> {
+  now = new Date(),
+): Promise<BagDelivery> {
   const byMaker = new Map<string, CartLineView[]>();
   for (const l of lines) byMaker.set(l.makerId, [...(byMaker.get(l.makerId) ?? []), l]);
   const makers = await makerRows(Array.from(byMaker.keys()));
   const state = await buyerStateFor(userId);
-  let cents = 0;
+  const offer = await activeShippingOffer(now);
+  const quotes = [];
   for (const [makerId, ls] of byMaker) {
     const m = makers.get(makerId);
-    if (m) cents += parcelQuote(m, ls, state, 'standard', new Date()).cents;
+    if (m)
+      quotes.push({
+        makerId,
+        speed: 'standard' as const,
+        ...parcelQuote(m, ls, state, 'standard', now),
+      });
   }
-  return { cents, makers: byMaker.size, from: !state };
+  const subtotal = lines.reduce((s, l) => s + l.unitPriceCents * l.quantity, 0);
+  const r = offerFor(quotes, subtotal, offer);
+  return {
+    cents: r.buyerTotalCents,
+    listCents: r.listTotalCents,
+    makers: byMaker.size,
+    from: !state,
+    applied: r.applied,
+    toFreeCents: r.toFreeCents,
+    offer: { enabled: offer.enabled, capCents: offer.capCents, freeOverCents: offer.freeOverCents },
+  };
 }
 
 async function pendingOrderFor(owner: Owner) {
@@ -394,6 +536,12 @@ async function syncOrder(orderId: string, lines: CartLineView[], now: Date) {
       speed,
     });
   }
+  const subtotal = lines.reduce((s, l) => s + l.unitPriceCents * l.quantity, 0);
+  const offer = offerFor(
+    Array.from(quotes.entries()).map(([makerId, q]) => ({ makerId, ...q })),
+    subtotal,
+    await offerForOrder(orderId, now, true),
+  );
   const plan = splitOrder(
     lines,
     new Map(
@@ -411,6 +559,7 @@ async function syncOrder(orderId: string, lines: CartLineView[], now: Date) {
       const pct = commissionPctAt(makers.get(makerId)?.foundingUntil, now);
       return pct === TERMS.standardCommissionPct ? env().PLATFORM_FEE_BPS : Math.round(pct * 100);
     },
+    offer.buyerByMaker,
   );
 
   await sql().begin(async (tx) => {
@@ -429,10 +578,13 @@ async function syncOrder(orderId: string, lines: CartLineView[], now: Date) {
     for (const f of plan.fulfilments) {
       const q = quotes.get(f.makerId)!;
       const [ful] = await db<{ id: string }[]>`
-        insert into public.fulfilments (order_id, maker_id, status, subtotal_cents, shipping_cents, platform_commission_cents,
+        insert into public.fulfilments (order_id, maker_id, status, subtotal_cents, shipping_cents, shipping_list_cents,
+          buyer_shipping_cents, shipping_subsidy_cents, shipping_subsidy_status, platform_commission_cents,
           seller_net_cents, estimated_dispatch_date, estimated_delivery_from, estimated_delivery_to, commission_pct_applied,
           shipping_method, speed, reply_token)
-        values (${orderId}, ${f.makerId}, 'paid', ${f.subtotalCents}, ${f.shippingCents}, ${f.platformCommissionCents},
+        values (${orderId}, ${f.makerId}, 'paid', ${f.subtotalCents}, ${f.shippingCents}, ${q.listCents},
+          ${f.buyerShippingCents}, ${f.shippingSubsidyCents}, ${f.shippingSubsidyCents > 0 ? 'pending' : 'none'},
+          ${f.platformCommissionCents},
           ${f.sellerNetCents}, ${iso(q.arrival.dispatch)}, ${iso(q.arrival.from)}, ${iso(q.arrival.to)}, ${f.feeBps / 100},
           ${q.speed === 'express' ? 'Express tracked' : f.shippingCents === 0 ? 'Free tracked shipping' : 'Standard tracked'},
           ${q.speed}, ${randomBytes(12).toString('base64url')})
@@ -463,7 +615,8 @@ async function syncOrder(orderId: string, lines: CartLineView[], now: Date) {
     }
     await db`
       update public.orders set subtotal_cents = ${plan.subtotalCents}, shipping_total_cents = ${plan.shippingTotalCents},
-        total_cents = ${plan.totalCents}, platform_fee_total_cents = ${plan.platformFeeTotalCents}
+        total_cents = ${plan.totalCents}, platform_fee_total_cents = ${plan.platformFeeTotalCents},
+        shipping_saving_cents = ${offer.savingCents}, shipping_offer = ${offer.applied}
       where id = ${orderId}`;
     await db`
       delete from public.reservations r where r.order_id = ${orderId}
@@ -511,6 +664,8 @@ export async function checkoutView(owner: Owner, now = new Date()): Promise<Chec
       const q = parcelQuote(m, items, buyerState, speed, now);
       return {
         cents: q.cents,
+        listCents: q.listCents,
+        deal: q.deal,
         arrival: formatArrival(q.arrival.from, q.arrival.to),
         from: iso(q.arrival.from),
         to: iso(q.arrival.to),
@@ -528,6 +683,7 @@ export async function checkoutView(owner: Owner, now = new Date()): Promise<Chec
         ({ fulfilmentId: _f, makerId: _m, speed: _s, shippingCents: _c, ...i }) => i,
       ),
       options: { standard: quote('standard'), express: quote('express') },
+      bundleNote: bundleLabel(bundleOf(m)),
       holidayNote: m.shopStatus === 'holiday' ? holidayMessage(m.holidayUntil) : null,
       mtoNote: mto
         ? `Made to order. ${m.makerName} starts once you pay and finishes in about ${mto.leadTimeDays ?? 14} days.${hasSizes ? ' Your measurements from Sizes & fit go with the order.' : ''}`
@@ -535,9 +691,20 @@ export async function checkoutView(owner: Owner, now = new Date()): Promise<Chec
     });
   }
   const [totals] = await sql()<
-    { subtotalCents: number; shippingTotalCents: number; totalCents: number }[]
+    {
+      subtotalCents: number;
+      shippingTotalCents: number;
+      totalCents: number;
+      shippingSavingCents: number;
+      shippingOffer: 'cap' | 'free_over' | null;
+    }[]
   >`
-    select subtotal_cents, shipping_total_cents, total_cents from public.orders where id = ${order.id}`;
+    select subtotal_cents, shipping_total_cents, total_cents, shipping_saving_cents, shipping_offer
+    from public.orders where id = ${order.id}`;
+  const offer = await offerForOrder(order.id, now, false);
+  const freeOver = offer.enabled && totals!.shippingTotalCents > 0 ? offer.freeOverCents : null;
+  const toFreeCents =
+    freeOver && totals!.subtotalCents < freeOver ? freeOver - totals!.subtotalCents : null;
   const saved = owner.userId
     ? ((
         await sql()<
@@ -569,6 +736,11 @@ export async function checkoutView(owner: Owner, now = new Date()): Promise<Chec
     pieces: rows.reduce((s, r) => s + r.quantity, 0),
     subtotalCents: totals!.subtotalCents,
     shippingCents: totals!.shippingTotalCents,
+    shippingListCents: totals!.shippingTotalCents + totals!.shippingSavingCents,
+    shippingSavingCents: totals!.shippingSavingCents,
+    shippingOffer: totals!.shippingOffer,
+    toFreeCents,
+    offer: { enabled: offer.enabled, capCents: offer.capCents, freeOverCents: offer.freeOverCents },
     totalCents: totals!.totalCents,
     gstCents: gstIncluded(totals!.totalCents),
     step: !detailsDone ? 1 : !deliveryDone ? 2 : 3,
@@ -667,6 +839,8 @@ async function customerFor(userId: string): Promise<string> {
 export async function preparePayment(
   owner: Owner,
   now = new Date(),
+  /** The total the buyer was shown: payment stops if it no longer matches. */
+  expectedTotalCents?: number,
 ): Promise<{
   orderId: string;
   orderNumber: string;
@@ -681,6 +855,10 @@ export async function preparePayment(
     throw new CartError('Some pieces in your bag are no longer available. Please review your bag.');
   await syncOrder(order.id, cart.lines, now);
   const view = await checkoutView(owner, now);
+  if (expectedTotalCents !== undefined && expectedTotalCents !== view.totalCents)
+    throw new CartError(
+      `Your total is now ${formatPrice(view.totalCents)}. Check your order and pay again.`,
+    );
   if (!view.detailsDone) throw new CartError('Add your email first.');
   const problem = addressProblem(view.address);
   if (problem) throw new CartError(problem);
@@ -776,16 +954,26 @@ export async function quoteForState(owner: Owner, state: string, now = new Date(
         select maker_id, speed from public.fulfilments where order_id = ${order.id}`
     ).map((r) => [r.makerId, r.speed]),
   );
-  let shipping = 0;
-  for (const makerId of makers.keys())
-    shipping += parcelQuote(
-      makers.get(makerId)!,
-      cart.lines.filter((l) => l.makerId === makerId),
-      state.toUpperCase(),
-      speeds.get(makerId) ?? 'standard',
-      now,
-    ).cents;
+  const quotes = Array.from(makers.keys()).map((makerId) => {
+    const speed = speeds.get(makerId) ?? 'standard';
+    return {
+      makerId,
+      speed,
+      ...parcelQuote(
+        makers.get(makerId)!,
+        cart.lines.filter((l) => l.makerId === makerId),
+        state.toUpperCase(),
+        speed,
+        now,
+      ),
+    };
+  });
   const subtotal = cart.lines.reduce((s, l) => s + l.unitPriceCents * l.quantity, 0);
+  const shipping = offerFor(
+    quotes,
+    subtotal,
+    await offerForOrder(order.id, now, false),
+  ).buyerTotalCents;
   return { shippingCents: shipping, totalCents: subtotal + shipping };
 }
 

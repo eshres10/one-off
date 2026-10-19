@@ -47,6 +47,25 @@ export async function recordProcessingFees(orderId: string, chargeId: string | n
   }
 }
 
+/**
+ * Splits what a maker is owed into the part funded by the buyer's charge and the part One Off
+ * covers. The charge-funded part is at most net − subsidy − refunded share (so transfers from a
+ * charge never add up to more than the buyer paid); the covered part tops up to what's owed and
+ * is never more than the subsidy. Together they're exactly what's owed (or nothing).
+ */
+export function splitPayout(input: {
+  owedCents: number;
+  sellerNetCents: number;
+  subsidyCents: number;
+  refundedShareCents: number;
+}): { amount: number; subsidyDue: number } {
+  const owed = Math.max(0, input.owedCents);
+  const fromCharge = input.sellerNetCents - input.subsidyCents - input.refundedShareCents;
+  const amount = Math.max(0, Math.min(owed, fromCharge));
+  const subsidyDue = Math.max(0, Math.min(input.subsidyCents, owed - amount));
+  return { amount, subsidyDue };
+}
+
 /** Marks a shipped order delivered (carrier event, buyer confirmation, or the timeout). */
 export async function markDelivered(
   fulfilmentId: string,
@@ -114,6 +133,7 @@ export async function releaseDueTransfers(now = new Date()): Promise<ReleaseResu
       orderId: string;
       makerId: string;
       sellerNetCents: number;
+      shippingSubsidyCents: number;
       refundedShare: number;
       stripeAccountId: string | null;
       chargesEnabled: boolean;
@@ -121,7 +141,7 @@ export async function releaseDueTransfers(now = new Date()): Promise<ReleaseResu
       held: boolean;
     }[]
   >`
-    select f.id, f.order_id, f.maker_id, f.seller_net_cents, m.stripe_account_id,
+    select f.id, f.order_id, f.maker_id, f.seller_net_cents, f.shipping_subsidy_cents, m.stripe_account_id,
       m.stripe_charges_enabled as charges_enabled, o.stripe_charge_id as charge_id,
       coalesce((select sum(round(oi.refunded_cents::numeric * oi.seller_net_cents / oi.line_total_cents))
                 from public.order_items oi where oi.fulfilment_id = f.id), 0)::int as refunded_share,
@@ -154,13 +174,23 @@ export async function releaseDueTransfers(now = new Date()): Promise<ReleaseResu
     const owed = await sql()<{ id: string; amountCents: number }[]>`
       select id, amount_cents from public.maker_adjustments
       where maker_id = ${f.makerId} and applied_at is null order by created_at`;
-    let amount = f.sellerNetCents - f.refundedShare;
+    // What the maker is owed in total: their net, less refunds and anything they owe.
+    let owedTotal = f.sellerNetCents - f.refundedShare;
     const applied: string[] = [];
     for (const a of owed) {
-      if (a.amountCents > amount) break;
-      amount -= a.amountCents;
+      if (a.amountCents > owedTotal) break;
+      owedTotal -= a.amountCents;
       applied.push(a.id);
     }
+    // It's paid in two parts. The buyer's charge only holds what the buyer paid, so the part
+    // funded from it (source_transaction) leaves out the shipping One Off covered; that part
+    // follows from the platform balance (releaseShippingSubsidies). Never more than owed.
+    const { amount, subsidyDue } = splitPayout({
+      owedCents: owedTotal,
+      sellerNetCents: f.sellerNetCents,
+      subsidyCents: f.shippingSubsidyCents,
+      refundedShareCents: f.refundedShare,
+    });
     try {
       let transferId: string | null = null;
       if (amount > 0) {
@@ -177,7 +207,9 @@ export async function releaseDueTransfers(now = new Date()): Promise<ReleaseResu
       await sql()`
         update public.fulfilments set status = 'completed', stripe_transfer_id = ${transferId},
           transfer_status = ${transferId ? 'created' : 'skipped'}, transfer_released_at = ${now},
-          payout_status = 'paid'
+          payout_status = 'paid', transfer_amount_cents = ${transferId ? amount : 0},
+          shipping_subsidy_due_cents = ${subsidyDue},
+          shipping_subsidy_status = ${subsidyDue > 0 ? 'pending' : 'none'}
         where id = ${f.id}`;
       if (applied.length)
         await sql()`
@@ -189,7 +221,7 @@ export async function releaseDueTransfers(now = new Date()): Promise<ReleaseResu
       await audit(
         'transfer.created',
         { type: 'fulfilment', id: f.id },
-        { amount, transferId, adjustments: applied },
+        { amount, subsidyDue, transferId, adjustments: applied },
       );
       result.released++;
     } catch (err) {
@@ -199,7 +231,75 @@ export async function releaseDueTransfers(now = new Date()): Promise<ReleaseResu
     }
   }
   log.info(result, 'transfers released');
+  await releaseShippingSubsidies(now);
   return result;
+}
+
+/**
+ * Pays makers the shipping One Off covered (the cross-maker cap or free-shipping threshold), once
+ * their main transfer has gone out. It comes from the platform balance, not the buyer's charge,
+ * so a low balance only delays this part: it's marked failed and retried on the next run.
+ * Idempotent per attempt: the key is the fulfilment id plus the attempt number.
+ */
+export async function releaseShippingSubsidies(now = new Date()) {
+  const rows = await sql()<
+    {
+      id: string;
+      orderId: string;
+      makerId: string;
+      amountCents: number;
+      attempts: number;
+      stripeAccountId: string | null;
+      chargesEnabled: boolean;
+    }[]
+  >`
+    select f.id, f.order_id, f.maker_id, f.shipping_subsidy_due_cents as amount_cents,
+      f.shipping_subsidy_attempts as attempts, m.stripe_account_id, m.stripe_charges_enabled as charges_enabled
+    from public.fulfilments f join public.makers m on m.id = f.maker_id
+    where f.shipping_subsidy_status in ('pending', 'failed') and f.shipping_subsidy_due_cents > 0
+      and f.status in ('completed', 'refunded') and f.transfer_status in ('created', 'skipped')`;
+  let released = 0;
+  for (const f of rows) {
+    if (!f.stripeAccountId || !f.chargesEnabled) continue;
+    try {
+      const t = await payments().createTransfer({
+        amountCents: f.amountCents,
+        destination: f.stripeAccountId,
+        transferGroup: f.orderId,
+        sourceTransaction: null,
+        metadata: {
+          order_id: f.orderId,
+          fulfilment_id: f.id,
+          maker_id: f.makerId,
+          kind: 'shipping_subsidy',
+        },
+        // A new key per attempt: Stripe replays a failed request's error for 24 hours.
+        idempotencyKey: `transfer:${f.id}:shipping:${f.attempts}`,
+      });
+      await sql()`
+        update public.fulfilments set shipping_subsidy_status = 'created', shipping_subsidy_transfer_id = ${t.id}
+        where id = ${f.id}`;
+      await audit(
+        'transfer.shipping_subsidy',
+        { type: 'fulfilment', id: f.id },
+        { amount: f.amountCents, transferId: t.id, at: now.toISOString() },
+      );
+      released++;
+    } catch (err) {
+      reportError(err, { fulfilmentId: f.id, where: 'releaseShippingSubsidies' });
+      await sql()`
+        update public.fulfilments set shipping_subsidy_status = 'failed',
+          shipping_subsidy_attempts = shipping_subsidy_attempts + 1
+        where id = ${f.id}`;
+      await audit(
+        'transfer.shipping_subsidy_failed',
+        { type: 'fulfilment', id: f.id },
+        { error: String(err) },
+      );
+    }
+  }
+  if (rows.length) log.info({ released, due: rows.length }, 'shipping subsidies released');
+  return released;
 }
 
 /** Mirrors a Stripe payout from a maker's connected account into `payouts`. */

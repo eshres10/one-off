@@ -4,6 +4,12 @@ import { useState } from 'react';
 import type { CheckoutView } from '@/lib/services/checkout';
 import { formatPrice } from '@/lib/domain/money';
 import { ChevronIcon } from '@/components/ui/icons';
+import {
+  FreeShippingProgress,
+  ShippingPrice,
+  ShippingSaving,
+  savingReason,
+} from '@/components/ui/ShippingPrice';
 import { Img as Image } from '@/components/ui/Img';
 
 function CodeField() {
@@ -59,8 +65,25 @@ export function Totals({ view, showGst }: { view: CheckoutView; showGst: boolean
         <dt>
           Delivery · {view.parcels.length} {view.parcels.length === 1 ? 'parcel' : 'parcels'}
         </dt>
-        <dd>{view.shippingCents ? formatPrice(view.shippingCents) : 'Free'}</dd>
+        <dd>
+          <ShippingPrice
+            paidCents={view.shippingCents}
+            listCents={view.shippingListCents}
+            testId="checkout-shipping-price"
+          />
+        </dd>
       </div>
+      <ShippingSaving
+        className="bg-surface"
+        savingCents={view.shippingSavingCents}
+        reason={savingReason(view.shippingOffer, view.offer)}
+        testId="checkout-shipping-saving"
+      />
+      <FreeShippingProgress
+        toFreeCents={view.toFreeCents}
+        freeOverCents={view.offer.enabled ? view.offer.freeOverCents : null}
+        testId="checkout-free-progress"
+      />
       <div className="flex items-baseline justify-between border-t border-ink pt-3">
         <dt className="text-[16px]">Total</dt>
         <dd className="font-display text-[28px] leading-none" data-testid="checkout-total">

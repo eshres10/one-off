@@ -128,6 +128,8 @@ export async function receiptPdf(order: BuyerOrder): Promise<Uint8Array> {
   };
   row('Subtotal', formatPrice(order.subtotalCents));
   row('Delivery', order.shippingTotalCents ? formatPrice(order.shippingTotalCents) : 'Free');
+  if (order.shippingSavingCents > 0)
+    row('You saved on shipping', formatPrice(order.shippingSavingCents));
   if (order.refundedCents > 0) row('Refunded', `-${formatPrice(order.refundedCents)}`);
   row('Total paid', formatPrice(order.totalCents), true);
   if (SITE.tax.showGstIncludedLine)
