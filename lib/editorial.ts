@@ -29,7 +29,7 @@ export const FEED_EDITORIAL: EditorialTileData[] = [
 export const HERO = {
   eyebrow: 'Melbourne-made · Straight from the maker',
   title: 'Bespoke pieces made just for you',
-  imageUrl: '/seed/hero-linen-suit.jpg',
+  imageUrl: '/seed/hero-velvet-sofa.jpg',
   href: '/?tab=new',
 };
 

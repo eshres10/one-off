@@ -125,40 +125,84 @@ export default async function ProductPage({ params }: { params: { slug: string }
       ? 'Follow the maker to hear about restocks.'
       : `Dispatch by ${fmtDay(estimate.dispatchBy)} · Estimated delivery ${formatDateRange(estimate.deliveryFrom, estimate.deliveryTo)}`;
 
+  const reviewsBlock = (id: string) => (
+    <>
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 id={id} className="text-[44px] leading-none md:text-[56px]">
+            Reviews
+          </h2>
+          <p className="mt-2 text-[13px] text-muted">
+            {m.reviewCount > 0
+              ? `★ ${m.rating.toFixed(1)} from ${m.reviewCount} buyers of ${m.displayName} pieces. `
+              : ''}
+            Only buyers with delivered orders can review.
+          </p>
+        </div>
+        <Link
+          href={`/makers/${m.slug}#reviews`}
+          className="text-[11px] uppercase tracking-label underline underline-offset-[6px]"
+        >
+          All reviews
+        </Link>
+      </div>
+      <Reviews reviews={reviews} emptyText="No reviews for this piece yet." />
+    </>
+  );
+
   return (
-    <div className="pb-28 md:pb-0">
+    // Phones: the site header steps aside (data-immersive), the photos stay fixed at the top and
+    // the content card slides up over them. Desktop: the gallery stays pinned while the details
+    // column scrolls, then releases when it ends.
+    <div className="pb-28 max-md:-mt-[var(--header-h)] md:pb-0" data-immersive>
       {preview && (
         <p
-          className="bg-stone-light px-4 py-2 text-center text-[11px] uppercase tracking-label"
+          className="relative z-[1] bg-stone-light px-4 py-2 text-center text-[11px] uppercase tracking-label"
           role="status"
         >
           Preview — this listing isn’t visible to shoppers yet
         </p>
       )}
-      <div className="md:grid md:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
-        <div className="md:sticky md:top-[var(--header-h)] md:self-start">
+      <div
+        className="fixed inset-x-3 top-[calc(env(safe-area-inset-top)+12px)] z-[5] flex items-center justify-between md:hidden"
+        data-testid="phone-product-actions"
+      >
+        <Link
+          href="/"
+          aria-label="Back to Discover"
+          className="glass-chip flex h-11 w-11 items-center justify-center"
+        >
+          <ChevronIcon dir="left" width={18} height={18} />
+        </Link>
+        <div className="flex gap-2">
+          <ShareButton title={product.title} className="glass-chip" />
+          <SaveButton productId={product.id} saved={saved} title={product.title} boxed />
+        </div>
+      </div>
+      <div className="md:grid md:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] lg:flex lg:items-start">
+        <div
+          className="sticky top-0 z-0 h-[max(480px,66vh)] md:top-[var(--header-h)] md:h-auto md:self-start lg:w-[59%] lg:shrink-0"
+          data-testid="product-gallery"
+        >
           <Gallery
             images={product.images}
             title={product.title}
             overlay={
-              <>
-                <Link
-                  href="/"
-                  aria-label="Back to Discover"
-                  className="glass-chip absolute left-3 top-3 flex h-11 w-11 items-center justify-center md:hidden"
-                >
-                  <ChevronIcon dir="left" width={18} height={18} />
-                </Link>
-                <div className="absolute right-3 top-3 flex gap-2">
-                  <ShareButton title={product.title} className="glass-chip md:hidden" />
-                  <SaveButton productId={product.id} saved={saved} title={product.title} boxed />
-                </div>
-              </>
+              <div className="absolute right-3 top-3 hidden md:flex">
+                <SaveButton productId={product.id} saved={saved} title={product.title} boxed />
+              </div>
             }
           />
         </div>
 
-        <div className="px-4 pt-4 md:px-10 md:pt-8 lg:px-12">
+        <div
+          className="relative z-[1] -mt-7 bg-ground px-4 pt-4 shadow-[0_-14px_32px_rgba(17,17,17,0.14)] md:mt-0 md:px-10 md:pt-8 md:shadow-none lg:min-w-0 lg:flex-1 lg:px-12"
+          data-testid="product-details"
+        >
+          <span
+            aria-hidden
+            className="mx-auto -mt-1 mb-3 block h-1 w-9 rounded-circle bg-line-strong md:hidden"
+          />
           <nav
             aria-label="Breadcrumb"
             className="hidden text-[11px] uppercase tracking-label text-muted-2 md:block"
@@ -294,78 +338,65 @@ export default async function ProductPage({ params }: { params: { slug: string }
               <p>{shippingText}</p>
             </Accordion>
           </div>
+          <section aria-labelledby="reviews-title-desktop" className="mt-16 hidden lg:block">
+            {reviewsBlock('reviews-title-desktop')}
+          </section>
         </div>
       </div>
 
-      <section aria-labelledby="reviews-title" className="container-page mt-20">
-        <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2 id="reviews-title" className="text-[44px] leading-none md:text-[56px]">
-              Reviews
-            </h2>
-            <p className="mt-2 text-[13px] text-muted">
-              {m.reviewCount > 0
-                ? `★ ${m.rating.toFixed(1)} from ${m.reviewCount} buyers of ${m.displayName} pieces. `
-                : ''}
-              Only buyers with delivered orders can review.
-            </p>
-          </div>
-          <Link
-            href={`/makers/${m.slug}#reviews`}
-            className="text-[11px] uppercase tracking-label underline underline-offset-[6px]"
-          >
-            All reviews
-          </Link>
-        </div>
-        <Reviews reviews={reviews} emptyText="No reviews for this piece yet." />
-      </section>
-
-      <section
-        id="questions"
-        aria-labelledby="questions-title"
-        className="container-page mt-20 scroll-mt-[calc(var(--header-h)+16px)]"
-      >
-        <h2 id="questions-title" className="text-[44px] leading-none md:text-[56px]">
-          Questions
-        </h2>
-        <p className="mb-6 mt-2 text-[13px] text-muted">
-          Asked in public and answered by {m.displayName}. For anything personal, ask the maker
-          privately.
-        </p>
-        <div className="grid gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <Questions entries={questions} slug={product.slug} canReply={isMaker} />
-          <div className="md:max-w-md">
-            <AskQuestionForm
-              productId={product.id}
-              slug={product.slug}
-              makerName={m.displayName}
-              signedIn={Boolean(user)}
-              isMaker={isMaker}
-            />
-          </div>
-        </div>
-      </section>
-
-      {related.fromMaker.length > 0 && (
-        <section aria-labelledby="more-maker" className="mt-20">
-          <div className="container-page">
-            <SectionTitle>
-              <span id="more-maker">More from {m.displayName}</span>
-            </SectionTitle>
-          </div>
-          <ProductGrid products={related.fromMaker} savedIds={savedIds} priorityCount={0} />
+      <div className="relative z-[1] bg-ground pt-20">
+        {/* On desktop, reviews sit in the details column (above) so the gallery stays pinned. */}
+        <section aria-labelledby="reviews-title" className="container-page lg:hidden">
+          {reviewsBlock('reviews-title')}
         </section>
-      )}
-      {related.similar.length > 0 && (
-        <section aria-labelledby="similar" className="mt-20">
-          <div className="container-page">
-            <SectionTitle>
-              <span id="similar">You may also like</span>
-            </SectionTitle>
+
+        <section
+          id="questions"
+          aria-labelledby="questions-title"
+          className="container-page mt-20 scroll-mt-[calc(var(--header-h)+16px)]"
+        >
+          <h2 id="questions-title" className="text-[44px] leading-none md:text-[56px]">
+            Questions
+          </h2>
+          <p className="mb-6 mt-2 text-[13px] text-muted">
+            Asked in public and answered by {m.displayName}. For anything personal, ask the maker
+            privately.
+          </p>
+          <div className="grid gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+            <Questions entries={questions} slug={product.slug} canReply={isMaker} />
+            <div className="md:max-w-md">
+              <AskQuestionForm
+                productId={product.id}
+                slug={product.slug}
+                makerName={m.displayName}
+                signedIn={Boolean(user)}
+                isMaker={isMaker}
+              />
+            </div>
           </div>
-          <ProductGrid products={related.similar} savedIds={savedIds} priorityCount={0} />
         </section>
-      )}
+
+        {related.fromMaker.length > 0 && (
+          <section aria-labelledby="more-maker" className="mt-20">
+            <div className="container-page">
+              <SectionTitle>
+                <span id="more-maker">More from {m.displayName}</span>
+              </SectionTitle>
+            </div>
+            <ProductGrid products={related.fromMaker} savedIds={savedIds} priorityCount={0} />
+          </section>
+        )}
+        {related.similar.length > 0 && (
+          <section aria-labelledby="similar" className="mt-20">
+            <div className="container-page">
+              <SectionTitle>
+                <span id="similar">You may also like</span>
+              </SectionTitle>
+            </div>
+            <ProductGrid products={related.similar} savedIds={savedIds} priorityCount={0} />
+          </section>
+        )}
+      </div>
     </div>
   );
 }

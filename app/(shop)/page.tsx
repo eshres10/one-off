@@ -232,7 +232,7 @@ export default async function DiscoverPage({ searchParams }: { searchParams: Sea
         <section
           data-hero
           aria-labelledby="hero-title"
-          className="relative -mt-[var(--header-h)] flex h-[min(88vh,860px)] min-h-[560px] items-center justify-center overflow-hidden text-ground"
+          className="relative z-0 -mt-[var(--header-h)] flex h-[min(88vh,860px)] min-h-[560px] items-center justify-center overflow-hidden text-ground md:sticky md:top-0"
         >
           {hero.imageUrl && (
             <Image
@@ -269,29 +269,39 @@ export default async function DiscoverPage({ searchParams }: { searchParams: Sea
       )}
       {!isDefault && <h1 className="sr-only">Discover</h1>}
 
-      <div className="mt-10 space-y-6 md:mt-14">
-        <FeedTabs active={filters.tab} />
-        {filters.tab !== 'collections' && <CollectionChips collections={collections.slice(0, 5)} />}
+      {/* From tablet up the hero stays put and everything after it slides over like a shutter. */}
+      <div
+        className={isDefault ? 'shutter relative z-[1] bg-ground' : undefined}
+        data-shutter={isDefault ? '' : undefined}
+      >
+        <div className="space-y-6 pt-10 md:pt-14">
+          <FeedTabs active={filters.tab} />
+          {filters.tab !== 'collections' && (
+            <CollectionChips collections={collections.slice(0, 5)} />
+          )}
+        </div>
+        <div className="mt-6">
+          {filters.tab !== 'collections' && <FilterBar options={options} />}
+        </div>
+
+        <section id="pieces" aria-labelledby="pieces-title" className="mt-[2px]">
+          <h2 id="pieces-title" className="sr-only">
+            Pieces
+          </h2>
+          <Suspense key={JSON.stringify(filters)} fallback={<ProductGridSkeleton />}>
+            <Feed filters={filters} />
+          </Suspense>
+        </section>
+
+        {isDefault && (
+          <>
+            <HomeRails />
+            <div className="mt-16">
+              <TrustStrip />
+            </div>
+          </>
+        )}
       </div>
-      <div className="mt-6">{filters.tab !== 'collections' && <FilterBar options={options} />}</div>
-
-      <section id="pieces" aria-labelledby="pieces-title" className="mt-[2px]">
-        <h2 id="pieces-title" className="sr-only">
-          Pieces
-        </h2>
-        <Suspense key={JSON.stringify(filters)} fallback={<ProductGridSkeleton />}>
-          <Feed filters={filters} />
-        </Suspense>
-      </section>
-
-      {isDefault && (
-        <>
-          <HomeRails />
-          <div className="mt-16">
-            <TrustStrip />
-          </div>
-        </>
-      )}
     </div>
   );
 }

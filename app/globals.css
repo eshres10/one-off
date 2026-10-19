@@ -370,3 +370,17 @@ html {
     box-shadow: none;
   }
 }
+
+/* Homepage shutter: the sheet after the sticky hero casts a shadow up over it (tablet and up). */
+@media (min-width: 768px) {
+  .shutter {
+    box-shadow: 0 -30px 60px rgba(17, 17, 17, 0.22);
+  }
+}
+
+/* Phone product pages are immersive: the photos sit at the very top with their own buttons. */
+@media (max-width: 767px) {
+  body:has([data-immersive]) .site-header {
+    display: none;
+  }
+}

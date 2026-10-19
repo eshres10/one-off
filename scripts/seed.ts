@@ -618,7 +618,7 @@ export async function seed(databaseUrl: string) {
         insert into public.editorial_placements (id, slot, title, subtitle, image_url, href, sort_order) values
           (${seedId('placement:hero')}, 'home_hero', 'Bespoke pieces made just for you',
             'Melbourne-made · Straight from the maker',
-            '/seed/hero-linen-suit.jpg', '/?tab=new', 0),
+            '/seed/hero-velvet-sofa.jpg', '/?tab=new', 0),
           (${seedId('placement:wedding')}, 'home_feature', 'Wedding guest, but not boring',
             'Season picks from ten independent Melbourne studios.', ${'/seed/tangerine-bias-maxi.jpg'},
             '/collections/wedding-guest-but-not-boring', 1)
