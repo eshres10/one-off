@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { BRAND } from '@/lib/brand';
+import { TERMS } from '@/lib/studio/terms';
 import { WaitlistForm } from '@/components/forms/WaitlistForm';
 import { BoxButtonGroup, boxButtonClass } from '@/components/ui/Button';
 import { Img as Image } from '@/components/ui/Img';
@@ -88,7 +89,7 @@ export default function WaitlistPage({ searchParams }: { searchParams: SearchPar
               <div className="card mt-8 p-6 md:p-10">
                 <h2 className="text-[28px] leading-tight md:text-[32px]">Get first access</h2>
                 <p className="mb-8 mt-2 text-[14px] text-muted">
-                  Shoppers hear first when we open. Makers can apply to launch with us.
+                  Shoppers hear first when we open. Makers can apply to sell.
                 </p>
                 <WaitlistForm source={ref} />
               </div>
@@ -112,13 +113,21 @@ export default function WaitlistPage({ searchParams }: { searchParams: SearchPar
           <h2 className="text-[32px] leading-tight md:text-[40px]">For makers</h2>
           <div className="max-w-[60ch] space-y-3 text-[15px] text-muted">
             <p>
-              We’re inviting a small group of labels to launch with us. You keep your brand and your
-              story. We handle checkout, payments and buyer protection.
+              Makers from anywhere in Australia can apply. We review every application by hand, so
+              everything on One Off is genuinely made by the people selling it. You keep your brand
+              and your story. We handle checkout, payments and buyer protection.
             </p>
             <p>
-              A 15% commission on each sale, shipping goes to you, and payouts are handled by
-              Stripe. Choose “I’m a maker” above and we’ll be in touch personally.
+              A {TERMS.standardCommissionPct}% commission on each sale, shipping goes to you, and
+              payouts are handled by Stripe.
             </p>
+            <Link
+              href="/sell/apply"
+              className={boxButtonClass('mt-3 min-w-[200px]')}
+              data-testid="waitlist-apply-to-sell"
+            >
+              Apply to sell
+            </Link>
           </div>
         </section>
       </main>

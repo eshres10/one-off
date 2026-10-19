@@ -18,7 +18,7 @@ const COLS = [
     { href: '/help/contact', label: 'Contact & help' },
   ],
   [
-    { href: '/help/sell-with-us', label: 'Sell with us' },
+    { href: '/sell/apply', label: 'Apply to sell' },
     { href: '/help/about', label: 'About' },
     { href: '/help/privacy', label: 'Privacy' },
     { href: '/terms', label: 'Terms' },

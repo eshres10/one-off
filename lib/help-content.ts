@@ -1,5 +1,6 @@
 import { RETURNS } from '@/lib/content/returns';
 import { BRAND } from '@/lib/brand';
+import { TERMS } from '@/lib/studio/terms';
 
 export interface HelpTopic {
   kicker: string;
@@ -175,7 +176,7 @@ export const HELP: Record<string, HelpTopic> = {
     kicker: 'Sell with us',
     title: 'Make it. We’ll help you sell it.',
     intro:
-      'We work with a small, hand-selected group of independent Australian makers. There is no open sign-up — tell us about your studio and we’ll be in touch.',
+      'Makers from anywhere in Australia can apply to sell. We review every application by hand, so everything on One Off is genuinely made by the people selling it.',
     sections: [
       {
         heading: 'What we look for',
@@ -186,7 +187,7 @@ export const HELP: Record<string, HelpTopic> = {
       {
         heading: 'How it works',
         body: [
-          'A 15% commission on each sale; shipping goes to you. Payouts are handled by Stripe. You keep your own brand and story, and we handle checkout and buyer protection.',
+          `Apply with your label and photos of your work. If you’re approved, you connect payouts and list your pieces. A ${TERMS.standardCommissionPct}% commission on each sale; shipping goes to you. Payouts are handled by Stripe. You keep your own brand and story, and we handle checkout and buyer protection.`,
         ],
       },
     ],

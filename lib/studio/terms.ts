@@ -11,6 +11,12 @@ export const TERMS = {
   releaseDaysAfterDelivery: 3, // [CONFIRM]
   autoDeliveredDaysAfterShip: 10, // if no carrier delivery event arrives
   inviteLinkDays: 7,
+  /** Applications: how long review usually takes, and how long after a decline to reapply. */
+  reviewBusinessDays: 2,
+  reapplyAfterDays: 90,
+  /** Pieces from a newly approved shop flagged for a light admin spot check. */
+  spotCheckPieces: 3,
+  applicationPhotos: { min: 3, max: 6 },
   readyToShipDispatchOptions: ['Same day', '1–2 days', '3–5 days'],
   mtoLeadOptions: ['1 week', '2 weeks', '3 weeks', '4 weeks'],
   sizes: ['6', '8', '10', '12', '14', '16', 'Custom'],

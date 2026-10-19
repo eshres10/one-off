@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { HELP } from '@/lib/help-content';
 import { Accordion } from '@/components/ui/Panels';
-import { SellerInterestForm } from '@/components/forms/SellerInterestForm';
+import { TERMS } from '@/lib/studio/terms';
 import { BRAND } from '@/lib/brand';
 
 export function generateMetadata({ params }: { params: { topic: string } }) {
@@ -95,25 +95,18 @@ export default function HelpPage({ params }: { params: { topic: string } }) {
           )}
           {params.topic === 'sell-with-us' && (
             <section className="max-w-2xl border-t border-ink pt-6">
-              <h2 className="text-[34px] leading-none">Ready to start?</h2>
+              <h2 className="text-[34px] leading-none">Ready to apply?</h2>
               <p className="mt-3 text-[14px] text-muted">
-                Set up your shop in a few minutes: your label, how selling works, and your bank.
+                Tell us about your label and show us your work. We review every application by hand,
+                usually within {TERMS.reviewBusinessDays} business days.
               </p>
               <Link
-                href="/sell/start"
+                href="/sell/apply"
                 className="glass-dark mt-5 inline-flex min-h-[52px] items-center px-8 text-[11px] uppercase tracking-[0.18em] text-ground"
                 data-testid="start-selling"
               >
-                Set up your shop
+                Apply to sell
               </Link>
-            </section>
-          )}
-          {params.topic === 'sell-with-us' && (
-            <section aria-labelledby="interest" className="max-w-2xl border-t border-ink pt-6">
-              <h2 id="interest" className="mb-6 text-[34px] italic leading-none">
-                Tell us about your studio
-              </h2>
-              <SellerInterestForm />
             </section>
           )}
         </div>

@@ -163,8 +163,8 @@ export const MEGA: MegaPanel[] = [
       },
       {
         title: 'Sell on One Off',
-        cta: 'Become a maker',
-        href: '/help/sell-with-us',
+        cta: 'Apply to sell',
+        href: '/sell/apply',
         image: '/seed/hero-linen-suit.jpg',
       },
     ],

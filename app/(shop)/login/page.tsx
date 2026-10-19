@@ -32,12 +32,21 @@ export default async function LoginPage({
       <div className="mt-8">
         <AuthForms next={next} magicLinks={magicLinksEnabled()} />
       </div>
-      <p className="mt-8 text-center text-[13px]">
-        New to One Off?{' '}
-        <Link href="/join" className="underline underline-offset-4">
-          Join
-        </Link>
-      </p>
+      {next.startsWith('/studio') ? (
+        <p className="mt-8 text-center text-[13px]" data-testid="login-apply">
+          Not selling with us yet?{' '}
+          <Link href="/sell/apply" className="underline underline-offset-4">
+            Apply to sell
+          </Link>
+        </p>
+      ) : (
+        <p className="mt-8 text-center text-[13px]">
+          New to One Off?{' '}
+          <Link href="/join" className="underline underline-offset-4">
+            Join
+          </Link>
+        </p>
+      )}
     </div>
   );
 }

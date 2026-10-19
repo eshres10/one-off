@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { BRAND } from '@/lib/brand';
 import { redirect } from 'next/navigation';
 import { getSessionUser } from '@/lib/auth/session';
 import { sql } from '@/lib/db';
@@ -44,8 +45,8 @@ function Expired() {
       <p className="mt-4 text-[15px] text-muted">
         Message us on Instagram and we’ll send a new one.
       </p>
-      <a href="https://instagram.com/shoponeoff" className="link mt-6 text-[14px]">
-        @shoponeoff
+      <a href={`https://instagram.com/${BRAND.instagram}`} className="link mt-6 text-[14px]">
+        @{BRAND.instagram}
       </a>
     </main>
   );

@@ -2,6 +2,7 @@ import { BRAND } from '@/lib/brand';
 import { formatPrice } from '@/lib/domain/money';
 import { env } from '@/lib/env';
 import { RETURNS } from '@/lib/content/returns';
+import { TERMS } from '@/lib/studio/terms';
 import type { EmailMessage } from './send';
 import { renderEmail } from './layout';
 
@@ -443,6 +444,128 @@ export const emails = {
       related: { type: 'maker', id: shop.makerId },
     };
   },
+
+  applicationNew: (
+    to: string,
+    a: {
+      makerId: string;
+      label: string;
+      owner: string;
+      place: string;
+      instagram: string;
+      resubmit: boolean;
+    },
+  ): EmailMessage => ({
+    to,
+    template: 'application_new',
+    subject: `${a.resubmit ? 'Application resubmitted' : 'New application'}: ${a.label}`,
+    text: `${a.owner} applied to sell as ${a.label} (${a.place}).\nInstagram: https://instagram.com/${a.instagram}\n\nReview it: ${url(`/admin/applications/${a.makerId}`)}`,
+    related: { type: 'maker', id: a.makerId },
+  }),
+
+  applicationReceived: (to: string, label: string): EmailMessage => {
+    const lines = [
+      `We review every application by hand, usually within ${TERMS.reviewBusinessDays} business days. We’ll email you either way.`,
+    ];
+    return {
+      to,
+      template: 'application_received',
+      subject: `Thanks, ${label}. Your application is in`,
+      text: `${lines.join('\n\n')}\n\nSee your application: ${url('/sell/apply')}${sign}`,
+      html: renderEmail({
+        heading: `Thanks, ${label}. Your application is in.`,
+        paragraphs: lines,
+        button: { label: 'See your application', url: '/sell/apply' },
+      }),
+    };
+  },
+
+  applicationApproved: (
+    to: string,
+    a: { makerId: string; label: string; foundingNumber: number | null },
+  ): EmailMessage => {
+    const lines = [
+      `${a.label} has been approved. It’s time to set up your shop: sign the Seller Agreement, connect payouts, set your shipping and add your first pieces.`,
+      ...(a.foundingNumber
+        ? [
+            `You’re founding maker Nº ${String(a.foundingNumber).padStart(2, '0')}: ${TERMS.foundingCommissionPct}% commission for your first ${TERMS.foundingMonths} months, starting when your shop goes live.`,
+          ]
+        : []),
+      'Your shop goes live once payouts are connected and your first piece is published.',
+    ];
+    return {
+      to,
+      template: 'application_approved',
+      subject: 'You’re in. Welcome to One Off',
+      text: `${lines.join('\n\n')}\n\nSet up your shop: ${url('/studio/setup')}${sign}`,
+      html: renderEmail({
+        preheader: 'Time to set up your shop.',
+        heading: 'You’re in. Welcome to One Off',
+        paragraphs: lines,
+        button: { label: 'Set up your shop', url: '/studio/setup' },
+        sellerFooter: true,
+      }),
+      related: { type: 'maker', id: a.makerId },
+    };
+  },
+
+  applicationChanges: (
+    to: string,
+    a: { makerId: string; label: string; note: string },
+  ): EmailMessage => {
+    const lines = [
+      `Thanks for applying, ${a.label}. Before we decide, we’d like a little more from you:`,
+      a.note,
+      'Update your application and resubmit it when you’re ready.',
+    ];
+    return {
+      to,
+      template: 'application_changes',
+      subject: 'A little more about your application',
+      text: `${lines.join('\n\n')}\n\nUpdate your application: ${url('/sell/apply')}${sign}`,
+      html: renderEmail({
+        heading: 'A little more about your application',
+        paragraphs: lines,
+        button: { label: 'Update your application', url: '/sell/apply' },
+      }),
+      related: { type: 'maker', id: a.makerId },
+    };
+  },
+
+  applicationDeclined: (
+    to: string,
+    a: { makerId: string; label: string; reason: string; reapplyAfter: string },
+  ): EmailMessage => {
+    const lines = [
+      `Thank you for applying to One Off, ${a.label}, and for showing us your work.`,
+      `We’re not able to offer you a shop right now. ${a.reason}`,
+      `You’re welcome to apply again after ${a.reapplyAfter}.`,
+    ];
+    return {
+      to,
+      template: 'application_declined',
+      subject: 'About your One Off application',
+      text: `${lines.join('\n\n')}${sign}`,
+      html: renderEmail({
+        heading: 'About your application',
+        paragraphs: lines,
+      }),
+      related: { type: 'maker', id: a.makerId },
+    };
+  },
+
+  applicationsWaiting: (
+    to: string,
+    waiting: Array<{ label: string; days: number }>,
+  ): EmailMessage => ({
+    to,
+    template: 'applications_waiting',
+    subject: `${waiting.length} ${waiting.length === 1 ? 'application is' : 'applications are'} waiting for review`,
+    text:
+      `These have waited more than ${TERMS.reviewBusinessDays} business days:\n\n` +
+      waiting.map((w) => `• ${w.label} (${w.days} days)`).join('\n') +
+      `\n\nReview them: ${url('/admin/applications')}`,
+  }),
 
   supportNew: (
     to: string,

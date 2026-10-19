@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import { useFormState } from 'react-dom';
 import { joinWaitlistAction } from '@/lib/actions/waitlist';
@@ -74,48 +75,28 @@ export function WaitlistForm({ source }: { source?: string }) {
       </div>
 
       {kind === 'maker' && (
-        <div className="grid gap-6 sm:grid-cols-2">
-          <div>
-            <label htmlFor="wl-name" className="label text-ink">
-              Label name
-            </label>
-            <input
-              id="wl-name"
-              name="name"
-              autoComplete="organization"
-              required
-              maxLength={80}
-              className="input-line"
-              aria-invalid={e.name ? true : undefined}
-              aria-describedby={e.name ? 'wl-name-error' : undefined}
-            />
-            {error('name')}
-          </div>
-          <div>
-            <label htmlFor="wl-instagram" className="label text-ink">
-              Instagram (optional)
-            </label>
-            <input
-              id="wl-instagram"
-              name="instagram"
-              placeholder="@yourlabel"
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck={false}
-              className="input-line"
-              aria-invalid={e.instagram ? true : undefined}
-              aria-describedby={e.instagram ? 'wl-instagram-error' : undefined}
-            />
-            {error('instagram')}
-          </div>
+        <div className="bg-stone p-4 text-[14px] leading-relaxed" data-testid="waitlist-apply">
+          <p>
+            Makers apply separately, so we can see your work. We review every application by hand.
+          </p>
+          <Link
+            href="/sell/apply"
+            className="glass-dark mt-4 flex min-h-[48px] items-center justify-center text-[11px] uppercase tracking-[0.18em] text-ground"
+          >
+            Apply to sell
+          </Link>
         </div>
       )}
 
-      <FormAlert message={state?.message} />
-      <SubmitButton size="lg" pendingLabel="Joining…" className="w-full">
-        {kind === 'maker' ? 'Apply for early access' : 'Join the waitlist'}
-      </SubmitButton>
-      <p className="text-[12px] text-muted-2">No spam. Just a note when we open.</p>
+      {kind === 'shopper' && (
+        <>
+          <FormAlert message={state?.message} />
+          <SubmitButton size="lg" pendingLabel="Joining…" className="w-full">
+            Join the waitlist
+          </SubmitButton>
+          <p className="text-[12px] text-muted-2">No spam. Just a note when we open.</p>
+        </>
+      )}
     </form>
   );
 }

@@ -15,6 +15,7 @@ export function AuthForms({
   defaultEmail,
   initialMode = 'password',
   oauth = [],
+  sellerNote = true,
 }: {
   next: string;
   magicLinks?: boolean;
@@ -23,6 +24,8 @@ export function AuthForms({
   initialMode?: Mode;
   /** Social sign-in buttons to show ("google", "apple"). */
   oauth?: string[];
+  /** The "Apply to sell" line under sign-up (off inside the application itself). */
+  sellerNote?: boolean;
 }) {
   const [mode, setMode] = useState<Mode>(initialMode);
   const [loginState, login] = useFormState<FormState, FormData>(loginAction, undefined);
@@ -164,9 +167,15 @@ export function AuthForms({
           <SubmitButton size="lg" className="w-full" pendingLabel="Creating account…">
             Create account
           </SubmitButton>
-          <p className="text-[12px] text-muted-2">
-            Selling on the platform is by invitation. Seller accounts are set up by our team.
-          </p>
+          {sellerNote && (
+            <p className="text-[12px] text-muted-2">
+              Want to sell your work?{' '}
+              <a href="/sell/apply" className="underline underline-offset-4">
+                Apply to sell
+              </a>
+              .
+            </p>
+          )}
         </form>
       )}
     </div>

@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useRef, useState } from 'react';
 import { CheckIcon, PlusIcon } from '@/components/ui/icons';
 import { Img as Image } from '@/components/ui/Img';
@@ -40,8 +39,19 @@ function Card({
   );
 }
 
-/** Step 2 of /sell/start: four swipeable cards built from real Studio pieces of UI. */
-export function SellingCards({ images, payout }: { images: string[]; payout: PayoutExample }) {
+/**
+ * "What to expect if you're approved": four swipeable cards built from real Studio pieces of UI.
+ * `finish` is shown in place of Next on the last card.
+ */
+export function SellingCards({
+  images,
+  payout,
+  finish,
+}: {
+  images: string[];
+  payout: PayoutExample;
+  finish: React.ReactNode;
+}) {
   const track = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
   // While Next/dots scroll the track, ignore the in-between scroll positions.
@@ -215,13 +225,7 @@ export function SellingCards({ images, payout }: { images: string[]; payout: Pay
       </div>
       <div className="mt-4">
         {last ? (
-          <Link
-            href="/sell/start?step=3"
-            className="glass-dark flex min-h-[52px] w-full items-center justify-center text-[11px] uppercase tracking-[0.18em] text-ground"
-            data-testid="sell-cards-continue"
-          >
-            Continue
-          </Link>
+          finish
         ) : (
           <button
             type="button"

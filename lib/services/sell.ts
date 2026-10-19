@@ -1,11 +1,8 @@
 import { audit } from '@/lib/audit';
 import type { SessionUser } from '@/lib/auth/session';
 import { sql } from '@/lib/db';
-import { sanitizeText } from '@/lib/domain/moderation';
-import { slugify } from '@/lib/slug';
 import { TERMS } from '@/lib/studio/terms';
 import { logShopEvent } from './concierge';
-import { UserError } from './errors';
 
 type User = Pick<SessionUser, 'id' | 'email' | 'role' | 'makerId'>;
 
@@ -52,76 +49,6 @@ export async function mySellShop(user: Pick<User, 'id'>): Promise<SellShop | nul
       exists (select 1 from public.maker_shipping_rates r where r.maker_id = m.id) as has_shipping
     from public.makers m where m.user_id = ${user.id} limit 1`;
   return s ?? null;
-}
-
-async function uniqueSlug(name: string): Promise<string> {
-  const base = slugify(name).slice(0, 40) || 'studio';
-  for (let i = 0; i < 50; i++) {
-    const slug = i === 0 ? base : `${base}-${i + 1}`;
-    const [taken] = await sql()`
-      select 1 from public.makers where slug = ${slug}
-      union all select 1 from public.maker_slug_redirects where old_slug = ${slug}`;
-    if (!taken) return slug;
-  }
-  return `${base}-${Date.now().toString(36)}`;
-}
-
-/**
- * Step 1 of /sell/start: the label. Creates (or updates) the maker's shop as a draft, makes the
- * account a seller account, and gives early shops a founding number.
- */
-export async function saveLabel(
-  user: User,
-  input: { name: string; suburb: string; instagram: string; makes: string[]; modes: string[] },
-): Promise<SellShop> {
-  const name = sanitizeText(input.name).trim().slice(0, 60);
-  if (name.length < 2) throw new UserError('Add your label’s name.');
-  const suburb = sanitizeText(input.suburb).trim().slice(0, 60);
-  if (!suburb) throw new UserError('Add the suburb you work from.');
-  const instagram =
-    input.instagram
-      .trim()
-      .replace(/^@/, '')
-      .replace(/[^\w.]/g, '')
-      .slice(0, 30) || null;
-  const makes = input.makes.filter((m) => (MAKES as readonly string[]).includes(m));
-  if (!makes.length) throw new UserError('Pick what you make.');
-  const modes = input.modes.filter((m) => SELL_MODES.some((x) => x.value === m));
-  if (!modes.length) throw new UserError('Pick how you sell.');
-
-  const existing = await mySellShop(user);
-  if (existing && existing.shopStatus !== 'draft')
-    throw new UserError('Your shop is already set up. Change these details in Studio settings.');
-  if (user.role === 'admin') throw new UserError('Admin accounts can’t open a shop.');
-
-  if (existing) {
-    await sql()`
-      update public.makers set display_name = ${name}, location = ${suburb}, city = ${suburb}, instagram = ${instagram},
-        tags = ${makes}, sell_modes = ${modes}, custom_commissions_enabled = ${modes.includes('custom')}
-      where id = ${existing.id}`;
-    return (await mySellShop(user))!;
-  }
-
-  const slug = await uniqueSlug(name);
-  const makerId = await sql().begin(async (tx) => {
-    const [row] = await tx<{ id: string }[]>`
-      insert into public.makers (user_id, slug, display_name, location, city, instagram, tags, sell_modes,
-        custom_commissions_enabled, status, shop_status, self_signup, claimed_at)
-      values (${user.id}, ${slug}, ${name}, ${suburb}, ${suburb}, ${instagram}, ${makes}, ${modes},
-        ${modes.includes('custom')}, 'draft', 'draft', true, now())
-      returning id`;
-    await tx`update public.users set role = 'seller' where id = ${user.id} and role = 'buyer'`;
-    await tx`select pg_advisory_xact_lock(hashtext('founding_number'))`;
-    const [next] = await tx<
-      { n: number }[]
-    >`select coalesce(max(founding_number), 0) + 1 as n from public.makers`;
-    if (next!.n <= TERMS.foundingMakerCap)
-      await tx`update public.makers set founding_number = ${next!.n} where id = ${row!.id}`;
-    return row!.id;
-  });
-  await logShopEvent(makerId, 'self_signup');
-  await audit('shop.self_signup', { type: 'maker', id: makerId }, { slug }, user.id);
-  return (await mySellShop(user))!;
 }
 
 /** Shop statuses whose pieces can be published (buyers see them once the shop is live). */
