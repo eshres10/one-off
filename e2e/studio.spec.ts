@@ -187,8 +187,9 @@ test.describe.serial('Studio', () => {
 
   test('3. publish stays off until all 5 checks pass', async ({ page }) => {
     await login(page, halde.email, '/studio/listings/new');
-    const publish = page.getByTestId('publish-piece');
-    const checklist = page.getByTestId('publish-checklist');
+    // Desktop and phone layouts both render; use the visible one.
+    const publish = page.getByTestId('publish-piece').filter({ visible: true }).first();
+    const checklist = page.getByTestId('publish-checklist').filter({ visible: true }).first();
     await expect(publish).toBeDisabled();
     await page.getByTestId('photo-input').setInputFiles(PHOTOS);
     await expect(page.getByTestId('photo-grid').locator('img')).toHaveCount(3, { timeout: 30_000 });
