@@ -19,6 +19,7 @@ export const LIMITS = {
   supportRequest: { windowSeconds: 3600, max: 5 },
   clientEvent: { windowSeconds: 3600, max: 300 },
   restoreLink: { windowSeconds: 3600, max: 20 },
+  pushSubscribe: { windowSeconds: 3600, max: 20 },
   returnStart: { windowSeconds: 86_400, max: 10 },
   question: { windowSeconds: 3600, max: 10 },
   waitlist: { windowSeconds: 3600, max: 10 },

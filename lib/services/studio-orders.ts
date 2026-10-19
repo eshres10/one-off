@@ -6,6 +6,8 @@ import { emails } from '@/lib/email/templates';
 import { textBuyerShipped } from './notifications';
 import { CARRIERS, trackingError, trackingUrl, type Carrier } from '@/lib/studio/carriers';
 import { UserError } from './errors';
+import { reportError } from '@/lib/log';
+import { sendOrderShippedPush } from './push';
 
 export {
   CARRIERS,
@@ -307,6 +309,7 @@ export async function markShipped(
     ),
   );
   await textBuyerShipped(input.fulfilmentId);
+  await sendOrderShippedPush(b.orderId).catch((err) => reportError(err, { where: 'push:shipped' }));
   return { buyerFirstName: firstName(b.name) };
 }
 

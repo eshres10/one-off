@@ -25,7 +25,12 @@ export const SITE = {
    * [DECIDE] Drop alerts (web push). Off until VAPID keys are set and you're happy with the
    * wording; at most one alert per device a day either way.
    */
-  pushAlerts: { enabled: false, maxPerDay: 1 },
+  /**
+   * Drop alerts (web push): the server-side triggers (a followed maker's new piece, order
+   * shipped). Off until VAPID keys are set in production. [DECIDE] At most one push per browser
+   * per 24 hours, order-shipped included.
+   */
+  pushAlerts: { enabled: false, minHoursBetween: 24 },
   /** One Off's Instagram, linked from the footer. */
   instagram: 'https://www.instagram.com/shoponeoff',
   /** Makers from anywhere in Australia can apply; buyers can order from anywhere in Australia. */

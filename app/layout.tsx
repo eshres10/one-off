@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { FirstOpen } from '@/components/install/FirstOpen';
 import { InstallProvider } from '@/components/install/InstallProvider';
 import { RestoreFromLink } from '@/components/install/RestoreFromLink';
 import { ServiceWorker } from '@/components/install/ServiceWorker';
@@ -71,6 +72,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Suspense fallback={null}>
           <InstallProvider />
           <RestoreFromLink />
+          <FirstOpen />
         </Suspense>
       </body>
     </html>

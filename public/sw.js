@@ -28,10 +28,13 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const url = new URL(
+  let url = new URL(
     (event.notification.data && event.notification.data.url) || '/',
     self.location.origin,
-  ).href;
+  );
+  // Only ever open One Off pages.
+  if (url.origin !== self.location.origin) url = new URL('/', self.location.origin);
+  url = url.href;
   event.waitUntil(
     (async () => {
       const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });

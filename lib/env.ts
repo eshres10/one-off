@@ -81,6 +81,10 @@ const schema = z
     INBOUND_EMAIL_DOMAIN: z.string().optional(),
     /** Vercel Cron sends `Authorization: Bearer <CRON_SECRET>`; scheduled routes require it. */
     CRON_SECRET: z.string().min(16).optional(),
+    /** Drop alerts (web push). Generate with `npx web-push generate-vapid-keys`. */
+    NEXT_PUBLIC_VAPID_PUBLIC_KEY: z.string().optional(),
+    VAPID_PRIVATE_KEY: z.string().optional(),
+    VAPID_SUBJECT: z.string().default('mailto:hello@shoponeoff.com.au'),
   })
   .superRefine((env, ctx) => {
     if (env.AUTH_DRIVER === 'supabase' || env.STORAGE_DRIVER === 'supabase') {
