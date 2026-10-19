@@ -133,9 +133,10 @@ test.describe.serial('discover', () => {
     await page.getByTestId('discover-search').fill('zzqxvbnonsense');
     await expect(page).toHaveURL(/q=zzqxvbnonsense/);
     await expect(page.getByTestId('discover-empty')).toBeVisible();
-    await expect(
-      page.getByTestId('discover-empty').getByRole('link', { name: 'Request a custom piece' }),
-    ).toHaveAttribute('href', '/custom');
+    await expect(page.getByTestId('discover-empty').getByTestId('have-it-made')).toHaveAttribute(
+      'href',
+      '/custom?q=zzqxvbnonsense',
+    );
   });
 
   test('quick view opens over the list, closes with Esc, and reloads as the full page', async ({

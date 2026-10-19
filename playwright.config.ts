@@ -99,6 +99,17 @@ export default defineConfig({
       dependencies: ['onboarding'],
       use: { browserName: 'chromium', viewport: { width: 1280, height: 860 } },
     },
+    {
+      name: 'states',
+      testMatch: 'states.spec.ts',
+      dependencies: ['applications'],
+      use: {
+        browserName: 'chromium',
+        viewport: { width: 390, height: 844 },
+        isMobile: true,
+        hasTouch: true,
+      },
+    },
   ],
   webServer: {
     command:

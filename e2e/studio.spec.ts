@@ -346,7 +346,7 @@ test.describe.serial('Studio', () => {
     expect(mail!.n).toBeGreaterThanOrEqual(2);
   });
 
-  test('7. holiday mode pauses buying with the away note, and ends on the back date', async ({
+  test('7. holiday mode shows the banner and note, keeps orders open, and ends on the back date', async ({
     page,
     browser,
   }) => {
@@ -365,13 +365,17 @@ test.describe.serial('Studio', () => {
 
     const shopper = await (await browser.newContext()).newPage();
     await shopper.goto(`/products/${piece.slug}`);
-    await expect(shopper.getByText(/Away until/).first()).toBeVisible();
+    const banner = shopper.getByTestId('holiday-banner').first();
+    await expect(banner).toContainText('You can still order');
+    await expect(banner).toContainText('Gone to the coast.');
+    // Orders stay open by default (SITE.holidayMode = 'accept_orders').
+    await shopper.getByRole('button', { name: `Size ${piece.size}`, exact: true }).click();
     await expect(
       shopper
-        .getByRole('button', { name: /Away until/ })
+        .getByRole('button', { name: /^Add to bag/ })
         .filter({ visible: true })
         .first(),
-    ).toBeDisabled();
+    ).toBeEnabled();
 
     // The back date arrives: the daily job turns holiday mode off.
     await db`update public.makers set holiday_until = current_date where slug = 'halde-studio'`;
@@ -380,7 +384,7 @@ test.describe.serial('Studio', () => {
       select shop_status from public.makers where slug = 'halde-studio'`;
     expect(shop!.shopStatus).toBe('live');
     await shopper.reload();
-    await expect(shopper.getByText(/Away until/)).toHaveCount(0);
+    await expect(shopper.getByTestId('holiday-banner')).toHaveCount(0);
     await shopper.getByRole('button', { name: `Size ${piece.size}`, exact: true }).click();
     await expect(
       shopper

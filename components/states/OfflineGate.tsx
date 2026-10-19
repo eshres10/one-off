@@ -83,7 +83,13 @@ export function OfflineGate() {
                       <span className="relative block aspect-4/5 overflow-hidden bg-stone">
                         {p.imageUrl && (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={p.imageUrl} alt="" className="h-full w-full object-cover" />
+                          <img
+                            src={p.imageUrl}
+                            alt=""
+                            className="h-full w-full object-cover"
+                            // Offline, an uncached photo can't load: leave the stone tile instead.
+                            onError={(e) => (e.currentTarget.style.display = 'none')}
+                          />
                         )}
                       </span>
                       <span className="mt-1.5 block truncate text-[12px]">{p.title}</span>

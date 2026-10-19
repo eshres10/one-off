@@ -1,0 +1,118 @@
+import { expect, test } from '@playwright/test';
+import postgres from 'postgres';
+import { PRODUCTS } from '../scripts/seed-data';
+
+const db = postgres(
+  process.env.E2E_DATABASE_URL ?? 'postgres://postgres@127.0.0.1:54329/marketplace_e2e',
+  { max: 1, onnotice: () => {} },
+);
+test.afterAll(() => db.end());
+
+test.describe('empty and edge states', () => {
+  test('a missing page is a real 404 with "This one got away."', async ({ page }) => {
+    const res = await page.goto('/does-not-exist');
+    expect(res?.status()).toBe(404);
+    await expect(page.getByTestId('not-found')).toContainText('This one got away.');
+    await expect(page.getByTestId('not-found-search')).toBeVisible();
+  });
+
+  test('a thrown error shows "A dropped stitch." and Try again re-renders', async ({ page }) => {
+    await page.goto('/dev/error');
+    await expect(page.getByTestId('error-state')).toContainText('A dropped stitch.');
+    await expect(page.getByText('Error 500 · We’ve been notified')).toBeVisible();
+    // reset() re-renders the segment, which asks the server for it again.
+    const again = page.waitForRequest((r) => r.url().includes('/dev/error'));
+    await page.getByTestId('error-retry').click();
+    await again;
+    await expect(page.getByTestId('error-state')).toBeVisible();
+  });
+
+  test('a search with no results offers "Have it made" with the query', async ({ page }) => {
+    await page.goto('/search?q=velvet%20opera%20cape');
+    await expect(page.getByTestId('search-empty')).toContainText(
+      'Nothing for “velvet opera cape”, yet.',
+    );
+    await expect(page.getByTestId('search-words')).toContainText('velvet');
+    await expect(page.getByTestId('have-it-made')).toHaveAttribute(
+      'href',
+      '/custom?q=velvet%20opera%20cape',
+    );
+    await expect(page.getByTestId('popular-searches')).toBeVisible();
+  });
+
+  test('filters with nothing to show suggest one to remove, and the button applies it', async ({
+    page,
+  }) => {
+    await page.goto('/discover?colour=navy&size=10&max=120');
+    await expect(page.getByTestId('discover-empty')).toContainText('A little too specific.');
+    const relax = page.getByTestId('relax-filter');
+    await expect(relax).toContainText(/^Show \d+ navy size 10 pieces?$/);
+    await relax.click();
+    await expect(page).toHaveURL(/colour=navy/);
+    await expect(page).not.toHaveURL(/max=/);
+    await expect(page.getByTestId('discover-empty')).toHaveCount(0);
+  });
+
+  test('a sold one-of-one keeps its page: 200, "Sold", no Add to bag', async ({ page }) => {
+    const ooo = PRODUCTS.find((p) => p.productType === 'one_of_one')!;
+    await db`update public.product_variants set stock_quantity = 0 where product_id = ${ooo.id}`;
+    const res = await page.goto(`/products/${ooo.slug}`);
+    expect(res?.status()).toBe(200);
+    await expect(page.getByTestId('sold-stamp').first()).toBeVisible();
+    await expect(page.getByTestId('sold-panel')).toContainText('This one found its person.');
+    await expect(page.getByRole('button', { name: /Add to bag/ })).toHaveCount(0);
+  });
+
+  test('a sold-out size can be picked to ask for a restock alert', async ({ page }) => {
+    const ready = PRODUCTS.find(
+      (p) =>
+        p.productType === 'ready_to_ship' &&
+        p.variants.length > 1 &&
+        !p.tags?.includes('preview-only'),
+    )!;
+    const [v] = await db<{ id: string; size: string }[]>`
+      update public.product_variants set stock_quantity = 0
+      where id = (select id from public.product_variants where product_id = ${ready.id} order by sort_order limit 1)
+      returning id, size`;
+    await page.goto(`/products/${ready.slug}`);
+    await page.getByRole('button', { name: `Size ${v!.size}, sold out` }).click();
+    await expect(page.getByTestId('size-sold-out')).toContainText(`Size ${v!.size} is sold out`);
+    await page.getByTestId('notify-restock').click();
+    await page.getByTestId('restock-email').fill('e2e.restock@buyer.test');
+    await page.getByTestId('notify-restock').click();
+    await expect(page.getByTestId('restock-confirmed')).toBeVisible();
+    const [n] = await db<{ n: number }[]>`
+      select count(*)::int as n from public.restock_alerts where variant_id = ${v!.id}`;
+    expect(n!.n).toBe(1);
+  });
+
+  test('a shop on holiday shows the banner', async ({ page }) => {
+    const p = PRODUCTS.find((x) => x.productType === 'ready_to_ship')!;
+    await db`update public.makers set shop_status = 'holiday', holiday_until = current_date + 10
+      where id = ${p.maker.id}`;
+    try {
+      await page.goto(`/makers/${p.maker.slug}`);
+      await expect(page.getByTestId('holiday-banner')).toContainText('You can still order.');
+    } finally {
+      await db`update public.makers set shop_status = 'live', holiday_until = null where id = ${p.maker.id}`;
+    }
+  });
+
+  test('icons, manifest and the product share image are served', async ({ request }) => {
+    for (const path of [
+      '/favicon.ico',
+      '/favicon.svg',
+      '/apple-touch-icon.png',
+      '/manifest.webmanifest',
+    ])
+      expect((await request.get(path)).status(), path).toBe(200);
+    const p = PRODUCTS[0]!;
+    const og = await request.get(`/og/products/${p.slug}?v=test`);
+    expect(og.status()).toBe(200);
+    expect(og.headers()['content-type']).toContain('image/png');
+    const png = await og.body();
+    // PNG header: width and height are big-endian at bytes 16–23.
+    expect(png.readUInt32BE(16)).toBe(1200);
+    expect(png.readUInt32BE(20)).toBe(630);
+  });
+});

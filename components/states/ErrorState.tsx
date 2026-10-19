@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { startTransition, useEffect } from 'react';
 import { EmptyState } from './EmptyState';
 import { NeedleIcon } from './illustrations';
 
@@ -26,7 +26,14 @@ export function useReportError(error: Error & { digest?: string }) {
 }
 
 /** "A dropped stitch.": something broke on our side; try again or go home. */
-export function ErrorState({ reset }: { reset: () => void }) {
+export function ErrorState({ reset, refresh }: { reset: () => void; refresh?: () => void }) {
+  // A server render that failed is cached in the page; reset() alone would show the same error,
+  // so fetch the segment again (when there's a router to ask) and re-render it together.
+  const retry = () =>
+    startTransition(() => {
+      refresh?.();
+      reset();
+    });
   return (
     <EmptyState
       testId="error-state"
@@ -40,7 +47,7 @@ export function ErrorState({ reset }: { reset: () => void }) {
           button: (
             <button
               type="button"
-              onClick={() => reset()}
+              onClick={retry}
               className="glass-dark min-h-[52px] w-full px-6 text-[11px] uppercase tracking-[0.2em] text-ground"
               data-testid="error-retry"
             >

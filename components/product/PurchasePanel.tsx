@@ -187,6 +187,7 @@ export function PurchasePanel({
         {modelLine && <p className="mt-2 text-[12px] text-muted-2">{modelLine}</p>}
         {selected &&
           productType === 'ready_to_ship' &&
+          selected.stockQuantity > 0 &&
           selected.stockQuantity <= selected.lowStockThreshold && (
             <p className="mt-1 text-[12px] text-ink">
               Only {selected.stockQuantity} left in this size
@@ -272,7 +273,9 @@ export function PurchasePanel({
           </div>
           <AddButton
             disabled={disabled}
-            label={checkoutEnabled && !allSoldOut && selected ? 'Add to bag' : label}
+            label={
+              checkoutEnabled && !allSoldOut && selected && !selectedSoldOut ? 'Add to bag' : label
+            }
             light
             className="shrink-0"
           />

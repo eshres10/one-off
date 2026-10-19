@@ -355,12 +355,24 @@ export function DiscoverView({
                           testId: 'relax-filter',
                         },
                       ]
-                    : [{ label: 'Request a custom piece', href: '/custom' }]),
-                  {
-                    label: 'Clear all filters',
-                    href: discoverHref(clearFilters(params)),
-                    testId: 'clear-filters',
-                  },
+                    : [
+                        {
+                          label: 'Request a custom piece',
+                          href: params.q ? `/custom?q=${encodeURIComponent(params.q)}` : '/custom',
+                        },
+                      ]),
+                  // Only a search word is on: clearing it is the button above, so offer a maker instead.
+                  relax.active === 1 && params.q
+                    ? {
+                        label: 'Have it made',
+                        href: `/custom?q=${encodeURIComponent(params.q)}`,
+                        testId: 'have-it-made',
+                      }
+                    : {
+                        label: 'Clear all filters',
+                        href: discoverHref(clearFilters(params)),
+                        testId: 'clear-filters',
+                      },
                 ]}
               />
             ) : (

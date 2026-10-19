@@ -64,11 +64,8 @@ test.describe.serial('app shell', () => {
     ).toBeGreaterThan(0);
 
     await page.getByTestId('search-input').fill('qwxzyplk');
-    await expect(page.getByTestId('search-empty')).toContainText('Nothing yet for “qwxzyplk”');
-    await expect(page.getByRole('link', { name: 'Request a custom piece' })).toHaveAttribute(
-      'href',
-      '/custom',
-    );
+    await expect(page.getByTestId('search-empty')).toContainText('Nothing for “qwxzyplk”, yet.');
+    await expect(page.getByTestId('have-it-made')).toHaveAttribute('href', '/custom?q=qwxzyplk');
   });
 
   test('saving and unsaving from search shows on /saved', async ({ browser }) => {
