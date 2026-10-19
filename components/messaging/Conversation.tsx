@@ -202,7 +202,7 @@ function Composer({
   }
 
   const chipClass =
-    'min-h-[36px] shrink-0 border border-line-strong bg-surface px-3 text-[12px] hover:border-ink';
+    'min-h-[44px] shrink-0 border border-line-strong bg-surface px-3 text-[12px] hover:border-ink';
 
   if (blocked) return <p className="bg-stone-light px-4 py-3 text-[13px] text-muted">{blocked}</p>;
 
@@ -260,9 +260,11 @@ function Composer({
                 type="button"
                 aria-label="Remove photo"
                 onClick={() => setPhotos(photos.filter((p) => p !== u))}
-                className="absolute right-0 top-0 flex h-6 w-6 items-center justify-center bg-ink/70 text-ground"
+                className="absolute right-0 top-0 flex h-11 w-11 items-start justify-end"
               >
-                <CloseIcon width={10} height={10} />
+                <span className="flex h-6 w-6 items-center justify-center bg-ink/70 text-ground">
+                  <CloseIcon width={10} height={10} />
+                </span>
               </button>
             </li>
           ))}

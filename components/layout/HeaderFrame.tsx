@@ -21,7 +21,7 @@ export function HeaderFrame({
   const scrolled = useScrolled(8);
   return (
     <header
-      className={`site-header${scrolled ? 'glass-nav' : ''}`}
+      className={scrolled ? 'site-header glass-nav' : 'site-header'}
       data-variant={variant}
       data-scrolled={scrolled ? '' : undefined}
       data-testid="site-header"

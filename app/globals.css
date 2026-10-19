@@ -114,11 +114,11 @@
     isolation: isolate;
     -webkit-backdrop-filter: blur(30px) saturate(120%);
     backdrop-filter: blur(30px) saturate(120%);
-    background-color: rgba(246, 244, 240, 0.5);
+    background-color: rgb(var(--ground-rgb) / 0.5);
     border-bottom: 1px solid rgba(255, 255, 255, 0.45);
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.5),
-      0 8px 24px rgba(17, 17, 17, 0.06);
+      0 8px 24px rgb(var(--ink-rgb) / 0.06);
   }
   .glass-light::before {
     content: '';
@@ -133,14 +133,14 @@
   /* Black glass buttons: the nav recipe with an ink tint. */
   .glass-dark {
     position: relative;
-    background: rgba(17, 17, 17, 0.82);
+    background: rgb(var(--ink-rgb) / 0.82);
     color: var(--ground);
     -webkit-backdrop-filter: blur(24px) saturate(140%);
     backdrop-filter: blur(24px) saturate(140%);
     border: 1px solid rgba(255, 255, 255, 0.14);
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.16),
-      0 6px 18px rgba(17, 17, 17, 0.18);
+      0 6px 18px rgb(var(--ink-rgb) / 0.18);
   }
   .glass-dark::before {
     content: '';
@@ -157,7 +157,7 @@
   .glass-chip {
     position: relative;
     isolation: isolate;
-    background: rgba(246, 244, 240, 0.5);
+    background: rgb(var(--ground-rgb) / 0.5);
     -webkit-backdrop-filter: blur(24px) saturate(140%);
     backdrop-filter: blur(24px) saturate(140%);
     border: 1px solid rgba(255, 255, 255, 0.5);
@@ -210,17 +210,20 @@
   color: #ffffff;
 }
 
-/* Frosted glass: the scrolled header, and the phone tab bar (always). */
-.glass-nav {
-  background: rgba(246, 244, 240, 0.55); /* see-through, not solid */
+/* Frosted glass: the scrolled header, and the phone tab bar (always). The attribute selector
+   outranks .site-header's transparent state regardless of how the CSS is bundled. */
+.glass-nav,
+.site-header[data-scrolled] {
+  background: rgb(var(--ground-rgb) / 0.55); /* see-through, not solid */
   -webkit-backdrop-filter: blur(24px) saturate(140%);
   backdrop-filter: blur(24px) saturate(140%);
-  border-bottom: 1px solid rgba(226, 222, 215, 0.7);
+  border-bottom: 1px solid rgb(var(--line-rgb) / 0.7);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    0 8px 24px rgba(17, 17, 17, 0.06);
+    0 8px 24px rgb(var(--ink-rgb) / 0.06);
 }
-.glass-nav::before {
+.glass-nav::before,
+.site-header[data-scrolled]::before {
   /* grain sits on its own layer */
   content: '';
   position: absolute;
@@ -236,10 +239,10 @@
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .glass-nav,
   .glass-chip {
-    background: rgba(246, 244, 240, 0.92);
+    background: rgb(var(--ground-rgb) / 0.92);
   }
   .glass-dark {
-    background: rgba(17, 17, 17, 0.92);
+    background: rgb(var(--ink-rgb) / 0.92);
   }
 }
 
@@ -281,13 +284,17 @@ html {
 body {
   padding-bottom: var(--tabbar-h);
 }
+/* Focus and scroll-into-view never leave a control hidden behind the tab bar. */
+html {
+  scroll-padding-bottom: var(--tabbar-h);
+}
 /* The tab bar is the glass recipe flipped: the edge and shadow face up. */
 [data-tabbar].glass-nav {
   border-bottom: 0;
-  border-top: 1px solid rgba(226, 222, 215, 0.7);
+  border-top: 1px solid rgb(var(--line-rgb) / 0.7);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    0 -8px 24px rgba(17, 17, 17, 0.06);
+    0 -8px 24px rgb(var(--ink-rgb) / 0.06);
 }
 
 @media (prefers-reduced-transparency: reduce) {

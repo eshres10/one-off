@@ -23,7 +23,9 @@ test.describe.serial('marketplace smoke', () => {
 
   test('browse the home feed', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: /Pieces nobody else/i })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: /Bespoke pieces made just for you/i }),
+    ).toBeVisible();
     const cards = page.getByTestId('product-card');
     await expect(cards.first()).toBeVisible();
     expect(await cards.count()).toBeGreaterThanOrEqual(8);
@@ -76,17 +78,18 @@ test.describe.serial('marketplace smoke', () => {
 
   test('send an "Ask the maker" message', async ({ page }) => {
     await login(page, BUYERS[0]!.email, `/products/${product.slug}`);
-    await page.getByRole('link', { name: 'Ask the maker' }).click();
-    await expect(page.getByTestId('thread-context')).toContainText(product.title);
+    await page.getByTestId('ask-the-maker').filter({ visible: true }).first().click();
+    // Straight into the conversation for this piece.
+    await page.waitForURL(/\/messages\/[0-9a-f-]{36}/);
+    await expect(page.getByTestId('piece-strip')).toContainText(product.title);
     await page.getByRole('button', { name: 'What size should I get?' }).click();
-    await page.getByRole('button', { name: 'Send', exact: true }).click();
-    await page.waitForURL(/\/account\/messages\//);
+    await page.getByTestId('send-message').click();
     await expect(page.getByTestId('message-list')).toContainText('What size should I get?');
 
     // Moderation blocks off-platform payment requests before sending.
-    await page.getByLabel('Message', { exact: true }).fill('Can I just PayID you instead?');
-    await expect(page.getByText(/Payments and contact must stay on the platform/)).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeDisabled();
+    await page.getByTestId('message-input').fill('Can I just PayID you instead?');
+    await expect(page.getByTestId('moderation-error')).toContainText('covered by buyer protection');
+    await expect(page.getByTestId('send-message')).toBeDisabled();
   });
 
   test('seller logs in and sees the order', async ({ page }) => {

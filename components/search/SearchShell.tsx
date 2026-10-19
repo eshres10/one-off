@@ -168,7 +168,7 @@ export function SearchShell({
                 type="button"
                 aria-pressed={filter === c.value}
                 onClick={() => start(() => router.replace(href(q, c.value), { scroll: false }))}
-                className={`min-h-[36px] shrink-0 border px-3.5 text-[11px] uppercase tracking-[0.12em] ${
+                className={`min-h-[44px] shrink-0 border px-3.5 text-[11px] uppercase tracking-[0.12em] ${
                   filter === c.value
                     ? 'border-ink bg-ink text-ground'
                     : 'border-line-strong bg-transparent text-ink hover:border-ink'
@@ -216,7 +216,7 @@ export function SearchShell({
                     <button
                       type="button"
                       onClick={() => setQ(r)}
-                      className="flex min-h-[36px] items-center gap-2 border border-line-strong px-3 text-[13px]"
+                      className="flex min-h-[44px] items-center gap-2 border border-line-strong px-3 text-[13px]"
                     >
                       {r}
                     </button>

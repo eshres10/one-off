@@ -66,6 +66,12 @@ export default defineConfig({
         deviceScaleFactor: 1,
       },
     },
+    {
+      name: 'app-shell',
+      testMatch: 'app-shell.spec.ts',
+      dependencies: ['visual-1280'],
+      use: { browserName: 'chromium', viewport: { width: 1280, height: 860 } },
+    },
   ],
   webServer: {
     command:
