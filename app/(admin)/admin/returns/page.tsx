@@ -67,7 +67,7 @@ export default async function AdminReturnsPage({
         </button>
       </form>
       {returns.length === 0 ? (
-        <p className="text-[14px] text-muted">No returns.</p>
+        <p className="text-[14px] text-muted">Nothing here yet.</p>
       ) : (
         <ul
           className="divide-y divide-line border-y border-line"

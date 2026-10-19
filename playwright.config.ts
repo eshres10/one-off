@@ -110,6 +110,12 @@ export default defineConfig({
         hasTouch: true,
       },
     },
+    {
+      name: 'change-of-mind',
+      testMatch: 'change-of-mind.spec.ts',
+      dependencies: ['states'],
+      use: { browserName: 'chromium', viewport: { width: 1280, height: 860 } },
+    },
   ],
   webServer: {
     command:
