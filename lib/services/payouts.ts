@@ -3,6 +3,7 @@ import { sql } from '@/lib/db';
 import { log, reportError } from '@/lib/log';
 import { payments } from '@/lib/payments';
 import { TERMS } from '@/lib/studio/terms';
+import { SITE } from '@/lib/site/config';
 import { checkDelivery, trackingConfigured } from '@/lib/studio/tracking';
 
 const DAY = 86_400_000;
@@ -132,7 +133,12 @@ export async function releaseDueTransfers(now = new Date()): Promise<ReleaseResu
     where f.status = 'delivered' and coalesce(f.payout_due_at, f.delivered_at + interval '1 day' * ${TERMS.releaseDaysAfterDelivery}) <= ${now}
       and f.payout_status <> 'paused'
       and f.stripe_transfer_id is null and f.transfer_status in ('pending', 'failed')
-      and o.status in ('paid', 'partially_refunded')`;
+      and o.status in ('paid', 'partially_refunded')
+      -- [DECIDE] SITE.returns.holdReadyToShipPayoutUntilWindowCloses (off by default): ready-to-ship
+      -- orders wait until their change-of-mind window has closed.
+      and (not ${SITE.returns.holdReadyToShipPayoutUntilWindowCloses}
+        or not exists (select 1 from public.order_items oi where oi.fulfilment_id = f.id and oi.product_type = 'ready_to_ship')
+        or f.delivered_at + make_interval(days => ${SITE.returns.readyToShipWindowDays}) <= ${now})`;
 
   const result: ReleaseResult = { released: 0, waiting: 0, held: 0 };
   for (const f of rows) {

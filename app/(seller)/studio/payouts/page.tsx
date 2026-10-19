@@ -5,7 +5,7 @@ import {
   syncStripeAccount,
 } from '@/lib/actions/seller';
 import { formatPrice } from '@/lib/domain/money';
-import { getPayouts } from '@/lib/queries/payouts';
+import { getPayoutAdjustments, getPayouts } from '@/lib/queries/payouts';
 import { TERMS, commissionPctAt, processingEstimateCents } from '@/lib/studio/terms';
 import { getStudioShop } from '@/lib/queries/studio';
 import { Monogram } from '@/components/ui/Monogram';
@@ -21,6 +21,13 @@ const day = (
     : '—';
 const weekday = TERMS.payoutWeekday[0]!.toUpperCase() + TERMS.payoutWeekday.slice(1);
 
+const ADJUSTMENT_HOW: Record<string, string> = {
+  reversed: 'Reversed from your Stripe balance',
+  next_payout: 'Comes off your next payout',
+  taken: 'Taken from your payout',
+  before_payout: 'Refunded before it was paid out',
+};
+
 const STATUS: Record<string, string> = {
   paid: 'Paid',
   in_transit: 'On the way',
@@ -32,7 +39,11 @@ const STATUS: Record<string, string> = {
 export default async function PayoutsPage({ searchParams }: { searchParams: { return?: string } }) {
   const seller = await requireSeller();
   if (searchParams.return) await syncStripeAccount(seller.makerId);
-  const [p, shop] = await Promise.all([getPayouts(seller), getStudioShop(seller.makerId)]);
+  const [p, shop, adjustments] = await Promise.all([
+    getPayouts(seller),
+    getStudioShop(seller.makerId),
+    getPayoutAdjustments(seller),
+  ]);
 
   // "How a sale pays out", with this shop's current rate.
   const piece = 30000;
@@ -164,6 +175,30 @@ export default async function PayoutsPage({ searchParams }: { searchParams: { re
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+          {adjustments.length > 0 && (
+            <div className="mt-10" data-testid="payout-adjustments">
+              <h3 className="mb-3 text-[24px] leading-none">Returns and adjustments</h3>
+              <ul className="divide-y divide-line border-y border-line text-[13px]" role="list">
+                {adjustments.map((a) => (
+                  <li key={a.id} className="py-3" data-testid="adjustment-row">
+                    <span>
+                      {a.label} · −{formatPrice(a.amountCents)}
+                      <span className="block text-[12px] text-muted">
+                        {ADJUSTMENT_HOW[a.how]}
+                        {a.how === 'taken' && a.appliedAt
+                          ? ` ${new Date(a.appliedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}`
+                          : ''}
+                      </span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 text-[12px] text-muted">
+                A returned piece comes back out of what you were paid for it. One Off’s commission
+                on it is refunded to you, so only your share is taken.
+              </p>
             </div>
           )}
         </section>

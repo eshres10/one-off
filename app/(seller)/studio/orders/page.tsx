@@ -19,6 +19,8 @@ import { countClaimsNeedingAttention } from '@/lib/services/claims';
 import { firstOrderChecklist } from '@/lib/services/studio-states';
 import { NoOrdersYet } from '@/components/studio/states/NoOrdersYet';
 import { env } from '@/lib/env';
+import { countOpenMakerReturns, listMakerReturns } from '@/lib/services/returns';
+import { StudioReturns } from '@/components/studio/returns/StudioReturns';
 
 export const metadata = { title: 'Orders · Studio' };
 
@@ -46,12 +48,70 @@ function ShipBy({ o }: { o: StudioOrderRow }) {
   );
 }
 
+function OrdersNav({
+  active,
+  counts,
+  problems,
+  returns,
+}: {
+  active: string;
+  counts: Record<OrderTab, number>;
+  problems: number;
+  returns: number;
+}) {
+  const cls = (on: boolean) =>
+    `-mb-px flex min-h-[44px] shrink-0 items-center gap-1.5 border-b text-[11px] uppercase tracking-label ${on ? 'border-ink' : 'border-transparent text-muted-2 hover:text-ink'}`;
+  return (
+    <nav
+      aria-label="Order status"
+      className="no-scrollbar -mx-4 mt-6 flex gap-6 overflow-x-auto border-b border-line px-4 md:mx-0 md:px-0"
+    >
+      {ORDER_TABS.map((t) => (
+        <Link
+          key={t.key}
+          href={`/studio/orders?tab=${t.key}`}
+          aria-current={active === t.key ? 'page' : undefined}
+          data-testid={`orders-tab-${t.key}`}
+          className={cls(active === t.key)}
+        >
+          {t.label} <span className="text-muted-2">({counts[t.key]})</span>
+        </Link>
+      ))}
+      <Link
+        href="/studio/orders?tab=returns"
+        aria-current={active === 'returns' ? 'page' : undefined}
+        data-testid="orders-tab-returns"
+        className={cls(active === 'returns')}
+      >
+        Returns <span className={returns ? 'text-alert' : 'text-muted-2'}>({returns})</span>
+      </Link>
+      <Link href="/studio/claims" data-testid="orders-tab-problems" className={cls(false)}>
+        Problems <span className={problems ? 'text-alert' : 'text-muted-2'}>({problems})</span>
+      </Link>
+    </nav>
+  );
+}
+
 export default async function StudioOrdersPage({
   searchParams,
 }: {
   searchParams: { tab?: string; order?: string };
 }) {
   const seller = await requireSeller();
+  const openReturns = await countOpenMakerReturns(seller.makerId);
+  if (searchParams.tab === 'returns')
+    return (
+      <div>
+        <h1 className="text-[40px] leading-none md:text-[56px]">Orders</h1>
+        <OrdersNav
+          active="returns"
+          counts={await countStudioOrders(seller)}
+          problems={await countClaimsNeedingAttention(seller.makerId)}
+          returns={openReturns}
+        />
+        <StudioReturns returns={await listMakerReturns(seller)} />
+      </div>
+    );
   const tab = (
     ORDER_TABS.some((t) => t.key === searchParams.tab) ? searchParams.tab : 'to-ship'
   ) as OrderTab;
@@ -70,29 +130,7 @@ export default async function StudioOrdersPage({
   return (
     <div>
       <h1 className="text-[40px] leading-none md:text-[56px]">Orders</h1>
-      <nav
-        aria-label="Order status"
-        className="no-scrollbar -mx-4 mt-6 flex gap-6 overflow-x-auto border-b border-line px-4 md:mx-0 md:px-0"
-      >
-        {ORDER_TABS.map((t) => (
-          <Link
-            key={t.key}
-            href={`/studio/orders?tab=${t.key}`}
-            aria-current={tab === t.key ? 'page' : undefined}
-            data-testid={`orders-tab-${t.key}`}
-            className={`-mb-px flex min-h-[44px] shrink-0 items-center gap-1.5 border-b text-[11px] uppercase tracking-label ${tab === t.key ? 'border-ink' : 'border-transparent text-muted-2 hover:text-ink'}`}
-          >
-            {t.label} <span className="text-muted-2">({counts[t.key]})</span>
-          </Link>
-        ))}
-        <Link
-          href="/studio/claims"
-          data-testid="orders-tab-problems"
-          className="-mb-px flex min-h-[44px] shrink-0 items-center gap-1.5 border-b border-transparent text-[11px] uppercase tracking-label text-muted-2 hover:text-ink"
-        >
-          Problems <span className={problems ? 'text-alert' : 'text-muted-2'}>({problems})</span>
-        </Link>
-      </nav>
+      <OrdersNav active={tab} counts={counts} problems={problems} returns={openReturns} />
 
       {rows.length === 0 && checklist ? (
         <NoOrdersYet list={checklist} shopUrl={`${env().APP_URL}/makers/${checklist.slug}`} />

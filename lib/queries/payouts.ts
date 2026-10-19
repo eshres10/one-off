@@ -80,3 +80,43 @@ export async function getPayouts(seller: Seller): Promise<PayoutsView> {
     history,
   };
 }
+
+export interface PayoutAdjustment {
+  id: string;
+  /** "Return OO-R-1042" or the case's reason. */
+  label: string;
+  /** What comes off the maker: their share of the refund (the commission is refunded to them). */
+  amountCents: number;
+  at: Date;
+  /** How it was taken. */
+  how: 'reversed' | 'next_payout' | 'taken' | 'before_payout';
+  appliedAt: Date | null;
+}
+
+/**
+ * Refunds after a sale, shown as their own lines on Studio → Payouts: change-of-mind returns
+ * (reversed from the transfer, taken from a later payout, or deducted before it was paid) and
+ * any other amount owed from a refund that couldn't be reversed.
+ */
+export async function getPayoutAdjustments(seller: Seller): Promise<PayoutAdjustment[]> {
+  const makerId = seller.makerId!;
+  const returns = await sql()<PayoutAdjustment[]>`
+    select r.id, 'Return ' || r.number as label,
+      round(r.refund_amount::numeric * oi.seller_net_cents / oi.line_total_cents)::int as amount_cents,
+      r.refunded_at as at, a.applied_at,
+      case when a.id is not null and a.applied_at is not null then 'taken'
+           when a.id is not null then 'next_payout'
+           when f.stripe_transfer_id is not null then 'reversed'
+           else 'before_payout' end as how
+    from public.returns r
+    join public.order_items oi on oi.id = r.order_item_id
+    join public.fulfilments f on f.id = oi.fulfilment_id
+    left join public.maker_adjustments a on a.return_id = r.id
+    where r.maker_id = ${makerId} and r.status = 'refunded' and r.refund_amount is not null`;
+  const other = await sql()<PayoutAdjustment[]>`
+    select a.id, a.reason as label, a.amount_cents, a.created_at as at, a.applied_at,
+      case when a.applied_at is not null then 'taken' else 'next_payout' end as how
+    from public.maker_adjustments a
+    where a.maker_id = ${makerId} and a.return_id is null`;
+  return [...returns, ...other].sort((x, y) => new Date(y.at).getTime() - new Date(x.at).getTime());
+}
