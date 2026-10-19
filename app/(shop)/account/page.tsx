@@ -25,7 +25,7 @@ export default async function AccountPage() {
           </p>
         )}
       </Link>
-      <Link href="/account/messages" className="card p-5 hover:border-ink">
+      <Link href="/messages" className="card p-5 hover:border-ink">
         <p className="eyebrow">Messages</p>
         <p className="mt-2 font-display text-3xl">{unread}</p>
         <p className="mt-2 text-sm text-ink-muted">unread conversation{unread === 1 ? '' : 's'}</p>

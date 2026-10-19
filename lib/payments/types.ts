@@ -26,6 +26,18 @@ export interface CreateCheckoutInput {
   termsUrl: string;
 }
 
+/** Deposit for an accepted custom-request quote; the balance is charged when the piece is made. */
+export interface CreateDepositInput {
+  requestId: string;
+  quoteId: string;
+  amountCents: number;
+  title: string;
+  description: string;
+  customerEmail?: string | null;
+  successUrl: string;
+  cancelUrl: string;
+}
+
 export interface CheckoutSessionInfo {
   id: string;
   paymentStatus: 'paid' | 'unpaid' | 'no_payment_required';
@@ -50,6 +62,7 @@ export interface AccountInfo {
 export interface PaymentsDriver {
   readonly name: 'stripe' | 'mock';
   createCheckoutSession(input: CreateCheckoutInput): Promise<{ id: string; url: string }>;
+  createDepositSession(input: CreateDepositInput): Promise<{ id: string; url: string }>;
   retrieveCheckoutSession(id: string): Promise<CheckoutSessionInfo>;
   createTransfer(input: {
     amountCents: number;

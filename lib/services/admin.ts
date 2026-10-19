@@ -195,6 +195,10 @@ export async function assignCommission(actorId: string, requestId: string, maker
     update public.commission_requests set maker_id = ${makerId}, status = 'submitted' where id = ${requestId}
     returning garment_type, budget_min_cents, budget_max_cents`;
   if (!req) throw new UserError('Request not found.');
+  // Reassigning moves the conversation; a first assignment opens it.
+  await sql()`update public.message_threads set maker_id = ${makerId} where commission_request_id = ${requestId}`;
+  const { ensureCommissionThread } = await import('./messaging');
+  await ensureCommissionThread(requestId);
   await sendEmail(
     emails.commissionRequestMaker(
       m.email,

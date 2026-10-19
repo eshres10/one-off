@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useFormState, useFormStatus } from 'react-dom';
 import { addToBagAction } from '@/lib/actions/cart';
+import { openThreadAction } from '@/lib/actions/messages';
 import { formatPrice } from '@/lib/domain/money';
 import { swatchColour } from '@/lib/colours';
 import type { FormState } from '@/lib/validation';
@@ -174,12 +175,16 @@ export function PurchasePanel({
       <div className="mt-6 hidden md:block">
         <AddButton disabled={disabled} label={label} className="w-full" />
       </div>
-      <Link
-        href={`${askHref}${variantId ? `?variant=${variantId}` : ''}`}
+      <input type="hidden" name="returnTo" value={askHref} />
+      <button
+        type="submit"
+        formAction={openThreadAction}
+        formNoValidate
+        data-testid="ask-the-maker"
         className="mt-2 flex min-h-[52px] w-full items-center justify-center gap-2 border border-ink text-[11px] uppercase tracking-[0.2em] hover:bg-ink hover:text-ground"
       >
         <ChatIcon width={16} height={16} /> Ask the maker
-      </Link>
+      </button>
       {requestHref && (
         <p className="mt-4 text-center">
           <Link href={requestHref} className="text-[13px] underline underline-offset-[5px]">

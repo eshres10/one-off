@@ -16,6 +16,9 @@ const nextConfig = {
     // Canonical domain: send www traffic to the apex.
     return [
       { source: '/help/terms', destination: '/terms', permanent: true },
+      // The maker dashboard is branded "Studio"; /studio/* is its friendly address.
+      { source: '/studio', destination: '/seller', permanent: false },
+      { source: '/studio/:path*', destination: '/seller/:path*', permanent: false },
       {
         source: '/:path*',
         has: [{ type: 'host', value: 'www.shoponeoff.com.au' }],

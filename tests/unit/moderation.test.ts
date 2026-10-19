@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { moderateMessage, sanitizeText } from '@/lib/domain/moderation';
+import { blockedMessage, moderateMessage, sanitizeText } from '@/lib/domain/moderation';
 
 describe('message moderation', () => {
   it.each([
@@ -36,5 +36,25 @@ describe('message moderation', () => {
 
   it('sanitises control characters and excess whitespace', () => {
     expect(sanitizeText('  hi\u0000 there\r\n\n\n\nbye‮ ')).toBe('hi there\n\nbye');
+  });
+});
+
+describe('product-conversation rules', () => {
+  it('blocks 8-digit numbers, the word bank and payment links', () => {
+    for (const text of ['ring 9876 5432', 'what bank do you use', 'pay at paypal.me/x', 'BSB?'])
+      expect(moderateMessage(text).allowed, text).toBe(false);
+  });
+  it('allows measurements, prices and dates', () => {
+    for (const text of [
+      'Bust 86, waist 70, hips 95',
+      'Is A$310 the final price?',
+      'By 12/11/2026?',
+    ])
+      expect(moderateMessage(text).allowed, text).toBe(true);
+  });
+  it('words the error for buyers and makers', () => {
+    expect(blockedMessage('buyer')).toContain('covered by buyer protection');
+    expect(blockedMessage('buyer')).not.toContain('paused');
+    expect(blockedMessage('maker')).toContain('Off-platform sales can get your shop paused.');
   });
 });

@@ -99,9 +99,18 @@ export const emails = {
     template: 'new_message',
     subject: `New message from ${fromName}${productTitle ? ` about ${productTitle}` : ''}`,
     text: `${fromName} sent you a message${productTitle ? ` about “${productTitle}”` : ''}.\n\nReply here: ${url(
-      forMaker ? `/seller/messages/${threadId}` : `/account/messages/${threadId}`,
+      forMaker ? `/seller/messages/${threadId}` : `/messages/${threadId}`,
     )}\n\nFor buyer protection, keep all purchases on ${BRAND.name}.${sign}`,
     related: { type: 'message_thread', id: threadId },
+  }),
+
+  /** At most hourly while a maker has unread messages (after the first-message email). */
+  messageDigest: (to: string, unreadThreads: number, makerId: string): EmailMessage => ({
+    to,
+    template: 'message_digest',
+    subject: `${unreadThreads} ${unreadThreads === 1 ? 'conversation needs' : 'conversations need'} a reply`,
+    text: `Shoppers are waiting to hear from you in ${unreadThreads} ${unreadThreads === 1 ? 'conversation' : 'conversations'}. Replying within 6 hours keeps your shop's reply badge.\n\nOpen your inbox: ${url('/seller/messages')}${sign}`,
+    related: { type: 'maker', id: makerId },
   }),
 
   commissionRequestMaker: (
@@ -144,7 +153,7 @@ export const emails = {
     subject: `${maker} sent you a quote`,
     text: `${maker} has quoted ${formatPrice(totalCents)} for your custom piece (deposit ${formatPrice(depositCents)}).\n\nView the quote: ${url(
       `/account/commissions/${requestId}`,
-    )}\n\nIf you accept, our concierge team will send you a secure Stripe payment link for the deposit.${sign}`,
+    )}\n\nAccept it from your messages to pay the deposit securely through checkout.${sign}`,
     related: { type: 'commission_request', id: requestId },
   }),
 

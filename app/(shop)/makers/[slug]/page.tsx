@@ -1,3 +1,4 @@
+import { openMakerThreadAction } from '@/lib/actions/messages';
 import { DEFAULT_MAKER_BANNER } from '@/lib/editorial';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -109,9 +110,11 @@ export default async function MakerPage({
                 makerName={maker.displayName}
                 look="box"
               />
-              <Link href={`/makers/${maker.slug}/ask`} className={boxButtonClass()}>
-                Ask a question
-              </Link>
+              <form action={openMakerThreadAction} className="flex">
+                <input type="hidden" name="makerId" value={maker.id} />
+                <input type="hidden" name="returnTo" value={`/makers/${maker.slug}`} />
+                <button className={boxButtonClass('w-full')}>Ask a question</button>
+              </form>
               {maker.customCommissionsEnabled && (
                 <Link href={`/makers/${maker.slug}/commission`} className={boxButtonClass()}>
                   Request a custom piece

@@ -199,7 +199,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
               priceCents={product.priceCents}
               colours={product.colours}
               variants={product.variants}
-              askHref={`/products/${product.slug}/ask`}
+              askHref={`/products/${product.slug}`}
               requestHref={
                 m.customCommissionsEnabled
                   ? `/makers/${m.slug}/commission?product=${product.id}`

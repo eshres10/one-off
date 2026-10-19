@@ -84,6 +84,46 @@ export function createStripeDriver(secretKey: string): PaymentsDriver {
       return { id: session.id, url: session.url };
     },
 
+    async createDepositSession(input) {
+      const metadata = {
+        kind: 'commission_deposit',
+        commission_request_id: input.requestId,
+        quote_id: input.quoteId,
+      };
+      const session = await stripe.checkout.sessions.create(
+        {
+          mode: 'payment',
+          currency: 'aud',
+          customer_email: input.customerEmail ?? undefined,
+          // Keep the card on file so the balance can be charged when the piece is finished.
+          customer_creation: 'always',
+          line_items: [
+            {
+              quantity: 1,
+              price_data: {
+                currency: 'aud',
+                unit_amount: input.amountCents,
+                product_data: { name: input.title, description: input.description },
+              },
+            },
+          ],
+          payment_intent_data: {
+            setup_future_usage: 'off_session',
+            transfer_group: `commission:${input.requestId}`,
+            metadata,
+          },
+          metadata,
+          client_reference_id: input.requestId,
+          success_url: input.successUrl,
+          cancel_url: input.cancelUrl,
+          expires_at: Math.floor(Date.now() / 1000) + 60 * 60,
+        },
+        { idempotencyKey: `deposit:${input.quoteId}` },
+      );
+      if (!session.url) throw new Error('Stripe did not return a Checkout URL');
+      return { id: session.id, url: session.url };
+    },
+
     async retrieveCheckoutSession(id) {
       const s = await stripe.checkout.sessions.retrieve(id, {
         expand: ['payment_intent.latest_charge'],

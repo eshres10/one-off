@@ -134,6 +134,8 @@ export interface SellerStats {
   responseTimeHours: number;
   newOrders: number;
   unreadThreads: number;
+  /** Conversations waiting on the maker (6-hour reply window). */
+  needsReply: number;
   topProducts: Array<{
     id: string;
     title: string;
@@ -168,7 +170,9 @@ export async function getSellerStats(s: Seller, days = 30): Promise<SellerStats>
         (select count(*) from public.fulfilments f join public.orders o on o.id = f.order_id
           where f.maker_id = ${s.makerId} and f.status = 'paid' and o.status in ('paid','partially_refunded'))::int as new_orders,
         (select count(*) from public.message_threads t where t.maker_id = ${s.makerId}
-          and t.last_message_at > coalesce(t.maker_last_read_at, 'epoch'))::int as unread_threads`;
+          and t.maker_unread > 0)::int as unread_threads,
+        (select count(*) from public.message_threads t where t.maker_id = ${s.makerId}
+          and t.maker_needs_reply)::int as needs_reply`;
     const top = await db<SellerStats['topProducts']>`
       select p.id, p.title, p.slug,
         (select count(*) from public.product_views v where v.product_id = p.id and v.created_at > now() - make_interval(days => ${days}))::int as views,

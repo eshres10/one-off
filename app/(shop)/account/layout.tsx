@@ -7,7 +7,7 @@ const LINKS = [
   { href: '/account/orders', label: 'Orders' },
   { href: '/saved', label: 'Saved' },
   { href: '/account/following', label: 'Following' },
-  { href: '/account/messages', label: 'Messages' },
+  { href: '/messages', label: 'Messages' },
   { href: '/account/measurements', label: 'Measurements' },
   { href: '/account/commissions', label: 'Custom requests' },
 ];

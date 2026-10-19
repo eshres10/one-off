@@ -86,6 +86,11 @@ export async function onCheckoutCompleted(sessionId: string): Promise<void> {
     );
     return;
   }
+  if (session.metadata.kind === 'commission_deposit') {
+    const { onDepositPaid } = await import('./commissions');
+    await onDepositPaid(session);
+    return;
+  }
 
   const result = await sql().begin(async (tx) => {
     const db = tx as unknown as Db;

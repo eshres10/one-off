@@ -3,6 +3,7 @@ import { getSessionUser } from '@/lib/auth/session';
 import { rateLimit } from '@/lib/rate-limit';
 import { isUserFacing } from '@/lib/services/errors';
 import { storeImage } from '@/lib/storage';
+import { storeMessagePhoto } from '@/lib/message-media';
 import { uploadsEnabled } from '@/lib/features';
 import { reportError } from '@/lib/log';
 
@@ -34,7 +35,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Choose an image to upload.' }, { status: 400 });
     if (file.size > 8 * 1024 * 1024)
       return NextResponse.json({ error: 'Images must be 8 MB or smaller.' }, { status: 413 });
-    const stored = await storeImage(new Uint8Array(await file.arrayBuffer()), file.type, kind);
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    // Message photos are private; everything else is public catalogue imagery.
+    const stored =
+      kind === 'messages'
+        ? await storeMessagePhoto(bytes, file.type, user.id)
+        : await storeImage(bytes, file.type, kind);
     return NextResponse.json({ url: stored.url });
   } catch (err) {
     if (isUserFacing(err)) return NextResponse.json({ error: err.message }, { status: 400 });

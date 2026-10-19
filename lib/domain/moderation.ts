@@ -27,8 +27,8 @@ const RULES: Array<{ reason: ModerationReason; patterns: RegExp[] }> = [
     patterns: [
       // AU mobiles / landlines with optional +61, spaces, dots or dashes: 0412 345 678, +61 2 9876 5432
       /(?:\+?\s*61[\s.-]?|\b0)[2-478](?:[\s.-]?\d){8}\b/,
-      // Any other run of 9+ digits (allowing separators) is very likely a phone number.
-      /\b\d(?:[\s.-]?\d){8,}\b/,
+      // Any other run of 8+ digits (allowing separators) is treated as a phone number.
+      /\b\d(?:[\s.-]?\d){7,}\b/,
       // Bracketed area codes: (02) 9876 5432
       /\(\s*0[2378]\s*\)[\s.-]?\d{4}[\s.-]?\d{4}\b/,
     ],
@@ -37,6 +37,7 @@ const RULES: Array<{ reason: ModerationReason; patterns: RegExp[] }> = [
     reason: 'bank_details',
     patterns: [
       /\bBSB\b/i,
+      /\bbank\b/i,
       /\b(?:acc(?:ount)?|acct)\.?\s*(?:no|num|number|#)\b/i,
       /\b(?:IBAN|SWIFT|routing number)\b/i,
     ],
@@ -91,4 +92,11 @@ export function sanitizeText(input: string): string {
       .replace(/\n{3,}/g, '\n\n')
       .trim()
   );
+}
+
+/** What the sender sees when a message is blocked (shown inline in the composer). */
+export function blockedMessage(sender: 'buyer' | 'maker'): string {
+  const base =
+    'Contact details, bank details and payment links can’t be sent. Keep it on One Off so you’re covered by buyer protection.';
+  return sender === 'maker' ? `${base} Off-platform sales can get your shop paused.` : base;
 }
