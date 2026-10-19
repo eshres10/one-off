@@ -315,7 +315,7 @@ export async function weeklySummaries(now = new Date()) {
       and extract(isodow from ${now}::timestamptz at time zone m.timezone) = 1
       and extract(hour from ${now}::timestamptz at time zone m.timezone) >= ${MAKER_MORNING_HOUR}
       and not exists (select 1 from public.email_outbox e where e.template = 'maker_weekly_summary'
-        and e.related_entity_id = m.id and e.created_at > ${now}::timestamptz - interval '6 days')`;
+        and e.related_entity_id = m.id::text and e.created_at > ${now}::timestamptz - interval '6 days')`;
   let sent = 0;
   for (const w of shops) {
     const shop = await shopContact(w.makerId);

@@ -127,8 +127,8 @@ export async function readClaimPhoto(
  * Confirms each uploaded photo exists, is within size and really is a JPG/PNG/HEIC before it is
  * attached to a claim. Anything else is rejected.
  */
-export async function verifyClaimPhotos(userId: string, paths: string[]) {
-  if (paths.length < 1) throw new UserError('Add at least one photo.');
+export async function verifyClaimPhotos(userId: string, paths: string[], required = true) {
+  if (required && paths.length < 1) throw new UserError('Add at least one photo.');
   if (paths.length > MAX_CLAIM_PHOTOS) throw new UserError(`Add up to ${MAX_CLAIM_PHOTOS} photos.`);
   for (const p of paths) {
     if (!claimPhotoBelongsTo(p, userId)) throw new UserError('One of the photos is invalid.');

@@ -113,7 +113,12 @@ export function progressSteps(f: ShipmentFacts, now = new Date()): ProgressStep[
     let detail = '';
     if (key === 'ordered') detail = short(f.orderedAt);
     if (key === 'making')
-      detail = i < currentIndex ? 'Made' : makingDay(f.orderedAt, f.leadDays, now);
+      detail =
+        i < currentIndex
+          ? 'Made'
+          : f.status === 'ready'
+            ? 'Made and packed'
+            : makingDay(f.orderedAt, f.leadDays, now);
     if (key === 'packed')
       detail =
         i <= currentIndex && stage !== 'ordered'
@@ -140,7 +145,8 @@ export function progressSteps(f: ShipmentFacts, now = new Date()): ProgressStep[
 
 /** The human line in the stone box under each parcel. */
 export function humanNote(f: ShipmentFacts): string {
-  const stage = stageOf(f.status, f.isMto);
+  // Made to order and ready to send reads as packed.
+  const stage = f.isMto && f.status === 'ready' ? 'packed' : stageOf(f.status, f.isMto);
   const m = f.makerName;
   switch (stage) {
     case 'ordered':

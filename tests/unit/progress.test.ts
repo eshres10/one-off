@@ -57,3 +57,12 @@ describe('reported problems', () => {
     expect(humanNote(f)).toMatch(/reported a problem/);
   });
 });
+
+describe('made to order, packed', () => {
+  it('reads as made and packed', async () => {
+    const { humanNote } = await import('@/lib/account/progress');
+    const f = { ...base, isMto: true, status: 'ready', leadDays: 14 };
+    expect(progressSteps(f)[1]).toMatchObject({ key: 'making', detail: 'Made and packed' });
+    expect(humanNote(f)).toMatch(/has packed it/);
+  });
+});

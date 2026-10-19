@@ -1,5 +1,6 @@
 import path from 'node:path';
 import postgres from 'postgres';
+import { checkoutAsGuest } from './checkout-steps';
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { ADMIN, MAKERS, PASSWORD } from '../scripts/seed-data';
 import { TERMS } from '../lib/studio/terms';
@@ -55,18 +56,7 @@ async function buy(browser: Browser, email: string, piece?: { slug: string; size
     .filter({ visible: true })
     .click();
   await page.getByTestId('view-bag').click();
-  await page.getByLabel(/Email for your receipt/).fill(email);
-  await page.getByLabel(/returned for change of mind/).check();
-  await page.getByTestId('checkout-button').click();
-  await page.waitForURL(/\/dev\/checkout\//);
-  await page.locator('input[name=name]').fill('Studio Buyer');
-  await page.locator('input[name=line1]').fill('10 Brunswick St');
-  await page.locator('input[name=city]').fill('Fitzroy');
-  await page.locator('input[name=postalCode]').fill('3065');
-  await page.getByTestId('mock-tos').check();
-  await page.getByTestId('mock-pay').click();
-  await expect(page.getByTestId('order-confirmation')).toBeVisible();
-  const orderNumber = (await page.getByTestId('order-number').innerText()).trim();
+  const orderNumber = await checkoutAsGuest(page, email, 'Studio Buyer');
   await ctx.close();
   return orderNumber;
 }
@@ -243,7 +233,9 @@ test.describe.serial('Studio', () => {
       .toBe(1);
   });
 
-  test('5. a made-to-order step change shows on the buyer’s order page', async ({ browser }) => {
+  test('5. a made-to-order shipment moved to Packed shows on the buyer’s order page', async ({
+    browser,
+  }) => {
     const [mto] = await db<{ orderNumber: string; orderId: string; email: string }[]>`
       select o.order_number, o.id as order_id, u.email from public.fulfilments f
       join public.orders o on o.id = f.order_id join public.users u on u.id = o.buyer_user_id
@@ -260,14 +252,20 @@ test.describe.serial('Studio', () => {
       .filter({ hasText: short(mto!.orderNumber) })
       .getByTestId('order-open')
       .click();
-    await seller.getByTestId('making-step-2').click();
-    await expect(seller.getByTestId('making-step-2')).toHaveAttribute('aria-pressed', 'true');
+    await seller.getByTestId('stage-making').click();
+    await expect(seller.getByTestId('stage-making')).toHaveAttribute('aria-pressed', 'true');
 
     const buyer = await (await browser.newContext()).newPage();
-    await login(buyer, mto!.email, `/account/orders/${mto!.orderId}`);
-    await expect(buyer.getByTestId('buyer-making').locator('[aria-current=step]')).toHaveText(
-      'Sewing',
-    );
+    await login(buyer, mto!.email, `/account/orders/${mto!.orderNumber}`);
+    await expect(
+      buyer.getByTestId('parcel-progress').first().locator('[aria-current=step]'),
+    ).toContainText('Being made');
+
+    await seller.getByTestId('stage-packed').click();
+    await expect(seller.getByTestId('stage-packed')).toHaveAttribute('aria-pressed', 'true');
+    // Made to order shows "Being made" until it's sent; the note says it's packed.
+    await buyer.reload();
+    await expect(buyer.getByTestId('parcel-note').first()).toContainText('packed');
   });
 
   test(`6. money is released ${TERMS.releaseDaysAfterDelivery} days after delivery, not before, and an issue holds it`, async ({

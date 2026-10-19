@@ -3,7 +3,6 @@ import { closeDb, sql } from '@/lib/db';
 import { resetEnvCache } from '@/lib/env';
 import { handleInboundReply } from '@/lib/services/inbound';
 import { notifyNewOrder, shipByReminders } from '@/lib/services/notifications';
-import { melbourneToday } from '@/lib/studio/format';
 import { MAKERS, buyAndPay, pickVariant } from './helpers';
 
 const vars = process.env as Record<string, string | undefined>;
@@ -101,10 +100,12 @@ describe('replying with a tracking number', () => {
 describe('ship-by reminders', () => {
   it('reminds once on the ship-by day', async () => {
     const { fulfilment } = await sale(15);
-    await sql()`update public.fulfilments set estimated_dispatch_date = ${melbourneToday()}::date
+    await sql()`update public.fulfilments set estimated_dispatch_date = '2026-11-05'
       where id = ${fulfilment.id}`;
-    await shipByReminders();
-    await shipByReminders();
+    // Midday on the east coast, 10am in Perth: past 8am wherever the maker is.
+    const at = new Date('2026-11-05T02:00:00Z');
+    await shipByReminders(at);
+    await shipByReminders(at);
     const [n] = await sql()<{ n: number }[]>`
       select count(*)::int as n from public.email_outbox where template = 'maker_ship_by_reminder'
       and body_text like ${`%${fulfilment.id}%`}`;

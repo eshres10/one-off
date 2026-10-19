@@ -1,3 +1,4 @@
+import { checkoutAsGuest } from './checkout-steps';
 import { expect, test, type Page } from '@playwright/test';
 import { BUYERS, PASSWORD, PRODUCTS, MAKERS } from '../scripts/seed-data';
 
@@ -81,17 +82,9 @@ test.describe.serial('visual', () => {
     await expect(page.getByTestId('bag-line')).toHaveCount(1);
     await snap(page, 'bag');
 
-    await page.getByLabel(/Email for your receipt/).fill('visual-guest@buyer.test');
-    await page.getByLabel(/returned for change of mind/).check();
-    await page.getByTestId('checkout-button').click();
-    await page.waitForURL(/\/dev\/checkout\//);
-    await page.locator('input[name=name]').fill('Visual Guest');
-    await page.locator('input[name=line1]').fill('10 Brunswick St');
-    await page.locator('input[name=city]').fill('Fitzroy');
-    await page.locator('input[name=postalCode]').fill('3065');
-    await page.getByTestId('mock-tos').check();
-    await page.getByTestId('mock-pay').click();
-    await expect(page.getByTestId('order-confirmation')).toBeVisible();
+    await checkoutAsGuest(page, 'visual-guest@buyer.test', 'Visual Guest', {
+      onStep: (name) => snap(page, `checkout-${name}`),
+    });
     await snap(page, 'order-confirmation');
   });
 
@@ -103,5 +96,25 @@ test.describe.serial('visual', () => {
 
     await page.goto(`/makers/${maker.slug}/commission`);
     await snap(page, 'request-custom-piece');
+  });
+});
+
+test.describe('buyer account', () => {
+  test('account screens', async ({ page }) => {
+    await login(page, BUYERS[2]!.email);
+    for (const [path, name] of [
+      ['/account', 'account-home'],
+      ['/account/orders', 'account-orders'],
+      ['/account/sizes', 'account-sizes'],
+      ['/account/addresses', 'account-addresses'],
+      ['/account/notifications', 'account-notifications'],
+    ] as const) {
+      await page.goto(path);
+      await snap(page, name);
+    }
+    await page.goto('/account/orders');
+    await page.getByTestId('view-order').first().click();
+    await expect(page.getByTestId('order-number')).toBeVisible();
+    await snap(page, 'account-order');
   });
 });

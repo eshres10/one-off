@@ -1,3 +1,4 @@
+import { checkoutAsGuest } from './checkout-steps';
 import { expect, test, type Page } from '@playwright/test';
 import { BUYERS, MAKERS, PASSWORD, PRODUCTS } from '../scripts/seed-data';
 
@@ -55,22 +56,9 @@ test.describe.serial('marketplace smoke', () => {
 
     await expect(page.getByTestId('bag-line')).toHaveCount(1);
     await expect(page.getByText(`Ships from ${product.maker.displayName}`)).toBeVisible();
-    await page.getByLabel(/Email for your receipt/).fill('e2e-guest@buyer.test');
-    await page.getByLabel(/returned for change of mind/).check();
-    await page.getByTestId('checkout-button').click();
-
-    await page.waitForURL(/\/dev\/checkout\//);
-    await page.locator('input[name=name]').fill('E2E Guest');
-    await page.locator('input[name=line1]').fill('10 Brunswick St');
-    await page.locator('input[name=city]').fill('Fitzroy');
-    await page.locator('input[name=postalCode]').fill('3065');
-    await page.getByTestId('mock-tos').check();
-    await page.getByTestId('mock-pay').click();
-
-    await expect(page.getByTestId('order-confirmation')).toBeVisible();
-    orderNumber = (await page.getByTestId('order-number').innerText()).trim();
+    orderNumber = await checkoutAsGuest(page, 'e2e-guest@buyer.test');
     expect(orderNumber).toMatch(/^OO-\d+$/);
-    await expect(page.getByTestId('order-confirmation')).toContainText(product.title);
+    await expect(page.getByTestId('order-confirmed')).toContainText(product.title);
     // Bag is emptied by the verified webhook.
     await page.goto('/bag');
     await expect(page.getByText('Your bag is empty')).toBeVisible();

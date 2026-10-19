@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import postgres from 'postgres';
 import { RETURNS } from '../lib/content/returns';
+import { checkoutAsGuest } from './checkout-steps';
 import { BUYERS, PASSWORD, PRODUCTS } from '../scripts/seed-data';
 
 const db = postgres(
@@ -39,7 +40,7 @@ test.describe.serial('returns policy', () => {
     );
   });
 
-  test('checkout is blocked until the returns box is ticked, and the tick is saved', async ({
+  test('payment shows the no change-of-mind line, and paying records that it was shown', async ({
     page,
   }) => {
     const product = PRODUCTS.find(
@@ -54,24 +55,7 @@ test.describe.serial('returns policy', () => {
       .click();
     await page.getByTestId('view-bag').click();
     await expect(page.getByTestId('bag-returns-note').first()).toHaveText(RETURNS.short);
-    await page.getByLabel(/Email for your receipt/).fill('returns-ack@buyer.test');
-
-    const checkout = page.getByTestId('checkout-button');
-    await expect(checkout).toHaveAttribute('aria-disabled', 'true');
-    // aria-disabled (not disabled), so a real click still reaches the form; Playwright needs force.
-    await checkout.click({ force: true });
-    await expect(page.locator('#returnsAck-error')).toContainText('tick the box');
-    await expect(page).toHaveURL(/\/bag/);
-    const box = page.getByLabel(/returned for change of mind/);
-    await expect(box).toBeFocused();
-
-    await box.check();
-    await expect(checkout).not.toHaveAttribute('aria-disabled', 'true');
-    await checkout.click();
-    await page.waitForURL(/\/dev\/checkout\//);
-    await expect(page.getByTestId('mock-submit-message')).toContainText(
-      'No change-of-mind returns',
-    );
+    await checkoutAsGuest(page, 'returns-ack@buyer.test', 'Returns Ack');
     const [order] = await db<{ returnsAckAt: Date | null; returnsPolicyVersion: string | null }[]>`
       select returns_ack_at as "returnsAckAt", returns_policy_version as "returnsPolicyVersion"
       from public.orders where buyer_email = 'returns-ack@buyer.test' order by created_at desc limit 1`;
@@ -99,24 +83,30 @@ test.describe.serial('returns policy', () => {
 
     await login(page, buyer.email, `/account/orders/${old!.orderId}`);
     await expect(page.getByTestId('contact-us').first()).toBeVisible();
-    await expect(
-      page.locator(`a[href="/account/orders/${old!.orderId}/report/${old!.id}"]`),
-    ).toHaveCount(0);
+    await expect(page.locator(`a[href$="/report/${old!.id}"]`)).toHaveCount(0);
 
     await page.goto(`/account/orders/${recent!.orderId}`);
-    await page.locator(`a[href="/account/orders/${recent!.orderId}/report/${recent!.id}"]`).click();
-    await expect(page.getByRole('heading', { name: 'Report a problem' })).toBeVisible();
-    await page.getByLabel('Faulty', { exact: true }).check();
-    await page.getByLabel('Tell us what happened').fill('The side seam split on the first wear.');
-    await page.getByLabel('Photos (1–6)').setInputFiles({
+    await page.locator(`a[href$="/report/${recent!.id}"]`).click();
+    const drawer = page.getByTestId('report-drawer');
+    await expect(drawer).toBeVisible();
+    await expect(drawer).toContainText('Changed your mind?');
+    await page.getByTestId('reason-faulty').check();
+    await page.getByTestId('report-next').click();
+    // A photo is needed for a faulty piece.
+    await page.getByTestId('report-details').fill('The side seam split on the first wear.');
+    await expect(page.getByTestId('report-next')).toBeDisabled();
+    await page.getByTestId('report-photos').setInputFiles({
       name: 'seam.png',
       mimeType: 'image/png',
       buffer: PNG,
     });
     await expect(page.getByText('Added')).toBeVisible();
-    await page.getByRole('button', { name: 'Send report' }).click();
-    await expect(page.getByTestId('claim-sent')).toBeVisible();
-    await expect(page.getByRole('img', { name: 'Photo 1 of the problem' })).toBeVisible();
+    await page.getByTestId('report-next').click();
+    await expect(drawer).toContainText('Australian Consumer Law');
+    await page.getByTestId('outcome-repair').check();
+    await page.getByTestId('send-to-maker').click();
+    await expect(page.getByTestId('report-sent')).toContainText('We’re on it.');
+    await expect(page.getByTestId('case-number')).toContainText(/OO-C-\d+/);
   });
 
   test('a claim with no reply escalates to One Off after the deadline', async ({ page }) => {
@@ -126,5 +116,36 @@ test.describe.serial('returns policy', () => {
     await login(page, 'admin@oneoff.test', '/admin/claims');
     await expect(page.getByRole('heading', { name: /Escalated/ })).toContainText('(1)');
     await expect(page.getByTestId('claim-list').first()).toContainText('With One Off');
+  });
+});
+
+test.describe('report a problem options', () => {
+  test('“wasn’t made to my measurements” only shows for made to order', async ({ page }) => {
+    const items = await db<{ id: string; orderId: string; productType: string; buyerId: string }[]>`
+      select oi.id, oi.order_id as "orderId", oi.product_type as "productType", o.buyer_user_id as "buyerId"
+      from public.order_items oi join public.orders o on o.id = oi.order_id
+      where oi.fulfilment_status = 'delivered' and o.buyer_user_id is not null
+        and not exists (select 1 from public.return_claims c where c.order_item_id = oi.id)
+      order by oi.id`;
+    const mto = items.find((i) => i.productType === 'made_to_order')!;
+    const ready =
+      items.find((i) => i.productType !== 'made_to_order' && i.buyerId === mto.buyerId) ??
+      items.find((i) => i.productType !== 'made_to_order')!;
+    for (const i of [mto, ready])
+      await db`update public.order_items set delivered_at = now() - interval '1 day' where id = ${i.id}`;
+    const email = (id: string) => BUYERS.find((b) => b.id === id)!.email;
+
+    await login(page, email(mto.buyerId), `/account/orders/${mto.orderId}/report/${mto.id}`);
+    await expect(page.getByTestId('reason-custom_fit')).toBeVisible();
+    if (ready.buyerId !== mto.buyerId) {
+      await page.context().clearCookies();
+      await login(
+        page,
+        email(ready.buyerId),
+        `/account/orders/${ready.orderId}/report/${ready.id}`,
+      );
+    } else await page.goto(`/account/orders/${ready.orderId}/report/${ready.id}`);
+    await expect(page.getByTestId('reason-faulty')).toBeVisible();
+    await expect(page.getByTestId('reason-custom_fit')).toHaveCount(0);
   });
 });

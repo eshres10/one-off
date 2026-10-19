@@ -111,7 +111,8 @@ export async function createClaim(buyer: Actor, input: ClaimInput, now = new Dat
     );
   if (input.reason === 'custom_fit' && !isCustomType(item.productType))
     throw new UserError('Choose another reason — this piece wasn’t made to your measurements.');
-  await verifyClaimPhotos(buyer.id, input.photos);
+  // Faulty or not as described needs a photo; "something else" can go without.
+  await verifyClaimPhotos(buyer.id, input.photos, PHOTO_REQUIRED_REASONS.includes(input.reason));
 
   const respondBy = claimRespondBy(now);
   const platformDue = addBusinessDays(respondBy, SITE.cases.platformDecisionBusinessDays);

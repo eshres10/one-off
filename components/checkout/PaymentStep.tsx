@@ -282,7 +282,7 @@ function PaymentForm({
 
       <Totals view={view} showGst={payments.showGst} />
 
-      <p className="text-[12px] leading-relaxed text-muted">
+      <p className="text-[12px] leading-relaxed text-muted" data-testid="returns-small-print">
         By paying you agree to our{' '}
         <Link href="/terms" className="underline underline-offset-2">
           Terms
