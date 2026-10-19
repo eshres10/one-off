@@ -22,6 +22,10 @@ const serverEnv = {
   CRON_SECRET: process.env.E2E_CRON_SECRET ?? 'e2e-cron-secret-0123456789',
   // Texts are "sent" to the notification log only: no Twilio keys.
   SMS_ENABLED: 'true',
+  // A fixed public key (no private key: nothing is really sent), so the build doesn't pick up
+  // whatever .env.local holds and drop-alert screens look the same everywhere.
+  NEXT_PUBLIC_VAPID_PUBLIC_KEY:
+    'BG5WChUg6RoyjU_etHD-1Rdiw79JKpW20UHPzjaBuAqp6m68gaWcUwsDN0cSuLmP1IQBHa-vPP-_YJAOZKz85mw',
 };
 
 export default defineConfig({
@@ -121,6 +125,13 @@ export default defineConfig({
       testMatch: 'content.spec.ts',
       dependencies: ['change-of-mind'],
       use: { browserName: 'chromium', viewport: { width: 1280, height: 860 } },
+    },
+    {
+      // Each test opens its own phone or desktop context.
+      name: 'install',
+      testMatch: 'install.spec.ts',
+      dependencies: ['content'],
+      use: { browserName: 'chromium' },
     },
   ],
   webServer: {

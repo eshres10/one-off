@@ -17,6 +17,7 @@ import {
   type InstallTrigger,
 } from '@/lib/install/rules';
 import { readLocalSaves } from '@/lib/local-saves';
+import type { InstallRequest } from '@/lib/install/trigger';
 import { InstallSheet } from './InstallSheet';
 
 interface PromptEvent extends Event {
@@ -41,6 +42,7 @@ export function InstallProvider() {
   const [open, setOpen] = useState<{
     variant: 'android' | 'ios' | 'in-app';
     trigger: InstallTrigger;
+    opener: Element | null;
   } | null>(null);
   const pathRef = useRef(path);
   pathRef.current = path;
@@ -55,30 +57,33 @@ export function InstallProvider() {
 
   const situation = (): InstallSituation => detectHere(Boolean(prompt.current));
 
-  const fire = useCallback((trigger: InstallTrigger, attempt = 0) => {
-    const s = getStores();
-    const where = situation();
-    const input = {
-      situation: where,
-      path: pathRef.current,
-      trigger,
-      state: s.state.read(),
-      session: s.session.read(),
-      now: Date.now(),
-      overlayOpen: Boolean(document.querySelector(OVERLAY)),
-    };
-    const reason = blockReason(input);
-    // Another sheet or drawer is up: try again shortly, for up to half a minute.
-    if (reason === 'overlay open' && attempt < 30) {
-      window.setTimeout(() => fire(trigger, attempt + 1), 1000);
-      return;
-    }
-    if (reason) return;
-    s.session.write({ ...input.session, shown: true });
-    const variant = where as 'android' | 'ios' | 'in-app';
-    setOpen({ variant, trigger });
-    track('install_sheet_shown', { variant, trigger });
-  }, []);
+  const fire = useCallback(
+    (trigger: InstallTrigger, attempt = 0, opener: Element | null = null) => {
+      const s = getStores();
+      const where = situation();
+      const input = {
+        situation: where,
+        path: pathRef.current,
+        trigger,
+        state: s.state.read(),
+        session: s.session.read(),
+        now: Date.now(),
+        overlayOpen: Boolean(document.querySelector(OVERLAY)),
+      };
+      const reason = blockReason(input);
+      // Another sheet or drawer is up: try again shortly, for up to half a minute.
+      if (reason === 'overlay open' && attempt < 30) {
+        window.setTimeout(() => fire(trigger, attempt + 1, opener), 1000);
+        return;
+      }
+      if (reason) return;
+      s.session.write({ ...input.session, shown: true });
+      const variant = where as 'android' | 'ios' | 'in-app';
+      setOpen({ variant, trigger, opener });
+      track('install_sheet_shown', { variant, trigger });
+    },
+    [],
+  );
 
   // Capture the install prompt and installs; count this visit.
   useEffect(() => {
@@ -108,8 +113,10 @@ export function InstallProvider() {
     const seen = () => s.state.write({ ...s.state.read(), lastSeenAt: Date.now() });
     const onHide = () => document.visibilityState === 'hidden' && seen();
     document.addEventListener('visibilitychange', onHide);
-    const onRequest = (e: Event) =>
-      fire((e as CustomEvent<{ trigger: InstallTrigger }>).detail.trigger);
+    const onRequest = (e: Event) => {
+      const d = (e as CustomEvent<Partial<InstallRequest>>).detail;
+      if (d?.trigger) fire(d.trigger, 0, d.opener ?? null);
+    };
     window.addEventListener('oo:install', onRequest);
     return () => {
       window.removeEventListener('oo:installprompt', onPrompt);
@@ -143,6 +150,7 @@ export function InstallProvider() {
     <InstallSheet
       variant={open.variant}
       orderPlaced={open.trigger === 'order_placed'}
+      returnFocusTo={open.opener}
       appName={inAppName(ua)}
       shareAt={iosShareAt(ua)}
       onDismiss={() => {

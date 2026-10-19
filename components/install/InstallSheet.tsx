@@ -20,8 +20,11 @@ export function InstallSheet({
   onCopyLink,
   onDismiss,
   onClose,
+  returnFocusTo,
 }: {
   variant: SheetVariant;
+  /** Where focus goes back to on close; defaults to whatever had it when the sheet opened. */
+  returnFocusTo?: Element | null;
   orderPlaced?: boolean;
   /** The in-app browser's name ("Instagram"), or null if unknown. */
   appName?: string | null;
@@ -48,11 +51,14 @@ export function InstallSheet({
 
   // Focus the primary button; give focus back to whatever had it when we close.
   useEffect(() => {
-    opener.current = document.activeElement;
+    opener.current =
+      returnFocusTo && returnFocusTo.isConnected ? returnFocusTo : document.activeElement;
     primary.current?.focus();
     return () => {
       if (opener.current instanceof HTMLElement) opener.current.focus();
     };
+    // Only on open and close.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

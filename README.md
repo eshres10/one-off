@@ -219,6 +219,31 @@ The bag, checkout, order pages, receipt and confirmation email show the makers' 
 
 Database: run `supabase/updates/0015_shipping_offer.sql` in the SQL Editor on an existing project (new projects get it in `supabase/production-setup.sql`).
 
+## Add to home screen and drop alerts
+
+On phones, a slide-up sheet invites people to add One Off to their home screen (Android uses
+Chrome's own install prompt; iOS shows the Share-button steps; in-app browsers like Instagram's
+get "open in your browser", with a one-time link that carries a guest's bag and saved pieces).
+The rules (triggers, 14-day cooldown, three dismissals, pages it never shows on) live in
+`SITE.install` in `lib/site/config.ts`; the logic is in `lib/install/`.
+
+The first launch from the home screen shows "You're in." and is the only place that asks for
+notification permission. Drop alerts (web push) are off until you:
+
+1. Generate keys: `npx web-push generate-vapid-keys`.
+2. In Vercel, set `NEXT_PUBLIC_VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` (and optionally
+   `VAPID_SUBJECT`, a `mailto:` address). Redeploy.
+3. Set `SITE.pushAlerts.enabled = true` to turn on the server-side triggers: a followed maker's
+   new piece (sent by the daily job, batched) and "Your order is on its way".
+
+At most one push per browser per 24 hours. Test on a phone: turn on alerts from the first-open
+screen or Account → Notifications, then `npx tsx scripts/send-test-push.ts you@example.com`.
+
+**Testing on an iPhone** (iOS 16.4 or later; web push only works for home-screen web apps):
+open shoponeoff.com.au in Safari, tap Share → Add to Home Screen, open One Off from the home
+screen (not Safari), tap "Turn on drop alerts" and Allow. Then run the test script. If you tapped
+Don't Allow, turn it back on in Settings → Notifications → One Off.
+
 ## Testing
 
 - **Unit** (`tests/unit`): cart totals, multi-maker splitting, commission, lead times, stock, review eligibility, moderation.
