@@ -481,8 +481,8 @@ export async function adminSettleReturn(
   if (note.length < 10) throw new UserError('Add a note explaining the decision.');
   const r = await getReturn(returnId);
   if (!r) throw new UserError('Return not found.');
-  if (!['requested', 'in_transit', 'disputed'].includes(r.status))
-    throw new UserError('This return has already been settled.');
+  if (r.status === 'disputed') throw new UserError('Decide this one on its case.');
+  if (!LIVE.includes(r.status)) throw new UserError('This return has already been settled.');
   await sql()`update public.returns set admin_note = ${note.slice(0, 2000)} where id = ${r.id}`;
   if (input.action === 'refund') await refundReturn(r, 'admin', admin.id);
   else {

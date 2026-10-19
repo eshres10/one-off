@@ -28,6 +28,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         { href: '/admin/listing-requests', label: 'Photos to list' },
         { href: '/admin/orders', label: 'Orders & refunds', count: m.openDisputes },
         { href: '/admin/claims', label: 'Claims', count: claims },
+        { href: '/admin/returns', label: 'Returns' },
         { href: '/admin/collections', label: 'Collections & homepage' },
         { href: '/admin/commissions', label: 'Commissions' },
         { href: '/admin/support', label: 'Maker messages' },
