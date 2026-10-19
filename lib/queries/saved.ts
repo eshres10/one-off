@@ -155,3 +155,14 @@ export async function getFollowedMakers(user: Actor): Promise<FollowedMaker[]> {
           : 'Making for the next drop',
   }));
 }
+
+export async function getSavedCount(user: Actor): Promise<number> {
+  const [row] = await withUser(
+    user,
+    (db) =>
+      db<
+        { n: number }[]
+      >`select count(*)::int as n from public.saved_items where user_id = ${user.id}`,
+  );
+  return row?.n ?? 0;
+}

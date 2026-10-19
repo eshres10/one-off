@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BagIcon, ChatIcon, HeartIcon, HomeIcon, SearchIcon } from '@/components/ui/icons';
+import { BagIcon, ChatIcon, GridIcon, HomeIcon, SearchIcon } from '@/components/ui/icons';
 
 export interface TabBarCounts {
   messages: number;
@@ -26,11 +26,12 @@ export function TabBar({ counts, messagesHref }: { counts: TabBarCounts; message
     { href: '/', label: 'Home', icon: HomeIcon, active: pathname === '/' },
     { href: '/search', label: 'Search', icon: SearchIcon, active: pathname.startsWith('/search') },
     {
-      href: '/saved',
-      label: 'Saved',
-      icon: HeartIcon,
-      active: pathname.startsWith('/saved') || pathname.startsWith('/account/saved'),
+      href: '/discover',
+      label: 'Discover',
+      icon: GridIcon,
+      active: pathname.startsWith('/discover'),
       fill: true,
+      testId: 'tab-discover',
     },
     {
       href: messagesHref,

@@ -147,3 +147,22 @@ export const MoreIcon = (p: P) => (
     <circle cx="18.5" cy="12" r="0.9" fill="currentColor" />
   </svg>
 );
+export const GridIcon = ({ filled, ...p }: P & { filled?: boolean }) => (
+  <svg {...base} {...p}>
+    {[
+      [4, 4],
+      [13.5, 4],
+      [4, 13.5],
+      [13.5, 13.5],
+    ].map(([x, y]) => (
+      <rect
+        key={`${x}-${y}`}
+        x={x}
+        y={y}
+        width="6.5"
+        height="6.5"
+        fill={filled ? 'currentColor' : 'none'}
+      />
+    ))}
+  </svg>
+);

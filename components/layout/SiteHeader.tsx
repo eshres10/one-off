@@ -8,19 +8,15 @@ import { Wordmark } from '@/components/ui/Wordmark';
 import { unreadCount } from '@/lib/services/messaging';
 import { HeaderFrame, type HeaderVariant } from './HeaderFrame';
 import { MobileMenu } from './MobileMenu';
-
-const PRIMARY = [
-  { href: '/', label: 'Discover' },
-  { href: '/collections', label: 'Collections' },
-  { href: '/makers', label: 'Makers' },
-  { href: '/?tab=following', label: 'Following' },
-];
+import { PrimaryNavLinks } from './PrimaryNav';
+import { PRIMARY_NAV } from '@/lib/nav/primary';
+import { SavedHeart } from './SavedHeart';
+import { NavLink } from './NavLink';
+import { getSavedCount } from '@/lib/queries/saved';
 
 // Each strip is a fixed height (see --strip-h in globals.css) so pages can offset exactly.
 const strip =
   'relative flex h-[var(--strip-h)] items-center justify-center bg-ink px-4 text-center text-[10px] leading-[14px] text-ground sm:text-[11px]';
-
-const navLink = 'text-[11px] uppercase tracking-label hover:underline hover:underline-offset-[6px]';
 
 /** Where the signed-in user's inbox lives (makers answer from the studio). */
 export function messagesHref(role: string | undefined) {
@@ -30,9 +26,10 @@ export function messagesHref(role: string | undefined) {
 export async function SiteHeader({ variant = 'auto' }: { variant?: HeaderVariant } = {}) {
   const checkoutOn = checkoutEnabled();
   const user = await getSessionUser();
-  const [count, unread] = await Promise.all([
+  const [count, unread, saved] = await Promise.all([
     checkoutOn ? cartCount(getCartSessionId()) : Promise.resolve(0),
     user ? unreadCount(user).catch(() => 0) : Promise.resolve(0),
+    user ? getSavedCount(user).catch(() => 0) : Promise.resolve(0),
   ]);
   const accountHref = user
     ? user.role === 'seller'
@@ -49,7 +46,7 @@ export async function SiteHeader({ variant = 'auto' }: { variant?: HeaderVariant
         : 'Account'
     : 'Log in';
   const menuLinks = [
-    ...PRIMARY,
+    ...PRIMARY_NAV.map(({ href, label }) => ({ href, label })),
     { href: '/search', label: 'Search' },
     { href: '/saved', label: 'Saved' },
     { href: messagesHref(user?.role), label: 'Messages' },
@@ -83,44 +80,33 @@ export async function SiteHeader({ variant = 'auto' }: { variant?: HeaderVariant
               <MobileMenu links={menuLinks} />
             </div>
             <nav aria-label="Primary" className="hidden items-center gap-7 md:flex">
-              {PRIMARY.map((n) => (
-                <Link key={n.href} href={n.href} className={navLink}>
-                  {n.label}
-                </Link>
-              ))}
+              <PrimaryNavLinks />
             </nav>
           </div>
           <Link href="/" aria-label={`${BRAND.name} home`} className="justify-self-center">
             <Wordmark />
           </Link>
           <div className="flex items-center justify-end gap-6">
+            <SavedHeart count={saved} />
             <nav aria-label="Account" className="hidden items-center gap-6 md:flex">
-              <Link href="/search" className={navLink}>
-                Search
-              </Link>
-              <Link href={accountHref} className={navLink}>
-                {accountLabel}
-              </Link>
-              <Link href="/saved" className={navLink}>
-                Saved
-              </Link>
-              <Link
+              <NavLink href="/search">Search</NavLink>
+              <NavLink href={accountHref}>{accountLabel}</NavLink>
+              <NavLink href="/saved">Saved</NavLink>
+              <NavLink
                 href={messagesHref(user?.role)}
-                className={navLink}
                 data-testid="header-messages"
                 aria-label={`Messages, ${unread} unread`}
               >
                 Messages ({unread})
-              </Link>
+              </NavLink>
               {checkoutOn && (
-                <Link
+                <NavLink
                   href="/bag"
-                  className={navLink}
                   data-testid="bag-link"
                   aria-label={`Bag, ${count} ${count === 1 ? 'item' : 'items'}`}
                 >
                   Bag ({count})
-                </Link>
+                </NavLink>
               )}
             </nav>
           </div>
