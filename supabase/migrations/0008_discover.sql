@@ -81,3 +81,64 @@ language sql stable security definer set search_path = public as $$
 $$;
 revoke all on function public.discover_feed(text, text, text[], text[], integer, text[], text, text) from public;
 grant execute on function public.discover_feed(text, text, text[], text[], integer, text[], text, text) to anon, authenticated, service_role;
+
+-- ---------------------------------------------------------------------------
+-- Public questions on a piece (quick view and product page). Anyone can read them on a live
+-- piece; signed-in shoppers ask, and the piece's maker replies (parent_id set,
+-- is_maker_reply true). Contact details are refused, as in messages.
+create table if not exists public.product_questions (
+  id uuid primary key default gen_random_uuid(),
+  product_id uuid not null references public.products(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  body text not null check (char_length(body) between 1 and 600),
+  parent_id uuid references public.product_questions(id) on delete cascade,
+  is_maker_reply boolean not null default false,
+  is_hidden boolean not null default false,
+  created_at timestamptz not null default now(),
+  check (is_maker_reply = (parent_id is not null))
+);
+create index if not exists product_questions_product_idx on public.product_questions (product_id, created_at);
+create index if not exists product_questions_parent_idx on public.product_questions (parent_id);
+create index if not exists product_questions_user_idx on public.product_questions (user_id);
+
+alter table public.product_questions enable row level security;
+
+drop policy if exists product_questions_select on public.product_questions;
+create policy product_questions_select on public.product_questions for select
+  using ((not is_hidden and public.product_is_public(product_id)) or user_id = auth.uid()
+    or public.owns_product(product_id) or public.is_admin());
+
+drop policy if exists product_questions_ask on public.product_questions;
+create policy product_questions_ask on public.product_questions for insert
+  with check (user_id = auth.uid() and parent_id is null and not is_maker_reply and not is_hidden
+    and public.product_is_public(product_id) and not public.owns_product(product_id));
+
+drop policy if exists product_questions_reply on public.product_questions;
+create policy product_questions_reply on public.product_questions for insert
+  with check (user_id = auth.uid() and is_maker_reply and not is_hidden
+    and public.owns_product(product_id)
+    and exists (select 1 from public.product_questions q
+                where q.id = product_questions.parent_id and q.product_id = product_questions.product_id and q.parent_id is null));
+
+drop policy if exists product_questions_admin on public.product_questions;
+create policy product_questions_admin on public.product_questions for update
+  using (public.is_admin()) with check (public.is_admin());
+
+grant select on public.product_questions to anon, authenticated;
+grant insert on public.product_questions to authenticated;
+grant update (is_hidden) on public.product_questions to authenticated;
+grant all on public.product_questions to service_role;
+
+create or replace function public.product_questions_block_contact_details() returns trigger
+language plpgsql as $$
+begin
+  if public.message_has_contact_details(new.body) then
+    raise exception 'Contact details, bank details and payment links can''t be posted.'
+      using errcode = 'check_violation';
+  end if;
+  return new;
+end
+$$;
+drop trigger if exists product_questions_block_contact_details on public.product_questions;
+create trigger product_questions_block_contact_details before insert on public.product_questions
+  for each row execute function public.product_questions_block_contact_details();

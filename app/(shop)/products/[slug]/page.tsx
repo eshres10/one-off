@@ -23,6 +23,8 @@ import {
 import { Gallery } from '@/components/product/Gallery';
 import { PurchasePanel } from '@/components/product/PurchasePanel';
 import { Reviews } from '@/components/product/Reviews';
+import { AskQuestionForm, Questions } from '@/components/product/Questions';
+import { getQuestionsAndReviews } from '@/lib/queries/questions';
 import { ProductGrid } from '@/components/product/ProductCard';
 import { SaveButton } from '@/components/product/SaveButton';
 import { MakerStrip } from '@/components/maker/MakerByline';
@@ -65,11 +67,14 @@ export default async function ProductPage({ params }: { params: { slug: string }
     }
   }
   if (!product) notFound();
-  const [related, reviews, savedIds] = await Promise.all([
+  const [related, reviews, savedIds, qa] = await Promise.all([
     getRelated(product.id, product.maker.id, product.category, product.colours),
     getReviews({ productId: product.id }, 3),
     getSavedProductIds(user?.id ?? null),
+    getQuestionsAndReviews(product.id),
   ]);
+  const questions = qa.filter((e) => e.kind === 'question');
+  const isMaker = Boolean(user && user.id === product.maker.userId);
 
   const h = headers();
   const viewerKey =
@@ -300,6 +305,32 @@ export default async function ProductPage({ params }: { params: { slug: string }
           </Link>
         </div>
         <Reviews reviews={reviews} emptyText="No reviews for this piece yet." />
+      </section>
+
+      <section
+        id="questions"
+        aria-labelledby="questions-title"
+        className="container-page mt-20 scroll-mt-[calc(var(--header-h)+16px)]"
+      >
+        <h2 id="questions-title" className="text-[44px] leading-none md:text-[56px]">
+          Questions
+        </h2>
+        <p className="mb-6 mt-2 text-[13px] text-muted">
+          Asked in public and answered by {m.displayName}. For anything personal, ask the maker
+          privately.
+        </p>
+        <div className="grid gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <Questions entries={questions} slug={product.slug} canReply={isMaker} />
+          <div className="md:max-w-md">
+            <AskQuestionForm
+              productId={product.id}
+              slug={product.slug}
+              makerName={m.displayName}
+              signedIn={Boolean(user)}
+              isMaker={isMaker}
+            />
+          </div>
+        </div>
       </section>
 
       {related.fromMaker.length > 0 && (

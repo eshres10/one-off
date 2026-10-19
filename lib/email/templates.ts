@@ -113,6 +113,35 @@ export const emails = {
     related: { type: 'maker', id: makerId },
   }),
 
+  productQuestion: (
+    to: string,
+    product: { id: string; slug: string; title: string },
+    askerName: string,
+    body: string,
+  ): EmailMessage => ({
+    to,
+    template: 'product_question',
+    subject: `New question about ${product.title}`,
+    text: `${askerName} asked a public question about “${product.title}”:\n\n“${body}”\n\nYour reply shows to everyone viewing the piece. Answer it here: ${url(
+      `/products/${product.slug}#questions`,
+    )}${sign}`,
+    related: { type: 'product', id: product.id },
+  }),
+
+  questionAnswered: (
+    to: string,
+    product: { id: string; slug: string; title: string },
+    makerName: string,
+  ): EmailMessage => ({
+    to,
+    template: 'question_answered',
+    subject: `${makerName} answered your question`,
+    text: `${makerName} replied to your question about “${product.title}”.\n\nSee the answer: ${url(
+      `/products/${product.slug}#questions`,
+    )}${sign}`,
+    related: { type: 'product', id: product.id },
+  }),
+
   commissionRequestMaker: (
     to: string,
     requestId: string,

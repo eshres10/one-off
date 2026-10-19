@@ -1,10 +1,17 @@
 import { SiteFooter } from '@/components/layout/SiteFooter';
 import { SiteHeader } from '@/components/layout/SiteHeader';
 import { AppTabBar } from '@/components/layout/AppTabBar';
+import { QuickViewLinks } from '@/components/quickview/QuickViewLinks';
 
 export const dynamic = 'force-dynamic';
 
-export default function ShopLayout({ children }: { children: React.ReactNode }) {
+export default function ShopLayout({
+  children,
+  modal,
+}: {
+  children: React.ReactNode;
+  modal: React.ReactNode;
+}) {
   return (
     <>
       <SiteHeader />
@@ -13,6 +20,8 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
       </main>
       <SiteFooter />
       <AppTabBar />
+      {modal}
+      <QuickViewLinks />
     </>
   );
 }
