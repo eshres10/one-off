@@ -32,6 +32,8 @@ export interface BuyerFulfilment {
   trackingNumber: string | null;
   estimatedDeliveryFrom: Date | null;
   estimatedDeliveryTo: Date | null;
+  isMto: boolean;
+  mtoStep: number;
   items: BuyerOrderItem[];
 }
 
@@ -63,7 +65,8 @@ export async function getBuyerOrders(user: Actor, orderId?: string): Promise<Buy
     const ids = orders.map((o) => o.id);
     const fulfilments = await db<(Omit<BuyerFulfilment, 'items'> & { orderId: string })[]>`
       select f.id, f.order_id, m.display_name as maker_name, m.slug as maker_slug, f.status, f.shipping_cents, f.carrier,
-             f.tracking_number, f.estimated_delivery_from, f.estimated_delivery_to
+             f.tracking_number, f.estimated_delivery_from, f.estimated_delivery_to, f.mto_step,
+             exists (select 1 from public.order_items oi where oi.fulfilment_id = f.id and oi.product_type = 'made_to_order') as is_mto
       from public.fulfilments f join public.makers m on m.id = f.maker_id
       where f.order_id in ${db(ids)} order by m.display_name`;
     const items = await db<(BuyerOrderItem & { fulfilmentId: string })[]>`

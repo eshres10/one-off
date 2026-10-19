@@ -109,6 +109,12 @@ export async function createClaim(buyer: Actor, input: ClaimInput, now = new Dat
     throw err;
   }
 
+  // The order is now an issue: the maker's money is held until the claim is resolved.
+  await sql()`
+    update public.fulfilments set status = 'issue'
+    where id = (select fulfilment_id from public.order_items where id = ${item.id})
+      and status in ('shipped', 'delivered')`;
+
   const [contacts] = await sql()<{ buyerEmail: string; makerEmail: string }[]>`
     select o.buyer_email, u.email as maker_email
     from public.orders o, public.makers m join public.users u on u.id = m.user_id
@@ -304,6 +310,14 @@ export async function resolveClaim(
     update public.return_claims set status = ${status}::claim_status, resolution_note = ${note},
       refund_cents = ${refundCents}, resolved_at = now()
     where id = ${claimId}`;
+  // Back to delivered (the release job pays whatever is still owed), or refunded in full.
+  await sql()`
+    update public.fulfilments f set status = case
+        when not exists (select 1 from public.order_items oi where oi.fulfilment_id = f.id and oi.fulfilment_status <> 'refunded')
+        then 'refunded'::fulfilment_status else 'delivered'::fulfilment_status end
+    where f.id = (select fulfilment_id from public.order_items where id = ${claim.orderItemId}) and f.status = 'issue'
+      and not exists (select 1 from public.return_claims c join public.order_items oi on oi.id = c.order_item_id
+        where oi.fulfilment_id = f.id and c.status in ('open', 'seller_responded', 'escalated'))`;
   const [buyer] = await sql()<{ email: string }[]>`
     select o.buyer_email as email from public.orders o where o.id = ${claim.orderId}`;
   if (buyer)

@@ -307,6 +307,31 @@ begin
 end
 $$;
 
+-- Delivered pieces stay reviewable once the maker has been paid (status 'completed').
+create or replace function public.enforce_review_eligibility() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare
+  item record;
+begin
+  select oi.fulfilment_status, oi.maker_id, oi.product_id, o.buyer_user_id
+    into item
+    from public.order_items oi join public.orders o on o.id = oi.order_id
+    where oi.id = new.order_item_id;
+  if not found then
+    raise exception 'Order item not found' using errcode = 'foreign_key_violation';
+  end if;
+  if item.fulfilment_status::text not in ('delivered', 'completed') then
+    raise exception 'Reviews can only be left for delivered orders' using errcode = 'check_violation';
+  end if;
+  if item.buyer_user_id is distinct from new.buyer_user_id then
+    raise exception 'Only the buyer can review this order' using errcode = 'insufficient_privilege';
+  end if;
+  new.maker_id := item.maker_id;
+  new.product_id := item.product_id;
+  return new;
+end
+$$;
+
 -- ---------------------------------------------------------------------------
 -- Row-level security
 -- ---------------------------------------------------------------------------

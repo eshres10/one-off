@@ -1,96 +1,231 @@
 import Link from 'next/link';
+import { z } from 'zod';
 import { requireSeller } from '@/lib/auth/session';
-import { getSellerOrders } from '@/lib/queries/seller';
 import { formatPrice } from '@/lib/domain/money';
-import { StatusPill } from '@/components/ui/Badge';
-import { EmptyState } from '@/components/ui/EmptyState';
+import { daysUntil, shipByLabel } from '@/lib/studio/format';
+import {
+  ORDER_TABS,
+  countStudioOrders,
+  getStudioOrder,
+  listStudioOrders,
+  type OrderTab,
+  type StudioOrderRow,
+} from '@/lib/services/studio-orders';
+import { OrderPanel, OrderPanelTitle } from '@/components/studio/OrderPanel';
+import { RouteSheet } from '@/components/studio/RouteSheet';
+import { OrderStatusPill } from '@/components/studio/StatusPill';
+import { Img as Image } from '@/components/ui/Img';
 
-export const metadata = { title: 'Orders' };
+export const metadata = { title: 'Orders · Studio' };
 
-export default async function SellerOrdersPage({
+const placed = (d: Date) =>
+  new Date(d).toLocaleDateString('en-AU', {
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'Australia/Melbourne',
+  });
+
+function action(o: StudioOrderRow) {
+  if (['paid', 'preparing', 'ready'].includes(o.status) && !(o.isMto && o.status === 'paid'))
+    return 'Ship';
+  if (o.isMto && ['paid', 'making'].includes(o.status)) return 'Update';
+  return 'View';
+}
+
+function ShipBy({ o }: { o: StudioOrderRow }) {
+  const d = daysUntil(o.shipBy);
+  const open = !['shipped', 'delivered', 'completed', 'refunded', 'issue'].includes(o.status);
+  return (
+    <span className={open && d !== null && d <= 0 ? 'text-alert' : ''} data-testid="ship-by">
+      {open ? shipByLabel(o.shipBy) : '—'}
+    </span>
+  );
+}
+
+export default async function StudioOrdersPage({
   searchParams,
 }: {
-  searchParams: { status?: string };
+  searchParams: { tab?: string; order?: string };
 }) {
   const seller = await requireSeller();
-  const all = await getSellerOrders(seller);
-  const filter = searchParams.status;
-  const orders = filter ? all.filter((o) => o.status === filter) : all;
-  const tabs = ['paid', 'preparing', 'shipped', 'delivered', 'refunded'];
+  const tab = (
+    ORDER_TABS.some((t) => t.key === searchParams.tab) ? searchParams.tab : 'to-ship'
+  ) as OrderTab;
+  const orderId = z.string().uuid().safeParse(searchParams.order);
+  const [rows, counts, open] = await Promise.all([
+    listStudioOrders(seller, tab),
+    countStudioOrders(seller),
+    orderId.success ? getStudioOrder(seller, orderId.data) : Promise.resolve(null),
+  ]);
+  const href = (id?: string) => `/studio/orders?tab=${tab}${id ? `&order=${id}` : ''}`;
+
   return (
-    <div className="space-y-6">
-      <h1 className="text-[40px] leading-none md:text-[48px]">Orders</h1>
-      <nav className="flex flex-wrap gap-2" aria-label="Filter orders">
-        <Link
-          href="/studio/orders"
-          className={`inline-flex min-h-[44px] items-center px-4 text-[11px] uppercase tracking-label ${!filter ? 'glass-dark' : 'border border-line-strong'}`}
-        >
-          All ({all.length})
-        </Link>
-        {tabs.map((t) => (
+    <div>
+      <h1 className="text-[40px] leading-none md:text-[56px]">Orders</h1>
+      <nav
+        aria-label="Order status"
+        className="no-scrollbar -mx-4 mt-6 flex gap-6 overflow-x-auto border-b border-line px-4 md:mx-0 md:px-0"
+      >
+        {ORDER_TABS.map((t) => (
           <Link
-            key={t}
-            href={`/studio/orders?status=${t}`}
-            className={`inline-flex min-h-[44px] items-center px-4 text-[11px] uppercase capitalize tracking-label ${filter === t ? 'glass-dark' : 'border border-line-strong'}`}
+            key={t.key}
+            href={`/studio/orders?tab=${t.key}`}
+            aria-current={tab === t.key ? 'page' : undefined}
+            data-testid={`orders-tab-${t.key}`}
+            className={`-mb-px flex min-h-[44px] shrink-0 items-center gap-1.5 border-b text-[11px] uppercase tracking-label ${tab === t.key ? 'border-ink' : 'border-transparent text-muted-2 hover:text-ink'}`}
           >
-            {t === 'paid' ? 'New' : t} ({all.filter((o) => o.status === t).length})
+            {t.label} <span className="text-muted-2">({counts[t.key]})</span>
           </Link>
         ))}
       </nav>
-      {orders.length === 0 ? (
-        <EmptyState title="No orders here yet">
-          New orders appear here and are emailed to you as soon as they’re paid.
-        </EmptyState>
+
+      {rows.length === 0 ? (
+        <p className="py-16 text-center text-[14px] text-muted">
+          {tab === 'to-ship' ? 'Nothing to ship. Nice work.' : 'No orders here yet.'}
+        </p>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-stone/70 bg-white">
-          <table className="w-full min-w-[640px] text-left text-sm" data-testid="seller-orders">
-            <thead className="border-b border-stone/70 text-xs text-ink-muted">
-              <tr>
-                <th className="px-4 py-3 font-medium">Order</th>
-                <th className="px-4 py-3 font-medium">Pieces</th>
-                <th className="px-4 py-3 font-medium">Placed</th>
-                <th className="px-4 py-3 font-medium">Dispatch by</th>
-                <th className="px-4 py-3 font-medium">Your payout</th>
-                <th className="px-4 py-3 font-medium">Status</th>
+        <>
+          <table
+            className="mt-2 hidden w-full text-left text-[13px] md:table"
+            data-testid="orders-table"
+          >
+            <thead>
+              <tr className="border-b border-line text-[10px] uppercase tracking-label text-muted-2">
+                <th scope="col" className="py-3 font-normal">
+                  Order
+                </th>
+                <th scope="col" className="py-3 font-normal">
+                  Piece
+                </th>
+                <th scope="col" className="py-3 font-normal">
+                  Buyer
+                </th>
+                <th scope="col" className="py-3 font-normal">
+                  Ship by
+                </th>
+                <th scope="col" className="py-3 text-right font-normal">
+                  Total
+                </th>
+                <th scope="col" className="py-3 pl-6 font-normal">
+                  Status
+                </th>
+                <th scope="col" className="py-3 font-normal">
+                  <span className="sr-only">Action</span>
+                </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-stone/60">
-              {orders.map((o) => (
-                <tr key={o.id} className="hover:bg-stone-light/40">
-                  <td className="px-4 py-3">
+            <tbody>
+              {rows.map((o) => (
+                <tr
+                  key={o.id}
+                  className="border-b border-line hover:bg-stone/60"
+                  data-testid="order-row"
+                >
+                  <td className="py-3 pr-4 align-middle">
+                    <span className="block">#{o.orderNumber.replace(/^OO-/, '')}</span>
+                    <span className="text-[12px] text-muted-2">{placed(o.placedAt)}</span>
+                  </td>
+                  <td className="py-3 pr-4">
+                    <span className="flex items-center gap-3">
+                      <span className="relative aspect-4/5 w-10 shrink-0 overflow-hidden bg-stone">
+                        {o.imageUrl && (
+                          <Image
+                            src={o.imageUrl}
+                            alt=""
+                            fill
+                            sizes="40px"
+                            className="object-cover object-top"
+                          />
+                        )}
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block truncate">
+                          {o.title}
+                          {o.itemCount > 1 ? ` +${o.itemCount - 1}` : ''}
+                        </span>
+                        <span className="text-[12px] text-muted-2">
+                          {o.variantLabel.replace(/^AU /, 'Size ')}
+                        </span>
+                      </span>
+                    </span>
+                  </td>
+                  <td className="py-3 pr-4">
+                    <span className="block">{o.buyerName ?? 'Guest'}</span>
+                    <span className="text-[12px] text-muted-2">
+                      {[o.suburb, o.state].filter(Boolean).join(' ')}
+                    </span>
+                  </td>
+                  <td className="py-3 pr-4">
+                    <ShipBy o={o} />
+                  </td>
+                  <td className="py-3 text-right tabular-nums">{formatPrice(o.totalCents)}</td>
+                  <td className="py-3 pl-6">
+                    <OrderStatusPill status={o.status} mto={o.isMto} />
+                  </td>
+                  <td className="py-3 text-right">
                     <Link
-                      href={`/studio/orders/${o.id}`}
-                      className="font-medium underline-offset-4 hover:underline"
+                      href={href(o.id)}
+                      scroll={false}
+                      className="inline-flex min-h-[44px] items-center text-[11px] uppercase tracking-label underline underline-offset-[6px]"
+                      data-testid="order-open"
                     >
-                      {o.orderNumber}
+                      {action(o)}
+                      <span className="sr-only"> order {o.orderNumber}</span>
                     </Link>
-                  </td>
-                  <td className="max-w-[240px] truncate px-4 py-3">
-                    {o.items.map((i) => `${i.productTitle} (${i.variantLabel})`).join(', ')}
-                  </td>
-                  <td className="px-4 py-3 text-ink-muted">
-                    {new Date(o.createdAt).toLocaleDateString('en-AU', {
-                      day: 'numeric',
-                      month: 'short',
-                    })}
-                  </td>
-                  <td className="px-4 py-3 text-ink-muted">
-                    {o.estimatedDispatchDate
-                      ? new Date(o.estimatedDispatchDate).toLocaleDateString('en-AU', {
-                          day: 'numeric',
-                          month: 'short',
-                        })
-                      : '—'}
-                  </td>
-                  <td className="px-4 py-3">{formatPrice(o.sellerNetCents)}</td>
-                  <td className="px-4 py-3">
-                    <StatusPill status={o.status} />
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
+
+          <ul className="mt-4 space-y-2 md:hidden" role="list">
+            {rows.map((o) => (
+              <li key={o.id}>
+                <Link
+                  href={href(o.id)}
+                  scroll={false}
+                  className="flex gap-3 border border-line bg-surface p-3"
+                  data-testid="order-card"
+                >
+                  <span className="relative aspect-4/5 w-14 shrink-0 overflow-hidden bg-stone">
+                    {o.imageUrl && (
+                      <Image
+                        src={o.imageUrl}
+                        alt=""
+                        fill
+                        sizes="56px"
+                        className="object-cover object-top"
+                      />
+                    )}
+                  </span>
+                  <span className="min-w-0 flex-1 text-[13px]">
+                    <span className="flex items-start justify-between gap-2">
+                      <span className="truncate">{o.title}</span>
+                      <OrderStatusPill status={o.status} mto={o.isMto} />
+                    </span>
+                    <span className="block text-[12px] text-muted-2">
+                      #{o.orderNumber.replace(/^OO-/, '')} · {o.buyerName ?? 'Guest'} ·{' '}
+                      {formatPrice(o.totalCents)}
+                    </span>
+                    <span className="mt-1 block text-[12px]">
+                      Ship by <ShipBy o={o} />
+                    </span>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
+      {open && (
+        <RouteSheet
+          closeHref={href()}
+          title={<OrderPanelTitle order={open} />}
+          testId="order-sheet"
+        >
+          <OrderPanel order={open} />
+        </RouteSheet>
       )}
     </div>
   );

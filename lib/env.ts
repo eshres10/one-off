@@ -55,6 +55,24 @@ const schema = z
       .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
       .default('info'),
     SENTRY_DSN: z.string().optional(),
+    /** Carrier tracking (optional): with keys set, delivery is read from the carrier. */
+    AUSPOST_API_KEY: z.string().optional(),
+    AUSPOST_API_PASSWORD: z.string().optional(),
+    AUSPOST_ACCOUNT_NUMBER: z.string().optional(),
+    SENDLE_ID: z.string().optional(),
+    SENDLE_API_KEY: z.string().optional(),
+    /** Texts for new orders (optional): Twilio, only when SMS_ENABLED=true. */
+    SMS_ENABLED: z
+      .enum(['true', 'false'])
+      .default('false')
+      .transform((v) => v === 'true'),
+    TWILIO_ACCOUNT_SID: z.string().optional(),
+    TWILIO_AUTH_TOKEN: z.string().optional(),
+    TWILIO_FROM: z.string().optional(),
+    /** Shared secret for the inbound-email webhook (replies with tracking numbers). */
+    INBOUND_EMAIL_SECRET: z.string().min(16).optional(),
+    /** Reply-to domain for order emails, e.g. reply.shoponeoff.com.au (inbound routing). */
+    INBOUND_EMAIL_DOMAIN: z.string().optional(),
     /** Vercel Cron sends `Authorization: Bearer <CRON_SECRET>`; scheduled routes require it. */
     CRON_SECRET: z.string().min(16).optional(),
   })

@@ -1,3 +1,4 @@
+import { isDelivered } from '@/lib/domain/types';
 import Link from 'next/link';
 import { requireUser } from '@/lib/auth/session';
 import { getBuyerOrders } from '@/lib/queries/account';
@@ -12,7 +13,7 @@ export default async function AccountPage() {
   const [orders, unread] = await Promise.all([getBuyerOrders(user), unreadCount(user)]);
   const toReview = orders
     .flatMap((o) => o.fulfilments.flatMap((f) => f.items))
-    .filter((i) => i.fulfilmentStatus === 'delivered' && !i.reviewed);
+    .filter((i) => isDelivered(i.fulfilmentStatus) && !i.reviewed);
   return (
     <div className="grid gap-6 md:grid-cols-3">
       <Link href="/account/orders" className="card p-5 hover:border-ink">

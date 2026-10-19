@@ -6,7 +6,69 @@ import { formatDateRange } from '@/lib/domain/leadTime';
 import { StatusPill } from '@/components/ui/Badge';
 import { ReviewForm } from './ReviewForm';
 import { CLAIM_STATUS_LABEL, canReportProblem } from '@/lib/domain/claims';
-import type { BuyerOrderItem } from '@/lib/queries/account';
+import type { BuyerFulfilment, BuyerOrderItem } from '@/lib/queries/account';
+import { confirmReceivedAction } from '@/lib/actions/studio-orders';
+import { isDelivered } from '@/lib/domain/types';
+import { carrierLabel, trackingUrl } from '@/lib/studio/carriers';
+
+const MAKING = ['Ordered', 'Cutting', 'Sewing', 'Ready'];
+
+/** What the buyer sees of a made-to-order piece's progress, and the shipping line. */
+function Progress({ f }: { f: BuyerFulfilment }) {
+  const making = f.isMto && ['paid', 'making', 'ready', 'preparing'].includes(f.status);
+  const link = trackingUrl(f.carrier, f.trackingNumber);
+  return (
+    <>
+      {making && (
+        <ol
+          className="mt-3 grid grid-cols-4 gap-1"
+          aria-label="Making progress"
+          data-testid="buyer-making"
+        >
+          {MAKING.map((step, i) => (
+            <li
+              key={step}
+              aria-current={i === f.mtoStep ? 'step' : undefined}
+              className={`border-t-2 pt-1.5 text-[10px] uppercase tracking-[0.12em] ${i <= f.mtoStep ? 'border-ink text-ink' : 'border-line text-muted-2'}`}
+            >
+              {step}
+            </li>
+          ))}
+        </ol>
+      )}
+      <p className="mt-1 text-xs text-ink-muted">
+        {f.trackingNumber ? (
+          <>
+            {carrierLabel(f.carrier)}:{' '}
+            {link ? (
+              <a href={link} className="link" target="_blank" rel="noreferrer">
+                {f.trackingNumber}
+              </a>
+            ) : (
+              f.trackingNumber
+            )}
+          </>
+        ) : f.status === 'shipped' && f.carrier === 'hand' ? (
+          'Being hand delivered by the maker'
+        ) : f.estimatedDeliveryFrom && f.estimatedDeliveryTo ? (
+          `Estimated delivery ${formatDateRange(new Date(f.estimatedDeliveryFrom), new Date(f.estimatedDeliveryTo))}`
+        ) : null}
+      </p>
+      {f.status === 'shipped' && (
+        <form action={confirmReceivedAction} className="mt-2">
+          <input type="hidden" name="fulfilmentId" value={f.id} />
+          <button
+            type="submit"
+            className="min-h-[44px] border border-ink px-4 text-[11px] uppercase tracking-label hover:bg-ink hover:text-ground"
+            data-testid="received-it"
+          >
+            I’ve received it
+          </button>
+        </form>
+      )}
+    </>
+  );
+}
 
 /**
  * "Report a problem" within the report window after delivery; otherwise a contact link, since
@@ -77,15 +139,9 @@ export function OrderCard({ order, detailed = false }: { order: BuyerOrder; deta
                 {f.makerName}
               </Link>
             </p>
-            <StatusPill status={f.status} />
+            <StatusPill status={f.status === 'completed' ? 'delivered' : f.status} />
           </div>
-          <p className="mt-1 text-xs text-ink-muted">
-            {f.trackingNumber
-              ? `${f.carrier ?? 'Tracking'}: ${f.trackingNumber}`
-              : f.estimatedDeliveryFrom && f.estimatedDeliveryTo
-                ? `Estimated delivery ${formatDateRange(new Date(f.estimatedDeliveryFrom), new Date(f.estimatedDeliveryTo))}`
-                : null}
-          </p>
+          <Progress f={f} />
           <ul className="mt-3 space-y-3" role="list">
             {f.items.map((i) => (
               <li key={i.id} className="flex gap-3">
@@ -118,7 +174,7 @@ export function OrderCard({ order, detailed = false }: { order: BuyerOrder; deta
                     <p className="text-xs text-alert">Refunded</p>
                   )}
                   <ItemHelp item={i} orderId={order.id} />
-                  {i.fulfilmentStatus === 'delivered' &&
+                  {isDelivered(i.fulfilmentStatus) &&
                     (i.reviewed ? (
                       <p className="text-xs text-moss">Reviewed — thank you</p>
                     ) : (

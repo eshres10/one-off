@@ -329,9 +329,10 @@ export async function seedStudio(
         product_type, image_url, quantity, unit_price_cents, line_total_cents, platform_commission_cents, seller_net_cents,
         fulfilment_status, tracking_number, carrier, shipped_at, delivered_at, created_at)
       values (${itemId}, ${orderId}, ${fulfilmentId}, ${p.id}, ${variant.id}, ${halde.id}, ${p.title}, ${`AU ${variant.size}`},
-        ${p.productType}::product_type, ${`/seed/${p.slug}.jpg`}, 1, ${p.priceCents}, ${p.priceCents}, 0, ${p.priceCents},
+        ${p.productType}::product_type,
+        (select public_url from public.product_images where product_id = ${p.id} order by sort_order limit 1), 1, ${p.priceCents}, ${p.priceCents}, 0, ${p.priceCents},
         ${itemStatus}::fulfilment_status, ${tracking}, ${tracking ? 'auspost' : null}, ${shippedAt}, ${deliveredAt}, ${placed})
-      on conflict (id) do nothing`;
+      on conflict (id) do update set image_url = excluded.image_url`;
     if (o.status === 'issue') {
       await db`
         insert into public.return_claims (id, order_id, order_item_id, buyer_id, seller_id, reason, details, photos, respond_by,

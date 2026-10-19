@@ -3,6 +3,7 @@ import { sql } from '@/lib/db';
 import { log, reportError } from '@/lib/log';
 import { payments } from '@/lib/payments';
 import { TERMS } from '@/lib/studio/terms';
+import { checkDelivery, trackingConfigured } from '@/lib/studio/tracking';
 
 const DAY = 86_400_000;
 
@@ -64,6 +65,21 @@ export async function markDelivered(
     where id = ${updated[0]!.makerId}`;
   await audit('fulfilment.delivered', { type: 'fulfilment', id: fulfilmentId }, { source });
   return true;
+}
+
+/** Asks the carrier about shipped orders (only when its API keys are set). */
+export async function pollCarrierDeliveries(): Promise<number> {
+  const rows = await sql()<{ id: string; carrier: string; trackingNumber: string }[]>`
+    select id, carrier, tracking_number from public.fulfilments
+    where status = 'shipped' and tracking_number is not null and carrier in ('auspost', 'sendle')
+    order by shipped_at limit 200`;
+  let n = 0;
+  for (const f of rows) {
+    if (!trackingConfigured(f.carrier)) continue;
+    const result = await checkDelivery(f.carrier, f.trackingNumber);
+    if (result && (await markDelivered(f.id, 'carrier', result.deliveredAt))) n++;
+  }
+  return n;
 }
 
 /** Shipped orders with no delivery event after TERMS.autoDeliveredDaysAfterShip are delivered. */

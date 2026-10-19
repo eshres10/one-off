@@ -68,11 +68,35 @@ export const emails = {
     maker: string,
     carrier: string,
     tracking: string,
+    trackingLink: string | null = null,
   ): EmailMessage => ({
     to,
     template: 'order_shipped',
     subject: `${maker} has shipped part of order ${order.orderNumber}`,
-    text: `Good news — ${maker} has shipped your piece.\n\nCarrier: ${carrier}\nTracking: ${tracking}\n\nView your order: ${url(`/orders/${order.id}`)}\n\n${CLAIM_SHIPPED_LINE}${sign}`,
+    text:
+      `Good news — ${maker} has shipped your piece.\n\n` +
+      (tracking
+        ? `Carrier: ${carrier}\nTracking: ${tracking}${trackingLink ? `\nFollow it: ${trackingLink}` : ''}`
+        : `${carrier}: ${maker} is bringing it to you.`) +
+      `\n\nView your order: ${url(`/orders/${order.id}`)}\n\n${CLAIM_SHIPPED_LINE}${sign}`,
+    related: { type: 'order', id: order.id },
+  }),
+
+  makingUpdate: (
+    to: string,
+    order: { id: string; orderNumber: string },
+    maker: string,
+    piece: string,
+    ready: boolean,
+  ): EmailMessage => ({
+    to,
+    template: ready ? 'making_ready' : 'making_sewing',
+    subject: ready ? `Your ${piece} is ready` : `${maker} is sewing your ${piece}`,
+    text:
+      (ready
+        ? `${maker} has finished making your ${piece}. It ships next, and you’ll get the tracking link the moment it does.`
+        : `${maker} has cut your ${piece} and it’s on the sewing table now.`) +
+      `\n\nFollow along: ${url(`/orders/${order.id}`)}${sign}`,
     related: { type: 'order', id: order.id },
   }),
 

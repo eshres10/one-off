@@ -2,10 +2,17 @@ export type ProductType = 'ready_to_ship' | 'made_to_order' | 'one_of_one';
 export type FulfilmentStatus =
   | 'paid'
   | 'preparing'
+  | 'making'
+  | 'ready'
   | 'shipped'
   | 'delivered'
+  | 'completed'
+  | 'issue'
   | 'cancelled'
   | 'refunded';
+
+/** Delivered to the buyer (and possibly already paid out to the maker). */
+export const isDelivered = (status: string) => status === 'delivered' || status === 'completed';
 
 export interface CartLine {
   id?: string;

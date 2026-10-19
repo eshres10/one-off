@@ -4,6 +4,7 @@ import type { StudioShop } from '@/lib/queries/studio';
 import { Img as Image } from '@/components/ui/Img';
 import { Wordmark } from '@/components/ui/Wordmark';
 import { StudioNav, StudioTabs, type StudioCounts } from './StudioNav';
+import { ToastHost } from './ToastHost';
 
 function Avatar({ shop, size }: { shop: StudioShop; size: number }) {
   return (
@@ -90,6 +91,7 @@ export function StudioShell({
         {children}
       </main>
       <StudioTabs counts={counts} />
+      <ToastHost />
     </div>
   );
 }

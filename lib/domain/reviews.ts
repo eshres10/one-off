@@ -15,7 +15,7 @@ export function reviewEligibility(input: ReviewEligibilityInput): Eligibility {
   if (!input.buyerUserId || input.buyerUserId !== input.userId) {
     return { ok: false, reason: 'Only the buyer of this piece can review it.' };
   }
-  if (input.fulfilmentStatus !== 'delivered') {
+  if (input.fulfilmentStatus !== 'delivered' && input.fulfilmentStatus !== 'completed') {
     return { ok: false, reason: 'You can review this piece once it has been delivered.' };
   }
   if (input.alreadyReviewed) return { ok: false, reason: 'You have already reviewed this piece.' };
