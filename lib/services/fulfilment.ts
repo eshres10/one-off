@@ -23,7 +23,7 @@ export async function updateFulfilment(seller: Actor, input: FulfilmentAction) {
   const result = await withUser(seller, async (db) => {
     const [f] = await db<{ id: string; status: string; orderId: string; orderStatus: string }[]>`
       select f.id, f.status, f.order_id, o.status as order_status
-      from public.fulfilments f join public.orders o on o.id = f.order_id
+      from public.fulfilments f join public.order_summaries o on o.id = f.order_id
       where f.id = ${input.fulfilmentId} for update of f`;
     if (!f) throw new UserError('Order not found.');
     if (!['paid', 'partially_refunded'].includes(f.orderStatus))

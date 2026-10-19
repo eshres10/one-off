@@ -87,7 +87,6 @@ export interface SellerOrder {
   estimatedDispatchDate: Date | null;
   estimatedDeliveryTo: Date | null;
   shippingAddress: Record<string, string> | null;
-  buyerEmail: string;
   agreedSpec: AgreedSpecData | null;
   items: Array<{
     id: string;
@@ -107,8 +106,8 @@ export async function getSellerOrders(s: Seller, fulfilmentId?: string): Promise
     const rows = await db<Omit<SellerOrder, 'items'>[]>`
       select f.id, f.order_id, o.order_number, f.status, f.created_at, o.buyer_name, f.subtotal_cents, f.shipping_cents,
              f.platform_commission_cents, f.seller_net_cents, f.transfer_status, f.carrier, f.tracking_number,
-             f.estimated_dispatch_date, f.estimated_delivery_to, o.shipping_address, o.buyer_email, o.agreed_spec
-      from public.fulfilments f join public.orders o on o.id = f.order_id
+             f.estimated_dispatch_date, f.estimated_delivery_to, o.shipping_address, o.agreed_spec
+      from public.fulfilments f join public.order_summaries o on o.id = f.order_id
       where f.maker_id = ${s.makerId} and o.status not in ('pending', 'failed', 'cancelled')
         ${fulfilmentId ? db`and f.id = ${fulfilmentId}` : db``}
       order by case f.status when 'paid' then 0 when 'preparing' then 1 when 'shipped' then 2 else 3 end, f.created_at desc
@@ -153,21 +152,21 @@ export async function getSellerStats(s: Seller, days = 30): Promise<SellerStats>
       select
         (select count(*) from public.product_views v where v.maker_id = ${s.makerId} and v.created_at > now() - make_interval(days => ${days}))::int as views,
         (select coalesce(sum(save_count), 0) from public.products where maker_id = ${s.makerId})::int as saves,
-        (select count(*) from public.fulfilments f join public.orders o on o.id = f.order_id
+        (select count(*) from public.fulfilments f join public.order_summaries o on o.id = f.order_id
           where f.maker_id = ${s.makerId} and o.status not in ('pending','failed','cancelled') and f.created_at > now() - make_interval(days => ${days}))::int as orders,
-        (select coalesce(sum(f.subtotal_cents), 0) from public.fulfilments f join public.orders o on o.id = f.order_id
+        (select coalesce(sum(f.subtotal_cents), 0) from public.fulfilments f join public.order_summaries o on o.id = f.order_id
           where f.maker_id = ${s.makerId} and o.status not in ('pending','failed','cancelled') and f.created_at > now() - make_interval(days => ${days}))::int as revenue_cents,
-        (select coalesce(sum(f.subtotal_cents + f.shipping_cents), 0) from public.fulfilments f join public.orders o on o.id = f.order_id
+        (select coalesce(sum(f.subtotal_cents + f.shipping_cents), 0) from public.fulfilments f join public.order_summaries o on o.id = f.order_id
           where f.maker_id = ${s.makerId} and o.status not in ('pending','failed','cancelled'))::int as gross_cents,
-        (select coalesce(sum(f.platform_commission_cents), 0) from public.fulfilments f join public.orders o on o.id = f.order_id
+        (select coalesce(sum(f.platform_commission_cents), 0) from public.fulfilments f join public.order_summaries o on o.id = f.order_id
           where f.maker_id = ${s.makerId} and o.status not in ('pending','failed','cancelled'))::int as commission_cents,
         (select coalesce(sum(oi.refunded_cents), 0) from public.order_items oi where oi.maker_id = ${s.makerId})::int as refunds_cents,
-        ((select coalesce(sum(f.seller_net_cents), 0) from public.fulfilments f join public.orders o on o.id = f.order_id
+        ((select coalesce(sum(f.seller_net_cents), 0) from public.fulfilments f join public.order_summaries o on o.id = f.order_id
           where f.maker_id = ${s.makerId} and o.status not in ('pending','failed','cancelled'))
          - (select coalesce(sum(round(oi.refunded_cents::numeric * oi.seller_net_cents / oi.line_total_cents)), 0)
             from public.order_items oi where oi.maker_id = ${s.makerId}))::int as net_cents,
         (select response_time_hours from public.makers where id = ${s.makerId}) as response_time_hours,
-        (select count(*) from public.fulfilments f join public.orders o on o.id = f.order_id
+        (select count(*) from public.fulfilments f join public.order_summaries o on o.id = f.order_id
           where f.maker_id = ${s.makerId} and f.status = 'paid' and o.status in ('paid','partially_refunded'))::int as new_orders,
         (select count(*) from public.message_threads t where t.maker_id = ${s.makerId}
           and t.maker_unread > 0)::int as unread_threads,

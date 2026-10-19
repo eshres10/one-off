@@ -351,7 +351,7 @@ export async function listPieces(actor: Actor): Promise<ListingCard[]> {
         (select public_url from public.product_images i where i.product_id = p.id order by sort_order limit 1) as image_url,
         (select count(*) from public.product_views v where v.product_id = p.id)::int as views,
         (select count(*) from public.saved_items s where s.product_id = p.id)::int as saves,
-        coalesce((select sum(oi.quantity) from public.order_items oi join public.orders o on o.id = oi.order_id
+        coalesce((select sum(oi.quantity) from public.order_items oi join public.order_summaries o on o.id = oi.order_id
           where oi.product_id = p.id and o.status in ('paid', 'partially_refunded')), 0)::int as sold
       from public.products p where p.maker_id = ${actor.makerId!} and p.status <> 'rejected'
       order by (p.status = 'approved') desc, p.updated_at desc`;

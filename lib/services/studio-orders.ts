@@ -63,7 +63,7 @@ const ROW = `
   to_char(f.estimated_dispatch_date, 'YYYY-MM-DD') as ship_by, (f.subtotal_cents + f.shipping_cents) as total_cents,
   f.status::text as status, ${MTO} as is_mto, f.mto_step`;
 const FROM = `
-  from public.fulfilments f join public.orders o on o.id = f.order_id
+  from public.fulfilments f join public.order_summaries o on o.id = f.order_id
   left join lateral (select oi.product_title, oi.variant_label, oi.image_url from public.order_items oi
     where oi.fulfilment_id = f.id order by oi.created_at, oi.id limit 1) first on true`;
 
@@ -92,7 +92,7 @@ export async function countStudioOrders(seller: Seller): Promise<Record<OrderTab
             (t) => `count(*) filter (where ${TAB_SQL[t.key]})::int as "${t.key}"`,
           ).join(', '),
         )}
-      from public.fulfilments f join public.orders o on o.id = f.order_id
+      from public.fulfilments f join public.order_summaries o on o.id = f.order_id
       where f.maker_id = ${seller.makerId!} and o.status in ('paid', 'partially_refunded', 'refunded')`,
   );
   return row!;
@@ -101,7 +101,6 @@ export async function countStudioOrders(seller: Seller): Promise<Record<OrderTab
 export interface StudioOrderDetail extends StudioOrderRow {
   orderId: string;
   buyerUserId: string | null;
-  buyerEmail: string;
   shipTo: Record<string, string> | null;
   shippingCents: number;
   shippingMethod: string | null;
@@ -139,7 +138,7 @@ export async function getStudioOrder(
     const [row] = await db<
       (Omit<StudioOrderDetail, 'items' | 'claim'> & { commissionPct: string })[]
     >`
-      select ${db.unsafe(ROW)}, o.id as order_id, o.buyer_user_id, o.buyer_email, o.shipping_address as ship_to,
+      select ${db.unsafe(ROW)}, o.id as order_id, o.buyer_user_id, o.shipping_address as ship_to,
         f.shipping_cents, f.shipping_method, f.subtotal_cents, coalesce(f.commission_pct_applied, 15) as commission_pct,
         f.platform_commission_cents as commission_cents, f.processing_fee_cents, f.seller_net_cents, o.gift_note,
         f.carrier, f.tracking_number, f.shipped_at, f.delivered_at, f.transfer_released_at
@@ -170,7 +169,7 @@ async function lockOwn(db: Db, seller: Seller, fulfilmentId: string) {
     }[]
   >`
     select f.id, f.status::text as status, f.order_id, o.status as order_status, ${db.unsafe(MTO)} as is_mto, f.mto_step
-    from public.fulfilments f join public.orders o on o.id = f.order_id
+    from public.fulfilments f join public.order_summaries o on o.id = f.order_id
     where f.id = ${fulfilmentId} and f.maker_id = ${seller.makerId!} for update of f`;
   if (!f) throw new UserError('Order not found.');
   if (!['paid', 'partially_refunded'].includes(f.orderStatus))

@@ -76,7 +76,7 @@ export async function confirmReceivedAction(form: FormData): Promise<void> {
   const [own] = await withUser(
     user,
     (db) => db<{ id: string; orderId: string }[]>`
-      select f.id, f.order_id from public.fulfilments f join public.orders o on o.id = f.order_id
+      select f.id, f.order_id from public.fulfilments f join public.order_summaries o on o.id = f.order_id
       where f.id = ${id} and o.buyer_user_id = ${user.id}`,
   );
   if (!own) return;

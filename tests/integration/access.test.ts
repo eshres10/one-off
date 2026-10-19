@@ -12,6 +12,27 @@ describe('row level security: sellers', () => {
   const a = seller(0);
   const b = seller(1);
 
+  it('a seller never sees a buyer’s email or phone, only the order summary', async () => {
+    const [mine] = await sql()<{ orderId: string }[]>`
+      select order_id from public.fulfilments where maker_id = ${a.makerId} limit 1`;
+    const direct = await withUser(
+      a,
+      (db) => db`select buyer_email, buyer_phone from public.orders where id = ${mine!.orderId}`,
+    );
+    expect(direct).toHaveLength(0);
+    const summary = await withUser(
+      a,
+      (db) =>
+        db<
+          Record<string, unknown>[]
+        >`select * from public.order_summaries where id = ${mine!.orderId}`,
+    );
+    expect(summary).toHaveLength(1);
+    expect(Object.keys(summary[0]!)).not.toContain('buyerEmail');
+    expect(Object.keys(summary[0]!)).not.toContain('buyerPhone');
+    expect(summary[0]).toHaveProperty('shippingAddress');
+  });
+
   it('a seller cannot see another seller’s orders', async () => {
     const mine = await getSellerOrders(a);
     expect(mine.length).toBeGreaterThan(0);

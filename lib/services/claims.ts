@@ -196,7 +196,7 @@ const CLAIM_COLUMNS = (db: ReturnType<typeof sql>) => db`
 
 const CLAIM_FROM = (db: ReturnType<typeof sql>) => db`
   from public.return_claims c
-  join public.orders o on o.id = c.order_id
+  join public.order_summaries o on o.id = c.order_id
   join public.order_items oi on oi.id = c.order_item_id
   join public.makers m on m.id = c.seller_id`;
 
