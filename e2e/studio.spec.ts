@@ -33,7 +33,8 @@ async function haldePiece() {
     select p.slug, v.size from public.products p join public.product_variants v on v.product_id = p.id
     join public.makers m on m.id = p.maker_id
     where m.slug = 'halde-studio' and p.status = 'approved' and p.product_type = 'ready_to_ship'
-      and v.is_active and v.stock_quantity >= 3 and v.colour is null
+      and v.is_active and v.stock_quantity >= 3
+      and (select count(distinct colour) from public.product_variants x where x.product_id = p.id) <= 1
     order by p.slug, v.sort_order limit 1`;
   if (!v) throw new Error('No Halde piece in stock');
   return v;
