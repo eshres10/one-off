@@ -21,6 +21,7 @@ import {
 } from '@/lib/shipping/estimate';
 import { SITE } from '@/lib/site/config';
 import { RETURNS_POLICY_VERSION } from '@/lib/content/returns';
+import { policySnapshot } from '@/lib/returns/policy';
 import { TERMS, commissionPctAt } from '@/lib/studio/terms';
 import { CartError, getCart, type CartLineView } from './cart';
 
@@ -440,7 +441,7 @@ async function syncOrder(orderId: string, lines: CartLineView[], now: Date) {
         await db`
           insert into public.order_items (order_id, fulfilment_id, product_id, variant_id, maker_id, product_title, variant_label,
             product_type, image_url, quantity, unit_price_cents, line_total_cents, platform_commission_cents, seller_net_cents,
-            custom_measurements, note_to_maker)
+            custom_measurements, note_to_maker, return_policy)
           values (${orderId}, ${ful!.id}, ${item.productId}, ${item.variantId}, ${item.makerId}, ${item.productTitle},
             ${item.variantLabel}, ${item.productType}, ${item.imageUrl ?? null}, ${item.quantity}, ${item.unitPriceCents},
             ${item.lineTotalCents}, ${item.platformCommissionCents}, ${item.sellerNetCents},
@@ -456,7 +457,8 @@ async function syncOrder(orderId: string, lines: CartLineView[], now: Date) {
                 from public.orders o join public.buyer_measurements bm on bm.user_id = o.buyer_user_id
                 left join public.customer_prefs p on p.user_id = o.buyer_user_id
                 where o.id = ${orderId}) end),
-            ${notes.get(item.variantId) ?? null})`;
+            ${notes.get(item.variantId) ?? null},
+            ${db.json(policySnapshot(item.productType) as never)})`;
       }
     }
     await db`

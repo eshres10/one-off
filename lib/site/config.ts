@@ -62,6 +62,30 @@ export const SITE = {
     afterpayInstalments: 4,
   },
 
+  /**
+   * Returns. Ready-to-ship pieces can come back for a change of mind; made-to-order, custom and
+   * one-of-one pieces can't (faults are always covered). The policy text lives in
+   * lib/returns/policy.ts and is copied onto each order item at checkout.
+   */
+  returns: {
+    readyToShipWindowDays: 14,
+    condition: 'unworn, with tags and original packaging',
+    /** [DECIDE] Who pays to post a change-of-mind return back: 'buyer' or 'maker'. */
+    returnPostagePaidBy: 'buyer' as 'buyer' | 'maker',
+    /** The refund goes out when the maker marks the return received. */
+    refundTrigger: 'maker_receives' as const,
+    /** Business days a maker has to confirm a delivered return before it's refunded anyway. */
+    makerConfirmDays: 3,
+    /** Days the buyer has to post it once they've started a return. */
+    sendWithinDays: 7,
+    /**
+     * [DECIDE] false (default): makers are paid 3 days after delivery as usual, and a later
+     * return comes back out of their balance or next payout. true: ready-to-ship payouts wait
+     * until the return window closes. Either way the Seller Agreement needs a clause.
+     */
+    holdReadyToShipPayoutUntilWindowCloses: false,
+  },
+
   cases: {
     /**
      * [DECIDE] A problem reported within this many days of delivery pauses that maker's payout
