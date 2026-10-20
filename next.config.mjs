@@ -2,9 +2,9 @@ const NEW_HOST = 'offone.com.au';
 const OLD_HOSTS = ['shoponeoff.com.au', 'www.shoponeoff.com.au'];
 
 /**
- * Canonical domain: www goes to the apex. The old shoponeoff.com.au moves to offone.com.au only
- * once APP_URL says the site lives there, so switching APP_URL in Vercel (after connecting the
- * new domain) is what flips it. Until then the old domain keeps serving as it did.
+ * The old shoponeoff.com.au (and its www) moves to wherever APP_URL says the site lives, once
+ * that's offone.com.au. Which of offone.com.au and www.offone.com.au is primary is set in Vercel
+ * (Settings → Domains), not here.
  */
 function domainRedirects() {
   let appHost = '';
@@ -19,8 +19,9 @@ function domainRedirects() {
     destination: `https://${appHost}/:path*`,
     permanent: true,
   });
-  if (appHost === NEW_HOST) return [`www.${NEW_HOST}`, ...OLD_HOSTS].map(to);
-  if (OLD_HOSTS.includes(appHost)) return [to('www.shoponeoff.com.au')];
+  // www.offone.com.au is left to Vercel's domain settings: redirecting it here as well loops
+  // forever if Vercel sends the apex to www.
+  if (appHost === NEW_HOST || appHost === `www.${NEW_HOST}`) return OLD_HOSTS.map(to);
   return [];
 }
 
