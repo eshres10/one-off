@@ -51,6 +51,12 @@ export async function migrate(databaseUrl: string, opts: { reset?: boolean } = {
       await db.unsafe(readFileSync(path.join(dir, file), 'utf8'));
       await db`insert into public.schema_migrations (name) values (${file}) on conflict do nothing`;
     }
+    // Reference data: Australian postcodes (GeoNames, CC BY 4.0), loaded once.
+    const [{ n }] = (await db`select count(*)::int as n from public.postcodes`) as unknown as [
+      { n: number },
+    ];
+    if (n === 0)
+      await db.unsafe(readFileSync(path.join(root, 'supabase/seed/postcodes.sql'), 'utf8'));
     // schema_migrations is internal bookkeeping; keep it out of the API roles' reach.
     await db`alter table public.schema_migrations enable row level security`;
   } finally {
