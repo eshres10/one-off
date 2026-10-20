@@ -22,6 +22,7 @@ import { ArrowLeftIcon } from '@/components/ui/icons';
 import { Img as Image } from '@/components/ui/Img';
 import { Monogram } from '@/components/ui/Monogram';
 import { Wordmark } from '@/components/ui/Wordmark';
+import { oauthProviders } from '@/lib/auth/oauth';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Apply to sell' };
@@ -296,6 +297,7 @@ export default async function ApplyPage({ searchParams }: { searchParams: { step
           magicLinks={magicLinksEnabled()}
           initialMode="signup"
           sellerNote={false}
+          oauth={oauthProviders()}
         />
       </Frame>
     );

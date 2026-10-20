@@ -23,7 +23,7 @@ export async function GET(req: Request) {
   const { data, error } = await supabaseServer().auth.signInWithOAuth({
     provider: provider as 'google' | 'apple',
     options: {
-      redirectTo: `${e.APP_URL}/auth/callback?next=${encodeURIComponent(safeNext(url.searchParams.get('next')))}`,
+      redirectTo: `${e.APP_URL}/auth/callback?via=${provider}&next=${encodeURIComponent(safeNext(url.searchParams.get('next')))}`,
     },
   });
   if (error || !data.url) return NextResponse.redirect(new URL('/login?error=oauth', e.APP_URL));

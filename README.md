@@ -244,6 +244,20 @@ open offone.com.au in Safari, tap Share → Add to Home Screen, open Off One fro
 screen (not Safari), tap "Turn on drop alerts" and Allow. Then run the test script. If you tapped
 Don't Allow, turn it back on in Settings → Notifications → Off One.
 
+## Sign in with Google
+
+The Google button shows on Sign in, Join, Apply to sell and the shop-claim page once
+`AUTH_OAUTH_PROVIDERS=google` is set (Supabase auth only). First sign-in creates the Off One account
+from the Google name and email; an existing account with the same email is linked by Supabase.
+
+1. Google Cloud Console → APIs & Services → OAuth consent screen: External, app name "Off One",
+   support email, logo, home page `https://offone.com.au`, privacy `https://offone.com.au/legal/privacy`,
+   terms `https://offone.com.au/legal/terms`, authorised domain `offone.com.au`. Publish the app.
+2. Credentials → Create credentials → OAuth client ID → Web application. Authorised redirect URI:
+   `https://<project-ref>.supabase.co/auth/v1/callback` (shown in Supabase under the Google provider).
+3. Supabase → Authentication → Sign In / Providers → Google: enable, paste the client ID and secret.
+4. Vercel: `AUTH_OAUTH_PROVIDERS=google`, then redeploy.
+
 ## Testing
 
 - **Unit** (`tests/unit`): cart totals, multi-maker splitting, commission, lead times, stock, review eligibility, moderation.

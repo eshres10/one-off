@@ -6,6 +6,7 @@ import { loginAction, magicLinkAction, signupAction } from '@/lib/actions/auth';
 import { loginSchema, signupSchema, type FormState } from '@/lib/validation';
 import { SubmitButton } from '@/components/ui/SubmitButton';
 import { Field, FormAlert, Input } from '@/components/ui/Field';
+import { GoogleMark } from '@/components/ui/GoogleMark';
 
 type Mode = 'password' | 'magic' | 'signup';
 
@@ -68,11 +69,18 @@ export function AuthForms({
             <a
               key={p}
               href={`/auth/oauth?provider=${p}&next=${encodeURIComponent(next)}`}
-              className="flex min-h-[48px] items-center justify-center border border-ink text-[11px] uppercase tracking-label"
+              className="flex min-h-[48px] items-center justify-center gap-3 border border-ink bg-surface text-[11px] uppercase tracking-label hover:bg-stone-light"
+              data-testid={`oauth-${p}`}
             >
+              {p === 'google' && <GoogleMark />}
               Continue with {p === 'apple' ? 'Apple' : 'Google'}
             </a>
           ))}
+          <p className="mt-4 flex items-center gap-3 text-[11px] uppercase tracking-label text-muted-2">
+            <span aria-hidden className="h-px flex-1 bg-line" />
+            or
+            <span aria-hidden className="h-px flex-1 bg-line" />
+          </p>
         </div>
       )}
       <div role="tablist" aria-label="Sign in options" className="flex gap-6 border-b border-line">

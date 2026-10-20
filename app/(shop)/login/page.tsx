@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { getSessionUser } from '@/lib/auth/session';
 import { AuthForms } from '@/components/forms/AuthForms';
 import { magicLinksEnabled } from '@/lib/features';
+import { oauthProviders } from '@/lib/auth/oauth';
 
 export const metadata = { title: 'Sign in' };
 
@@ -26,11 +27,13 @@ export default async function LoginPage({
       </p>
       {searchParams.error && (
         <p className="mt-4 bg-error-bg px-3 py-2.5 text-[13px] text-error" role="alert">
-          That sign-in link has expired or is invalid. Request a new one below.
+          {searchParams.error === 'oauth'
+            ? 'Signing in with Google didn’t finish. Try again, or use your email below.'
+            : 'That sign-in link has expired or is invalid. Request a new one below.'}
         </p>
       )}
       <div className="mt-8">
-        <AuthForms next={next} magicLinks={magicLinksEnabled()} />
+        <AuthForms next={next} magicLinks={magicLinksEnabled()} oauth={oauthProviders()} />
       </div>
       {next.startsWith('/studio') ? (
         <p className="mt-8 text-center text-[13px]" data-testid="login-apply">

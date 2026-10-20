@@ -6,6 +6,7 @@ import { magicLinksEnabled } from '@/lib/features';
 import { JoinForm } from '@/components/onboarding/JoinForm';
 import { Img as Image } from '@/components/ui/Img';
 import { Wordmark } from '@/components/ui/Wordmark';
+import { GoogleMark } from '@/components/ui/GoogleMark';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Join Off One' };
@@ -50,8 +51,9 @@ export default async function JoinPage() {
               <a
                 key={p.id}
                 href={`/auth/oauth?provider=${p.id}&next=${encodeURIComponent('/welcome')}`}
-                className="flex min-h-[52px] items-center justify-center border border-ink text-[11px] uppercase tracking-label"
+                className="flex min-h-[52px] items-center justify-center gap-3 border border-ink text-[11px] uppercase tracking-label"
               >
+                {p.id === 'google' && <GoogleMark />}
                 {p.label}
               </a>
             ) : (
