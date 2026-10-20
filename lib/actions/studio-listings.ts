@@ -8,8 +8,10 @@ import { withUser } from '@/lib/db';
 import { toFormState } from './util';
 import type { FormState } from '@/lib/validation';
 import {
+  listReusableStories,
   savePiece,
   setPieceLive,
+  type ReusableStory,
   type SaveIntent,
   type SaveResult,
 } from '@/lib/services/studio-listings';
@@ -108,6 +110,18 @@ export async function savePieceAction(input: {
     const state = toFormState(err);
     return { ok: false, message: state?.message ?? 'Couldn’t save. Try again.' };
   }
+}
+
+/** "Reuse a story": the maker's other pieces that have one. */
+export async function reusableStoriesAction(input: {
+  makerId: string;
+  exceptId: string | null;
+}): Promise<ReusableStory[]> {
+  const user = await getSessionUser();
+  if (!user || (user.role !== 'seller' && user.role !== 'admin')) return [];
+  if (!uuid.safeParse(input.makerId).success) return [];
+  const exceptId = input.exceptId && uuid.safeParse(input.exceptId).success ? input.exceptId : null;
+  return listReusableStories(user, input.makerId, exceptId);
 }
 
 export async function setPieceLiveAction(productId: string, live: boolean): Promise<FormState> {

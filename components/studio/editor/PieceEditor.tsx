@@ -25,9 +25,14 @@ import { showToast } from '@/lib/studio/toast';
 import { ArrowLeftIcon, CheckIcon, CloseIcon, MinusIcon, PlusIcon } from '@/components/ui/icons';
 import { Img as Image } from '@/components/ui/Img';
 import { Sheet } from '../Sheet';
+import { StorySection } from './StorySection';
+import { hasStory, storyPrompts } from '@/lib/listings/story';
 import { Switch } from '../Switch';
 
-const STEPS = ['Photos', 'Details', 'Sizes & price', 'Check it'] as const;
+const STEPS = ['Photos', 'Details', 'The story', 'Sizes & price', 'Check it'] as const;
+const STORY_STEP = 2;
+const SIZES_STEP = 3;
+const CHECK_STEP = 4;
 
 function Chip({
   on,
@@ -93,7 +98,7 @@ const savedLabel = (at: number | null, now: number) => {
 
 /**
  * Add / edit a piece. Desktop: the form on the left, a sticky preview card and checklist on the
- * right, autosaving as you go. Phones: four steps (Photos, Details, Sizes & price, Check it).
+ * right, autosaving as you go. Phones: five steps (Photos, Details, The story, Sizes & price, Check it).
  * `mode="admin"` is One Off listing into a draft shop; `embedded` drops the page chrome so it
  * can sit in a sheet (the claim flow's "Edit details").
  */
@@ -145,6 +150,9 @@ export function PieceEditor({
   const holdTimer = useRef<ReturnType<typeof setTimeout>>();
 
   const live = status === 'approved';
+  // Close-ups alone still make a story, but they don't count towards the prompts.
+  const storyAdded = hasStory(draft.story);
+  const storyCount = storyPrompts(draft.story);
   const check = useMemo(() => publishChecklist(draft), [draft]);
   const update = (patch: Partial<PieceDraft>) => {
     setDraft((d) => ({ ...d, ...patch }));
@@ -700,7 +708,7 @@ export function PieceEditor({
   );
 
   const sizes = (
-    <Section id="sizes" title="Sizes" className={stepClass(2)}>
+    <Section id="sizes" title="Sizes" className={stepClass(SIZES_STEP)}>
       <ul
         className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7"
         role="list"
@@ -797,7 +805,7 @@ export function PieceEditor({
   );
 
   const priceSection = (
-    <Section id="price" title="Price" className={stepClass(2)}>
+    <Section id="price" title="Price" className={stepClass(SIZES_STEP)}>
       <div className="grid gap-6 sm:grid-cols-[200px_1fr]">
         <div>
           <label htmlFor="piece-price" className="label">
@@ -858,7 +866,7 @@ export function PieceEditor({
   );
 
   const shipping = (
-    <Section id="shipping" title="Shipping & requests" className={stepClass(2)}>
+    <Section id="shipping" title="Shipping & requests" className={stepClass(SIZES_STEP)}>
       <p className="text-[13px]">
         {shop.ratesSummary}{' '}
         <Link href="/studio/settings#shipping" className="link">
@@ -903,6 +911,21 @@ export function PieceEditor({
           </li>
         ))}
       </ul>
+      {/* The story never counts towards publishing. */}
+      <p
+        className={`mt-3 flex items-center gap-2 border-t border-line pt-3 text-[13px] ${storyAdded ? 'text-muted-2' : 'text-muted'}`}
+        data-testid="checklist-story"
+      >
+        <span
+          aria-hidden
+          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-circle border ${storyAdded ? 'border-ink bg-ink text-ground' : 'border-dashed border-line-strong'}`}
+        >
+          {storyAdded && <CheckIcon width={10} height={10} />}
+        </span>
+        {storyAdded
+          ? `Story added · ${storyCount} of 5 prompts`
+          : 'Story of the garment · optional'}
+      </p>
     </div>
   );
 
@@ -999,7 +1022,7 @@ export function PieceEditor({
           <p className="mt-2 text-[11px] uppercase tracking-label text-muted-2">
             Step {step + 1} of {STEPS.length} · {STEPS[step]}
           </p>
-          <div className="mt-2 grid grid-cols-4 gap-1" aria-hidden>
+          <div className="mt-2 grid grid-cols-5 gap-1" aria-hidden>
             {STEPS.map((s, i) => (
               <span key={s} className={`h-[3px] ${i <= step ? 'bg-ink' : 'bg-line-strong'}`} />
             ))}
@@ -1021,13 +1044,21 @@ export function PieceEditor({
         <div>
           {photos}
           {basics}
+          <StorySection
+            story={draft.story}
+            onChange={(story) => update({ story })}
+            productId={id}
+            makerId={shop.makerId}
+            className={stepClass(STORY_STEP)}
+            onSkip={embedded ? undefined : () => setStep(SIZES_STEP)}
+          />
           {sold}
           {sizes}
           {priceSection}
           {shipping}
           {!embedded && (
             <section
-              className={`py-6 md:hidden ${step === 3 ? '' : 'hidden'}`}
+              className={`py-6 md:hidden ${step === CHECK_STEP ? '' : 'hidden'}`}
               aria-label="Check it"
               data-testid="check-it"
             >
@@ -1048,6 +1079,13 @@ export function PieceEditor({
                     1,
                   ],
                   [
+                    'Story',
+                    storyAdded
+                      ? `${storyPrompts(draft.story, 'phone')} of 4 prompts`
+                      : 'Not added · optional',
+                    STORY_STEP,
+                  ],
+                  [
                     'Sizes & price',
                     `${
                       draft.sizes
@@ -1057,7 +1095,7 @@ export function PieceEditor({
                         .map((s) => s.size)
                         .join(', ') || 'No sizes'
                     } · ${formatPrice(price)}`,
-                    2,
+                    SIZES_STEP,
                   ],
                 ].map(([label, value, k]) => (
                   <div
@@ -1126,7 +1164,11 @@ export function PieceEditor({
             >
               {step === 0 && draft.images.length < MIN_PHOTOS
                 ? `Add ${MIN_PHOTOS - draft.images.length} more photo${MIN_PHOTOS - draft.images.length === 1 ? '' : 's'}`
-                : 'Next'}
+                : step === STORY_STEP
+                  ? hasStory(draft.story)
+                    ? 'Next · sizes & price'
+                    : 'Skip · sizes & price'
+                  : 'Next'}
             </button>
           ) : (
             <div className="flex-[2] [&>button]:w-full">{primary}</div>
