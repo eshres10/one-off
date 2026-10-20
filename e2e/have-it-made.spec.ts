@@ -28,7 +28,7 @@ const isPhone = (page: Page) => (page.viewportSize()?.width ?? 1280) < 768;
 const next = (page: Page) => page.getByTestId(isPhone(page) ? 'flow-next-phone' : 'flow-next');
 
 /** The seven steps, as a guest, up to "Find my makers". */
-async function fillBrief(page: Page, opts: { fitting?: boolean; budget?: number } = {}) {
+async function fillBrief(page: Page, opts: { fitting?: boolean; budget?: number; date?: string } = {}) {
   await page.goto('/have-it-made');
   await expect(page.getByRole('heading', { name: /Have something made/ })).toBeVisible();
   await next(page).click();
@@ -41,7 +41,10 @@ async function fillBrief(page: Page, opts: { fitting?: boolean; budget?: number 
   await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuetext', 'Step 2 of 7');
   await page.getByTestId('occasion-wedding_guest').click();
   await expect(page.getByTestId('occasion-wedding_guest')).toHaveAttribute('aria-pressed', 'true');
-  await page.getByTestId('date-later').click();
+  if (opts.date) {
+    await page.getByTestId('date-custom').click();
+    await page.getByTestId('date-custom-input').fill(opts.date);
+  } else await page.getByTestId('date-later').click();
   await next(page).click();
   // Fewer than 20 characters can't go on.
   await page.getByTestId('brief-words').fill('Short');
@@ -215,13 +218,15 @@ test.describe('Have it made', () => {
     test.setTimeout(180_000);
     const b = BUYERS[11]!;
     await login(page, b.email, '/have-it-made');
-    // A$300–450 with an in-person fitting: nobody near Fitzroy fits that budget with fittings.
-    await fillBrief(page, { fitting: true, budget: 0 });
+    // A$300–450, an in-person fitting and only 12 days: Fern doesn't do fittings, Lune starts at
+    // A$700 and Halde needs three weeks. Two more weeks finds Halde.
+    const inTwelveDays = new Date(Date.now() + 12 * 86_400_000).toISOString().slice(0, 10);
+    await fillBrief(page, { fitting: true, budget: 0, date: inTwelveDays });
     await next(page).click();
     await expect(page.getByTestId('finding')).toBeVisible();
     await expect(page.getByTestId('no-matches')).toBeVisible({ timeout: 20_000 });
-    await expect(page.getByTestId('widen-budget')).toContainText('maker');
-    await page.getByTestId('widen-budget').click();
+    await expect(page.getByTestId('widen-date')).toContainText('maker');
+    await page.getByTestId('widen-date').click();
     await expect(page.getByTestId('matches')).toBeVisible({ timeout: 20_000 });
     await page.getByTestId('ask-help-link').click();
     await page
