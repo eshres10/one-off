@@ -33,6 +33,9 @@ import {
 import { Gallery } from '@/components/product/Gallery';
 import { PurchasePanel } from '@/components/product/PurchasePanel';
 import { Reviews } from '@/components/product/Reviews';
+import { StoryLink, StorySection } from '@/components/product/PieceStory';
+import { getProductStory } from '@/lib/queries/story';
+import { env } from '@/lib/env';
 import { AskQuestionForm, Questions } from '@/components/product/Questions';
 import { getQuestionsAndReviews } from '@/lib/queries/questions';
 import { ProductGrid } from '@/components/product/ProductCard';
@@ -104,12 +107,13 @@ export default async function ProductPage({ params }: { params: { slug: string }
         height: num(sizes.heightCm),
       }
     : null;
-  const [related, reviews, savedIds, qa, nextSlot] = await Promise.all([
+  const [related, reviews, savedIds, qa, nextSlot, story] = await Promise.all([
     getRelated(product.id, product.maker.id, product.category, product.colours),
     getReviews({ productId: product.id }, 3),
     getSavedProductIds(user?.id ?? null),
     getQuestionsAndReviews(product.id),
     getNextSlot(product.id),
+    getProductStory(product.id),
   ]);
   const questions = qa.filter((e) => e.kind === 'question');
   const isMaker = Boolean(user && user.id === product.maker.userId);
@@ -166,6 +170,30 @@ export default async function ProductPage({ params }: { params: { slug: string }
       ? 'Follow the maker to hear about restocks.'
       : `Dispatch by ${fmtDay(estimate.dispatchBy)} · Estimated delivery ${formatDateRange(estimate.deliveryFrom, estimate.deliveryTo)}`;
 
+  const base = env().APP_URL;
+  const productJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.title,
+    description: [product.description, story?.story.inspiration]
+      .filter(Boolean)
+      .join('\n\n')
+      .slice(0, 5000),
+    image: product.images.map((i) => new URL(i.url, base).toString()),
+    sku: product.id,
+    brand: { '@type': 'Brand', name: m.displayName },
+    offers: {
+      '@type': 'Offer',
+      url: `${base}/products/${product.slug}`,
+      priceCurrency: 'AUD',
+      price: (product.priceCents / 100).toFixed(2),
+      availability:
+        totalStock > 0 || product.productType === 'made_to_order'
+          ? 'https://schema.org/InStock'
+          : 'https://schema.org/SoldOut',
+    },
+  };
+
   const reviewsBlock = (id: string) => (
     <>
       <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
@@ -196,6 +224,13 @@ export default async function ProductPage({ params }: { params: { slug: string }
     // the content card slides up over them. Desktop: the gallery stays pinned while the details
     // column scrolls, then releases when it ends.
     <div className="pb-28 max-md:-mt-[var(--header-h)] md:pb-0" data-immersive>
+      <script
+        type="application/ld+json"
+        // JSON.stringify escapes quotes; < is escaped so the text can't close the script tag.
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(productJsonLd).replace(/</g, '\\u003c'),
+        }}
+      />
       <RememberPiece
         slug={product.slug}
         title={product.title}
@@ -360,6 +395,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
             <TrustList shipsFrom={`${m.displayName}, ${m.city}`} shipping={shippingText} />
           </div>
 
+          {story && <StoryLink data={story} />}
           <div className="mt-2">
             <Accordion id="returns" title="Returns" open={custom}>
               <ReturnsPolicy productType={product.productType} link testId="returns-row" />
@@ -416,15 +452,26 @@ export default async function ProductPage({ params }: { params: { slug: string }
               <p>{shippingText}</p>
             </Accordion>
           </div>
-          <section aria-labelledby="reviews-title-desktop" className="mt-16 hidden lg:block">
-            {reviewsBlock('reviews-title-desktop')}
-          </section>
+          {/* With a story, reviews follow it below instead. */}
+          {!story && (
+            <section aria-labelledby="reviews-title-desktop" className="mt-16 hidden lg:block">
+              {reviewsBlock('reviews-title-desktop')}
+            </section>
+          )}
         </div>
       </div>
 
+      {story && (
+        <div className="mt-16 md:mt-20">
+          <StorySection data={story} />
+        </div>
+      )}
       <div className="relative z-[1] bg-ground pt-20">
         {/* On desktop, reviews sit in the details column (above) so the gallery stays pinned. */}
-        <section aria-labelledby="reviews-title" className="container-page lg:hidden">
+        <section
+          aria-labelledby="reviews-title"
+          className={`container-page ${story ? '' : 'lg:hidden'}`}
+        >
           {reviewsBlock('reviews-title')}
         </section>
 

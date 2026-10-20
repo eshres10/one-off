@@ -334,6 +334,40 @@ export function SettingsForm({
               onChange={(e) => set('tagline', e.target.value)}
             />
           </Field>
+          <div className="grid gap-5 sm:grid-cols-[minmax(0,1fr)_160px]">
+            <Field
+              id="set-owner-name"
+              label="Your name"
+              hint="Signs the stories on your pieces. Leave it blank to use the shop name."
+            >
+              <input
+                id="set-owner-name"
+                className="input"
+                maxLength={80}
+                value={s.ownerDisplayName}
+                onChange={(e) => set('ownerDisplayName', e.target.value)}
+                data-testid="owner-name"
+              />
+            </Field>
+            <Field id="set-team-size" label="People making" hint="Just you? Put 1.">
+              <input
+                id="set-team-size"
+                type="number"
+                inputMode="numeric"
+                min={1}
+                max={500}
+                className="input"
+                value={s.teamSize ?? ''}
+                onChange={(e) =>
+                  set(
+                    'teamSize',
+                    e.target.value ? Math.max(0, Math.round(Number(e.target.value))) : null,
+                  )
+                }
+                data-testid="team-size"
+              />
+            </Field>
+          </div>
           <Field id="set-story" label="Story">
             <textarea
               id="set-story"

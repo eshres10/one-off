@@ -257,6 +257,34 @@ export async function seedStudio(
     update public.product_variants set stock_quantity = 1
     where product_id = ${product('navy-satin-slip').id} and size = '14'`;
 
+  // Story of the garment: Ingrid writes her own, and works alone.
+  await db`
+    update public.makers set owner_display_name = 'Ingrid Halde', team_size = 1
+    where id = ${product('butter-silk-slip').maker.id}`;
+  await db`
+    insert into public.product_stories (product_id, quote, inspiration, details, fabric, hours_to_make, closeups)
+    values (${product('butter-silk-slip').id},
+      'I wanted a slip you could dance in at a wedding and still throw on with a jumper the next morning.',
+      ${'It started with my nan’s 1970s nightdress, worn so soft the silk felt like water. I spent a winter trying to get that drape right: cutting on the bias, testing six weights of satin, and unpicking more hems than I’d like to admit.'},
+      ${['French seams', 'Hand-rolled hem', 'Bias cut', 'Adjustable straps', 'Deadstock silk']},
+      ${'Deadstock silk satin, the end of a roll from a Sydney mill. When it’s gone, this colour is gone.'},
+      14,
+      ${db.json([
+        {
+          path: '/seed/butter-silk-slip.jpg',
+          caption: 'French seams inside, so nothing frays or scratches.',
+        },
+        {
+          path: '/seed/navy-satin-slip.jpg',
+          caption: 'A hand-rolled hem: about two hours, one stitch at a time.',
+        },
+        {
+          path: '/seed/satin-open-back-jumpsuit.jpg',
+          caption: 'Straps cut on the bias too, so they sit flat.',
+        },
+      ])})
+    on conflict (product_id) do nothing`;
+
   // Older orders from the general seed are history now: paid out and completed.
   await db`
     update public.fulfilments set status = 'completed',

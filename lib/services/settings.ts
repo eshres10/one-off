@@ -44,6 +44,10 @@ export interface ShopSettings {
   instagram: string;
   tagline: string;
   story: string;
+  /** The maker's own name, signing their piece stories ("Ingrid Halde"). */
+  ownerDisplayName: string;
+  /** How many people make the pieces; 1 shows "1 person" on stories. */
+  teamSize: number | null;
   tags: string[];
   avatarUrl: string;
   bannerUrl: string;
@@ -108,6 +112,8 @@ export async function getSettings(seller: Seller): Promise<ShopSettings> {
     instagram: String(m.instagram ?? ''),
     tagline: String(m.tagline ?? ''),
     story: String(m.story ?? ''),
+    ownerDisplayName: String(m.ownerDisplayName ?? ''),
+    teamSize: m.teamSize ? Number(m.teamSize) : null,
     tags: (m.tags as string[]) ?? [],
     avatarUrl: String(m.avatarUrl ?? ''),
     bannerUrl: String(m.coverUrl ?? ''),
@@ -264,6 +270,12 @@ export async function saveSettings(seller: Seller, s: ShopSettings) {
         timezone = ${MAKER_TIMEZONES.some((z) => z.value === s.timezone) ? s.timezone : current.timezone},
         instagram = ${s.instagram.replace(/^@/, '').trim().slice(0, 60) || null}, tagline = ${tagline || null},
         story = ${sanitizeText(s.story).slice(0, 4000) || null},
+        owner_display_name = ${
+          sanitizeText(s.ownerDisplayName ?? '')
+            .trim()
+            .slice(0, 80) || null
+        },
+        team_size = ${s.teamSize && s.teamSize >= 1 ? Math.min(500, Math.round(s.teamSize)) : null},
         tags = ${s.tags.filter((t) => (SHOP_TAGS as readonly string[]).includes(t)).slice(0, 6)},
         avatar_url = ${s.avatarUrl || null}, cover_url = ${s.bannerUrl || null},
         shipping_standard_cents = ${au.standardCents},

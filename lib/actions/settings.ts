@@ -23,6 +23,8 @@ const schema = z.object({
   instagram: z.string().max(80),
   tagline: z.string().max(200),
   story: z.string().max(5000),
+  ownerDisplayName: z.string().max(120).default(''),
+  teamSize: z.number().int().min(0).max(500).nullable().default(null),
   tags: z.array(z.string().max(40)).max(12),
   avatarUrl: z.string().max(500),
   bannerUrl: z.string().max(500),

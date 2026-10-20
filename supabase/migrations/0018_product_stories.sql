@@ -47,3 +47,7 @@ grant all on public.product_stories to service_role;
 -- How many people make the pieces: "1 person / cuts, sews and finishes it" on the story.
 alter table public.makers add column if not exists team_size integer
   check (team_size is null or team_size between 1 and 500);
+
+-- The maker's own name as it signs their stories ("Ingrid Halde"); the shop name if empty.
+alter table public.makers add column if not exists owner_display_name text
+  check (owner_display_name is null or char_length(owner_display_name) between 1 and 80);
