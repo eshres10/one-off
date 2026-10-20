@@ -28,7 +28,7 @@ const isPhone = (page: Page) => (page.viewportSize()?.width ?? 1280) < 768;
 const next = (page: Page) => page.getByTestId(isPhone(page) ? 'flow-next-phone' : 'flow-next');
 
 /** The seven steps, as a guest, up to "Find my makers". */
-async function fillBrief(page: Page, opts: { fitting?: boolean } = {}) {
+async function fillBrief(page: Page, opts: { fitting?: boolean; budget?: number } = {}) {
   await page.goto('/have-it-made');
   await expect(page.getByRole('heading', { name: /Have something made/ })).toBeVisible();
   await next(page).click();
@@ -65,8 +65,9 @@ async function fillBrief(page: Page, opts: { fitting?: boolean } = {}) {
       await page.getByTestId(`measure-${k}`).fill(v!);
   }
   await next(page).click();
-  await page.getByTestId('budget-1').click();
-  await expect(page.getByTestId('budget-big')).toHaveText('A$450–700');
+  const band = opts.budget ?? 1;
+  await page.getByTestId(`budget-${band}`).click();
+  if (band === 1) await expect(page.getByTestId('budget-big')).toHaveText('A$450–700');
   await next(page).click();
   await page.getByTestId('postcode').fill('3065');
   await expect(page.getByTestId('postcode-hint')).toContainText('Fitzroy, VIC');
@@ -215,8 +216,7 @@ test.describe('Have it made', () => {
     const b = BUYERS[11]!;
     await login(page, b.email, '/have-it-made');
     // A$300–450 with an in-person fitting: nobody near Fitzroy fits that budget with fittings.
-    await fillBrief(page, { fitting: true });
-    await page.getByTestId('budget-0').click();
+    await fillBrief(page, { fitting: true, budget: 0 });
     await next(page).click();
     await expect(page.getByTestId('finding')).toBeVisible();
     await expect(page.getByTestId('no-matches')).toBeVisible({ timeout: 20_000 });
@@ -255,7 +255,7 @@ test.describe('Have it made', () => {
   test('the old routes redirect, and reduced motion stills the loop', async ({ page, browser }) => {
     test.skip(isPhone(page), 'desktop only');
     await page.goto('/custom?q=green+dress');
-    await expect(page).toHaveURL(/\/have-it-made\?q=green\+dress/);
+    await expect(page).toHaveURL(/\/have-it-made\?q=green(%20|\+)dress/);
     const product = PRODUCTS.find((p) => p.maker.id === halde.id)!;
     await page.goto(`/makers/${halde.slug}/commission?product=${product.id}`);
     await expect(page).toHaveURL(new RegExp(`/have-it-made\\?source_listing_id=${product.id}`));
