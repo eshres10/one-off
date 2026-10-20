@@ -1,3 +1,29 @@
+const NEW_HOST = 'offone.com.au';
+const OLD_HOSTS = ['shoponeoff.com.au', 'www.shoponeoff.com.au'];
+
+/**
+ * Canonical domain: www goes to the apex. The old shoponeoff.com.au moves to offone.com.au only
+ * once APP_URL says the site lives there, so switching APP_URL in Vercel (after connecting the
+ * new domain) is what flips it. Until then the old domain keeps serving as it did.
+ */
+function domainRedirects() {
+  let appHost = '';
+  try {
+    appHost = new URL(process.env.APP_URL ?? '').host;
+  } catch {
+    // Unset (local and test builds): no host redirects.
+  }
+  const to = (host) => ({
+    source: '/:path*',
+    has: [{ type: 'host', value: host }],
+    destination: `https://${appHost}/:path*`,
+    permanent: true,
+  });
+  if (appHost === NEW_HOST) return [`www.${NEW_HOST}`, ...OLD_HOSTS].map(to);
+  if (OLD_HOSTS.includes(appHost)) return [to('www.shoponeoff.com.au')];
+  return [];
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -13,7 +39,6 @@ const nextConfig = {
     instrumentationHook: true,
   },
   async redirects() {
-    // Canonical domain: send www traffic to the apex.
     return [
       // Content pages moved to their own addresses; old links keep working.
       { source: '/help/terms', destination: '/legal/terms', permanent: true },
@@ -29,12 +54,7 @@ const nextConfig = {
       // The maker dashboard moved from /seller to /studio.
       { source: '/seller', destination: '/studio', permanent: true },
       { source: '/seller/:path*', destination: '/studio/:path*', permanent: true },
-      {
-        source: '/:path*',
-        has: [{ type: 'host', value: 'www.shoponeoff.com.au' }],
-        destination: 'https://shoponeoff.com.au/:path*',
-        permanent: true,
-      },
+      ...domainRedirects(),
     ];
   },
   async headers() {

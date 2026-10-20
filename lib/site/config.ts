@@ -7,7 +7,7 @@ export const SITE = {
   /** Signs the founder's note on Our story. */
   founderName: 'Ena Shrestha',
   /** [DECIDE] Where "Message us" sends support requests (and the address shown on Help). */
-  supportEmail: 'hello@shoponeoff.com.au',
+  supportEmail: BRAND.supportEmail,
   /** The footer shows "ABN to come" while this is null. */
   abn: null as string | null,
   /**

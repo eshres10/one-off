@@ -1,5 +1,6 @@
 'use client';
 
+import { BRAND } from '@/lib/brand';
 import { useEffect, useMemo, useState, useTransition } from 'react';
 import { MAKER_TIMEZONES } from '@/lib/site/config';
 import { closeShopAction, saveSettingsAction } from '@/lib/actions/settings';
@@ -277,7 +278,7 @@ export function SettingsForm({
             }
           >
             <div className="flex items-center border border-line-strong bg-surface focus-within:border-ink">
-              <span className="pl-3 text-[13px] text-muted-2">shoponeoff.com.au/makers/</span>
+              <span className="pl-3 text-[13px] text-muted-2">{BRAND.domain}/makers/</span>
               <input
                 id="set-slug"
                 className="min-h-[44px] min-w-0 flex-1 bg-transparent pr-3 text-[14px] focus:outline-none"

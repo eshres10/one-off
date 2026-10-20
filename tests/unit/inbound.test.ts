@@ -31,8 +31,8 @@ describe('tracking numbers in a maker’s reply', () => {
   });
 
   it('reads the order token from the reply-to address', () => {
-    expect(tokenFrom('Off One <orders+Ab3_x-9Q@reply.shoponeoff.com.au>')).toBe('Ab3_x-9Q');
-    expect(tokenFrom('hello@shoponeoff.com.au')).toBeNull();
+    expect(tokenFrom('Off One <orders+Ab3_x-9Q@reply.offone.com.au>')).toBe('Ab3_x-9Q');
+    expect(tokenFrom('hello@offone.com.au')).toBeNull();
   });
 });
 

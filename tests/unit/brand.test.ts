@@ -8,8 +8,8 @@ const ROOTS = ['app', 'components', 'content', 'lib', 'public/sw.js'];
 const OLD = [
   /One Off/,
   /ONE OFF/,
-  // The domain stays on shoponeoff.com.au for now; a bare oneoff.com.au is the old brand.
-  /(?<!shop)oneoff\.com\.au/,
+  // The old domains (shoponeoff.com.au only appears in next.config.mjs, to redirect it).
+  /oneoff\.com\.au/,
   // An old Instagram handle (local test logins like admin@oneoff.test are fine).
   /@oneoff\b(?!\.test)/,
   /#OneOff/,

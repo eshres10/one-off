@@ -1,5 +1,6 @@
 'use client';
 
+import { BRAND } from '@/lib/brand';
 import { useState } from 'react';
 import { useFormState } from 'react-dom';
 import { createSellerAction } from '@/lib/actions/admin';
@@ -31,7 +32,7 @@ export function CreateSellerForm() {
         label="Shop web address"
         name="slug"
         error={e.slug}
-        hint={`shoponeoff.com.au/makers/${slug || '…'}`}
+        hint={`${BRAND.domain}/makers/${slug || '…'}`}
       >
         <Input
           name="slug"

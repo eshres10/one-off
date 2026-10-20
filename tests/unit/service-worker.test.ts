@@ -21,7 +21,7 @@ function loadSw(windows: Array<{ url: string }> = []) {
     },
   }));
   const self = {
-    location: { origin: 'https://shoponeoff.com.au' },
+    location: { origin: 'https://offone.com.au' },
     addEventListener: (name: string, fn: (e: unknown) => void) => {
       handlers[name] = fn;
     },
@@ -79,20 +79,20 @@ describe('service worker push (test 10)', () => {
   it('a click with no Off One window open opens the URL', async () => {
     const { handlers, calls } = loadSw();
     await fire(handlers.notificationclick!, click('/products/butter-silk-slip'));
-    expect(calls.opened).toEqual(['https://shoponeoff.com.au/products/butter-silk-slip']);
+    expect(calls.opened).toEqual(['https://offone.com.au/products/butter-silk-slip']);
   });
 
   it('a click with Off One already open focuses it and goes to the URL', async () => {
-    const { handlers, calls } = loadSw([{ url: 'https://shoponeoff.com.au/discover' }]);
+    const { handlers, calls } = loadSw([{ url: 'https://offone.com.au/discover' }]);
     await fire(handlers.notificationclick!, click('/account/orders/abc'));
     expect(calls.focused).toBe(1);
-    expect(calls.navigated).toEqual(['https://shoponeoff.com.au/account/orders/abc']);
+    expect(calls.navigated).toEqual(['https://offone.com.au/account/orders/abc']);
     expect(calls.opened).toEqual([]);
   });
 
   it('never opens another site', async () => {
     const { handlers, calls } = loadSw();
     await fire(handlers.notificationclick!, click('https://evil.example/phish'));
-    expect(calls.opened).toEqual(['https://shoponeoff.com.au/']);
+    expect(calls.opened).toEqual(['https://offone.com.au/']);
   });
 });

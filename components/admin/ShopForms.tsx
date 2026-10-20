@@ -1,5 +1,6 @@
 'use client';
 
+import { BRAND } from '@/lib/brand';
 import { useFormState, useFormStatus } from 'react-dom';
 import { createShopAction, sendInviteAction } from '@/lib/actions/concierge';
 import type { FormState } from '@/lib/validation';
@@ -44,7 +45,7 @@ export function CreateShopForm({ defaults }: { defaults: Record<string, string> 
       )}
       <div className="grid gap-5 sm:grid-cols-2">
         {field('name', 'Shop name', { required: true })}
-        {field('slug', 'Shop link (shoponeoff.com.au/makers/…)', { placeholder: 'from the name' })}
+        {field('slug', `Shop link (${BRAND.domain}/makers/…)`, { placeholder: 'from the name' })}
         {field('suburb', 'Suburb')}
         <div>
           <label htmlFor="shop-state" className="label">

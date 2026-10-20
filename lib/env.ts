@@ -42,7 +42,7 @@ const schema = z
 
     EMAIL_DRIVER: z.enum(['outbox', 'resend']).default('outbox'),
     RESEND_API_KEY: z.string().optional(),
-    EMAIL_FROM: z.string().default('Off One <hello@shoponeoff.com.au>'),
+    EMAIL_FROM: z.string().default('Off One <hello@offone.com.au>'),
     ADMIN_NOTIFICATION_EMAIL: z.string().email().default('admin@oneoff.test'),
 
     PLATFORM_FEE_BPS: z.coerce.number().int().min(0).max(5000).default(1500),
@@ -77,14 +77,14 @@ const schema = z
     TWILIO_FROM: z.string().optional(),
     /** Shared secret for the inbound-email webhook (replies with tracking numbers). */
     INBOUND_EMAIL_SECRET: z.string().min(16).optional(),
-    /** Reply-to domain for order emails, e.g. reply.shoponeoff.com.au (inbound routing). */
+    /** Reply-to domain for order emails, e.g. reply.offone.com.au (inbound routing). */
     INBOUND_EMAIL_DOMAIN: z.string().optional(),
     /** Vercel Cron sends `Authorization: Bearer <CRON_SECRET>`; scheduled routes require it. */
     CRON_SECRET: z.string().min(16).optional(),
     /** Drop alerts (web push). Generate with `npx web-push generate-vapid-keys`. */
     NEXT_PUBLIC_VAPID_PUBLIC_KEY: z.string().optional(),
     VAPID_PRIVATE_KEY: z.string().optional(),
-    VAPID_SUBJECT: z.string().default('mailto:hello@shoponeoff.com.au'),
+    VAPID_SUBJECT: z.string().default('mailto:hello@offone.com.au'),
   })
   .superRefine((env, ctx) => {
     if (env.AUTH_DRIVER === 'supabase' || env.STORAGE_DRIVER === 'supabase') {
