@@ -1,4 +1,4 @@
-# One Off — independent Australian fashion marketplace (MVP)
+# Off One — independent Australian fashion marketplace (MVP)
 
 Live domain: **[shoponeoff.com.au](https://shoponeoff.com.au)**
 
@@ -184,9 +184,9 @@ The production URL is `https://shoponeoff.com.au` (apex). `www.shoponeoff.com.au
    - `CNAME` for `www` → `cname.vercel-dns.com`
      Vercel shows the exact values on the Domains page and issues the TLS certificate automatically.
 3. **Environment:** `APP_URL=https://shoponeoff.com.au` (no trailing slash).
-4. **Email (Resend):** add the domain `shoponeoff.com.au` in Resend and create the SPF, DKIM and DMARC DNS records it lists. Use `EMAIL_FROM="One Off <hello@shoponeoff.com.au>"`. Set up a mailbox or forwarding for `hello@shoponeoff.com.au` (support address in `lib/brand.ts`) and choose an `ADMIN_NOTIFICATION_EMAIL`.
+4. **Email (Resend):** add the domain `shoponeoff.com.au` in Resend and create the SPF, DKIM and DMARC DNS records it lists. Use `EMAIL_FROM="Off One <hello@shoponeoff.com.au>"`. Set up a mailbox or forwarding for `hello@shoponeoff.com.au` (support address in `lib/brand.ts`) and choose an `ADMIN_NOTIFICATION_EMAIL`.
 5. **Supabase Auth:** Site URL `https://shoponeoff.com.au`; redirect URLs `https://shoponeoff.com.au/auth/callback` (keep `http://localhost:3000/auth/callback` for development). Optionally set a custom SMTP sender on the same domain.
-6. **Stripe:** webhook endpoints at `https://shoponeoff.com.au/api/webhooks/stripe` (platform + connected accounts, see above); add `shoponeoff.com.au` under Settings → Payment method domains for Apple Pay / Google Pay; set the public business name to “One Off” and the website to `https://shoponeoff.com.au` (it appears on card statements, Checkout and Connect onboarding). Also set **Terms of service URL** (Settings → Public details) to `https://shoponeoff.com.au/terms`: Checkout requires buyers to accept it (`consent_collection`), and Stripe rejects the session if the URL isn’t set.
+6. **Stripe:** webhook endpoints at `https://shoponeoff.com.au/api/webhooks/stripe` (platform + connected accounts, see above); add `shoponeoff.com.au` under Settings → Payment method domains for Apple Pay / Google Pay; set the public business name to “Off One” and the website to `https://shoponeoff.com.au` (it appears on card statements, Checkout and Connect onboarding). Also set **Terms of service URL** (Settings → Public details) to `https://shoponeoff.com.au/terms`: Checkout requires buyers to accept it (`consent_collection`), and Stripe rejects the session if the URL isn’t set.
 
 ## Deploying to Vercel
 
@@ -211,9 +211,9 @@ The production URL is `https://shoponeoff.com.au` (apex). `www.shoponeoff.com.au
 Each maker ships from their own studio at their own rate. Two things lower what buyers pay:
 
 - **Maker bundle deals** (maker-funded). In Studio → Settings → Shipping a maker can offer free or a percentage off standard shipping on 2+ pieces in one parcel. This lowers what the maker is paid for shipping, like their existing free-over threshold.
-- **One Off's shipping offer** (platform-funded, **off by default** until One Off can afford it). At **Admin → Shipping offer**: the dearest standard parcel is charged in full, each other maker adds at most A$5, the total never exceeds A$20, and it's free when the bag reaches A$300. Express parcels are never discounted. Defaults live in `lib/shipping/offer.ts`; the admin's values are stored in `site_settings` (`shipping_offer`).
+- **Off One's shipping offer** (platform-funded, **off by default** until Off One can afford it). At **Admin → Shipping offer**: the dearest standard parcel is charged in full, each other maker adds at most A$5, the total never exceeds A$20, and it's free when the bag reaches A$300. Express parcels are never discounted. Defaults live in `lib/shipping/offer.ts`; the admin's values are stored in `site_settings` (`shipping_offer`).
 
-The maker is always paid their full shipping. One Off's part is stored per parcel as `fulfilments.shipping_subsidy_cents` (`shipping_cents` = what the maker gets, `buyer_shipping_cents` = what the buyer paid, `shipping_list_cents` = the maker's normal rate). At payout, what the maker is owed (net, less refunds and anything they owe) is split by `splitPayout`: the part funded by the buyer's charge (`source_transaction`) never includes the subsidy, so transfers from a charge can't exceed what the buyer paid, and the covered shipping follows as a second transfer from the platform balance (`releaseShippingSubsidies`). If the balance is short it's marked `failed` and retried on the next run with a fresh idempotency key. A refund after payout reverses what the main transfer holds; the rest comes off unpaid covered shipping first, then off the maker's next payouts. A checkout keeps the offer it was first priced with for 60 minutes, and payment is refused if the total the buyer saw no longer matches. Founding makers pay 0% commission, so on their parcels the subsidy is pure platform cost: keep the Stripe balance topped up, and use the monthly budget, which pauses the offer until the 1st once that much has been covered.
+The maker is always paid their full shipping. Off One's part is stored per parcel as `fulfilments.shipping_subsidy_cents` (`shipping_cents` = what the maker gets, `buyer_shipping_cents` = what the buyer paid, `shipping_list_cents` = the maker's normal rate). At payout, what the maker is owed (net, less refunds and anything they owe) is split by `splitPayout`: the part funded by the buyer's charge (`source_transaction`) never includes the subsidy, so transfers from a charge can't exceed what the buyer paid, and the covered shipping follows as a second transfer from the platform balance (`releaseShippingSubsidies`). If the balance is short it's marked `failed` and retried on the next run with a fresh idempotency key. A refund after payout reverses what the main transfer holds; the rest comes off unpaid covered shipping first, then off the maker's next payouts. A checkout keeps the offer it was first priced with for 60 minutes, and payment is refused if the total the buyer saw no longer matches. Founding makers pay 0% commission, so on their parcels the subsidy is pure platform cost: keep the Stripe balance topped up, and use the monthly budget, which pauses the offer until the 1st once that much has been covered.
 
 The bag, checkout, order pages, receipt and confirmation email show the makers' real price crossed out next to what the buyer pays, the saving, and how far they are from free shipping.
 
@@ -221,7 +221,7 @@ Database: run `supabase/updates/0015_shipping_offer.sql` in the SQL Editor on an
 
 ## Add to home screen and drop alerts
 
-On phones, a slide-up sheet invites people to add One Off to their home screen (Android uses
+On phones, a slide-up sheet invites people to add Off One to their home screen (Android uses
 Chrome's own install prompt; iOS shows the Share-button steps; in-app browsers like Instagram's
 get "open in your browser", with a one-time link that carries a guest's bag and saved pieces).
 The rules (triggers, 14-day cooldown, three dismissals, pages it never shows on) live in
@@ -240,9 +240,9 @@ At most one push per browser per 24 hours. Test on a phone: turn on alerts from 
 screen or Account → Notifications, then `npx tsx scripts/send-test-push.ts you@example.com`.
 
 **Testing on an iPhone** (iOS 16.4 or later; web push only works for home-screen web apps):
-open shoponeoff.com.au in Safari, tap Share → Add to Home Screen, open One Off from the home
+open shoponeoff.com.au in Safari, tap Share → Add to Home Screen, open Off One from the home
 screen (not Safari), tap "Turn on drop alerts" and Allow. Then run the test script. If you tapped
-Don't Allow, turn it back on in Settings → Notifications → One Off.
+Don't Allow, turn it back on in Settings → Notifications → Off One.
 
 ## Testing
 

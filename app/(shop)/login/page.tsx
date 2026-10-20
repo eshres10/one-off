@@ -41,7 +41,7 @@ export default async function LoginPage({
         </p>
       ) : (
         <p className="mt-8 text-center text-[13px]">
-          New to One Off?{' '}
+          New to Off One?{' '}
           <Link href="/join" className="underline underline-offset-4">
             Join
           </Link>

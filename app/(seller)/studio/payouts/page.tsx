@@ -196,7 +196,7 @@ export default async function PayoutsPage({ searchParams }: { searchParams: { re
                 ))}
               </ul>
               <p className="mt-2 text-[12px] text-muted">
-                A returned piece comes back out of what you were paid for it. One Off’s commission
+                A returned piece comes back out of what you were paid for it. Off One’s commission
                 on it is refunded to you, so only your share is taken.
               </p>
             </div>
@@ -237,7 +237,7 @@ export default async function PayoutsPage({ searchParams }: { searchParams: { re
             </div>
           </dl>
           <ol className="mt-5 space-y-2 text-[12px] text-muted">
-            <li>1. The buyer pays; the money waits with One Off.</li>
+            <li>1. The buyer pays; the money waits with Off One.</li>
             <li>2. You ship; it’s delivered.</li>
             <li>
               3. {TERMS.releaseDaysAfterDelivery} days later (if there’s no problem reported) it’s

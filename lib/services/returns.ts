@@ -336,7 +336,7 @@ export async function markReturnReceived(seller: Actor, returnId: string) {
 
 /**
  * "There's a problem with it" (worn, damaged, tags missing): never an automatic rejection. It
- * opens a case for One Off to decide, with the maker's photos and note.
+ * opens a case for Off One to decide, with the maker's photos and note.
  */
 export async function reportReturnProblem(
   seller: Actor,
@@ -379,7 +379,7 @@ export async function reportReturnProblem(
   return { claimId: claim!.id, caseNumber: numbered!.caseNumber };
 }
 
-/** Called when One Off decides a case opened from a return. */
+/** Called when Off One decides a case opened from a return. */
 export async function settleDisputedReturn(
   claimId: string,
   outcome: 'refunded' | 'rejected',
@@ -444,7 +444,7 @@ export async function processReturns(
   return { delivered, refunded };
 }
 
-/** Tracking (or One Off) says it's back with the maker: their confirm clock starts. */
+/** Tracking (or Off One) says it's back with the maker: their confirm clock starts. */
 export async function markReturnDelivered(returnId: string, at: Date): Promise<boolean> {
   const rows = await sql()`
     update public.returns set delivered_at = ${at},
@@ -476,7 +476,7 @@ export async function adminSettleReturn(
   returnId: string,
   input: { action: 'refund' | 'reject'; note: string },
 ) {
-  if (admin.role !== 'admin') throw new UserError('Only One Off can do that.');
+  if (admin.role !== 'admin') throw new UserError('Only Off One can do that.');
   const note = sanitizeText(input.note);
   if (note.length < 10) throw new UserError('Add a note explaining the decision.');
   const r = await getReturn(returnId);

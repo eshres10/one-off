@@ -58,7 +58,7 @@ export function ShippingOfferForm({ offer }: { offer: ShippingOffer }) {
           <span className="block text-[15px]">Shipping offer on</span>
           <span className="block text-[13px] text-muted">
             Buyers pay less for standard shipping across makers. Makers are still paid their full
-            rate; One Off covers the difference.
+            rate; Off One covers the difference.
           </span>
         </span>
       </label>
@@ -83,7 +83,7 @@ export function ShippingOfferForm({ offer }: { offer: ShippingOffer }) {
       <Money
         id="monthlyBudget"
         label="Monthly budget"
-        hint="Once One Off has covered this much shipping in a month, buyers pay makers' own rates until the 1st. Empty: no limit."
+        hint="Once Off One has covered this much shipping in a month, buyers pay makers' own rates until the 1st. Empty: no limit."
         value={offer.monthlyBudgetCents}
       />
       {state?.message && (

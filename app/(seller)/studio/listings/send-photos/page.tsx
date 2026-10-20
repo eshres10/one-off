@@ -6,7 +6,7 @@ import { SendPhotosForm } from '@/components/studio/states/SendPhotosForm';
 
 export const metadata = { title: 'Send us photos · Studio', robots: { index: false } };
 
-/** Founding and invited makers can send photos and have One Off list the piece. */
+/** Founding and invited makers can send photos and have Off One list the piece. */
 export default async function SendPhotosPage() {
   const seller = await requireSeller();
   const list = await firstOrderChecklist(seller.makerId!);

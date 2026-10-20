@@ -1,12 +1,12 @@
-# One Off Seller Agreement
+# Off One Seller Agreement
 
 > **Placeholder.** Replace this file with the lawyer-approved Seller Agreement before launch.
 > Update `AGREEMENT_VERSION` in `lib/services/claim.ts` whenever the text changes, so each
 > maker's acceptance records which version they agreed to.
 
-## 1. What One Off does
+## 1. What Off One does
 
-One Off runs the marketplace where your pieces are listed, takes payment from buyers and pays
+Off One runs the marketplace where your pieces are listed, takes payment from buyers and pays
 you, less commission and card processing, after each order is delivered.
 
 ## 2. Commission
@@ -30,13 +30,13 @@ Ready-to-ship pieces can be returned for a change of mind within 14 days of deli
 tags and original packaging. The buyer pays return postage, and the item price is refunded once you
 mark the return received (or automatically if you haven't confirmed within 3 business days of
 tracking showing it delivered). If you've already been paid for it, the refunded amount (less
-One Off's commission, which is refunded to you) comes back out of your Stripe balance or your next
+Off One's commission, which is refunded to you) comes back out of your Stripe balance or your next
 payout. Made-to-order, custom and one-of-one pieces have no change-of-mind returns. If any piece is
 faulty or not as described, you'll repair, replace or refund it. Australian Consumer Law applies.
 
 ## 6. Photos and content
 
-Your photos stay yours. You give One Off permission to show them on One Off and to promote your
+Your photos stay yours. You give Off One permission to show them on Off One and to promote your
 pieces.
 
 ## 7. Leaving

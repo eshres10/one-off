@@ -97,7 +97,7 @@ export default function WaitlistPage({ searchParams }: { searchParams: SearchPar
           </div>
         </section>
 
-        <section aria-label="Why One Off" className="border-t border-line bg-stone-light">
+        <section aria-label="Why Off One" className="border-t border-line bg-stone-light">
           <ul role="list" className="container-page grid gap-10 py-14 md:grid-cols-3 md:gap-12">
             {POINTS.map((p, i) => (
               <li key={p.title}>
@@ -114,7 +114,7 @@ export default function WaitlistPage({ searchParams }: { searchParams: SearchPar
           <div className="max-w-[60ch] space-y-3 text-[15px] text-muted">
             <p>
               Makers from anywhere in Australia can apply. We review every application by hand, so
-              everything on One Off is genuinely made by the people selling it. You keep your brand
+              everything on Off One is genuinely made by the people selling it. You keep your brand
               and your story. We handle checkout, payments and buyer protection.
             </p>
             <p>

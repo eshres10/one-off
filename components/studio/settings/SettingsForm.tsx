@@ -529,7 +529,7 @@ export function SettingsForm({
             </div>
           )}
           <p className="text-[12px] text-muted">
-            When One Off runs a shipping offer for buyers, it never comes out of your pocket: you’re
+            When Off One runs a shipping offer for buyers, it never comes out of your pocket: you’re
             always paid your full shipping rate (less any bundle deal you choose here).
           </p>
           <SwitchRow
@@ -632,7 +632,7 @@ export function SettingsForm({
         <Section id="returns" title="Returns & care">
           <div className="bg-stone p-4 text-[13px] leading-relaxed" data-testid="platform-policy">
             <p>
-              One Off’s returns policy applies to every shop, so buyers get the same promise
+              Off One’s returns policy applies to every shop, so buyers get the same promise
               wherever they shop.
             </p>
             <table className="mt-3 w-full text-left">
@@ -793,7 +793,7 @@ export function SettingsForm({
             </table>
           </div>
           <p className="text-[12px] text-muted">
-            Texts go to your mobile below. Push notifications arrive with the One Off app.
+            Texts go to your mobile below. Push notifications arrive with the Off One app.
           </p>
         </Section>
 
@@ -902,7 +902,7 @@ export function SettingsForm({
           title={<h2 className="font-display text-[28px] leading-tight">Close your shop?</h2>}
         >
           <p className="text-[14px]">
-            Your shop and pieces disappear from One Off straight away. Orders you already have still
+            Your shop and pieces disappear from Off One straight away. Orders you already have still
             need to be made and sent. You can reopen any time.
           </p>
           <div className="mt-5 grid gap-2">

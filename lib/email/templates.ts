@@ -433,12 +433,12 @@ export const emails = {
     to: string,
     shop: { makerId: string; shop: string; url: string; pieces: number; bannerUrl: string | null },
   ): EmailMessage => {
-    const note = `Hi! It’s Ena from One Off. I’ve set up your shop, listed ${shop.pieces} of your pieces and written your maker page, so it’s ready for you to look over.`;
+    const note = `Hi! It’s Ena from Off One. I’ve set up your shop, listed ${shop.pieces} of your pieces and written your maker page, so it’s ready for you to look over.`;
     const after = 'This link is just for you and works for 7 days.';
     return {
       to,
       template: 'shop_invite',
-      subject: `Your One Off shop is ready, ${shop.shop}`,
+      subject: `Your Off One shop is ready, ${shop.shop}`,
       text: `${note}\n\nSee your shop: ${shop.url}\n\n${after}${sign}`,
       html: renderEmail({
         preheader: 'Take a look, change anything you like, and go live.',
@@ -457,13 +457,13 @@ export const emails = {
     a: { firstName: string | null; link: string; orderNumber: string },
   ): EmailMessage => {
     const lines = [
-      `${a.firstName ? `Hi ${a.firstName}, your` : 'Your'} One Off account is ready. Track every parcel from order ${a.orderNumber}, message makers and save your sizes in one place.`,
+      `${a.firstName ? `Hi ${a.firstName}, your` : 'Your'} Off One account is ready. Track every parcel from order ${a.orderNumber}, message makers and save your sizes in one place.`,
       'No password needed: this link signs you in. It works once and expires in 15 minutes; you can always ask for a new one from the sign-in page.',
     ];
     return {
       to,
       template: 'account_ready',
-      subject: 'Your One Off account is ready',
+      subject: 'Your Off One account is ready',
       text: `${lines.join('\n\n')}\n\nSign in: ${a.link}${sign}`,
       html: renderEmail({
         heading: 'Your account is ready',
@@ -524,11 +524,11 @@ export const emails = {
     return {
       to,
       template: 'application_approved',
-      subject: 'You’re in. Welcome to One Off',
+      subject: 'You’re in. Welcome to Off One',
       text: `${lines.join('\n\n')}\n\nSet up your shop: ${url('/studio/setup')}${sign}`,
       html: renderEmail({
         preheader: 'Time to set up your shop.',
-        heading: 'You’re in. Welcome to One Off',
+        heading: 'You’re in. Welcome to Off One',
         paragraphs: lines,
         button: { label: 'Set up your shop', url: '/studio/setup' },
         sellerFooter: true,
@@ -565,14 +565,14 @@ export const emails = {
     a: { makerId: string; label: string; reason: string; reapplyAfter: string },
   ): EmailMessage => {
     const lines = [
-      `Thank you for applying to One Off, ${a.label}, and for showing us your work.`,
+      `Thank you for applying to Off One, ${a.label}, and for showing us your work.`,
       `We’re not able to offer you a shop right now. ${a.reason}`,
       `You’re welcome to apply again after ${a.reapplyAfter}.`,
     ];
     return {
       to,
       template: 'application_declined',
-      subject: 'About your One Off application',
+      subject: 'About your Off One application',
       text: `${lines.join('\n\n')}${sign}`,
       html: renderEmail({
         heading: 'About your application',
@@ -633,10 +633,10 @@ export const emails = {
   supportReply: (to: string, body: string): EmailMessage => ({
     to,
     template: 'support_reply',
-    subject: 'One Off replied to your message',
+    subject: 'Off One replied to your message',
     text: `${body}\n\nSee the conversation in Studio: ${url('/studio/support')}${sign}`,
     html: renderEmail({
-      heading: 'One Off replied',
+      heading: 'Off One replied',
       paragraphs: [body],
       button: { label: 'Open the conversation', url: '/studio/support' },
       sellerFooter: true,

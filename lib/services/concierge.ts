@@ -18,7 +18,7 @@ type Admin = Pick<SessionUser, 'id' | 'role'>;
 export const hashToken = (token: string) => createHash('sha256').update(token).digest('hex');
 
 function assertAdmin(user: Admin) {
-  if (user.role !== 'admin') throw new UserError('Only One Off can do that.');
+  if (user.role !== 'admin') throw new UserError('Only Off One can do that.');
 }
 
 export interface NewShopInput {
@@ -36,7 +36,7 @@ export interface NewShopInput {
 
 const STATES = ['VIC', 'NSW', 'QLD', 'SA', 'WA', 'TAS', 'ACT', 'NT'];
 
-/** One Off sets up a shop for a maker before they sign up: a draft with no owner yet. */
+/** Off One sets up a shop for a maker before they sign up: a draft with no owner yet. */
 export async function createShop(admin: Admin, input: NewShopInput): Promise<string> {
   assertAdmin(admin);
   const name = sanitizeText(input.name).slice(0, 80);
@@ -152,7 +152,7 @@ export interface PipelineRow {
   claimStep: number;
 }
 
-/** Every shop One Off set up, furthest stage reached, and when it last moved. */
+/** Every shop Off One set up, furthest stage reached, and when it last moved. */
 export async function getPipeline(): Promise<PipelineRow[]> {
   const rows = await sql()<
     (Omit<PipelineRow, 'stage'> & { opened: boolean; signed: boolean; connected: boolean })[]

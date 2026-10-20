@@ -6,7 +6,7 @@ export function TrustList({ shipsFrom, shipping }: { shipsFrom?: string; shippin
     { icon: LockIcon, text: 'Secure checkout with card, Apple Pay or Google Pay.' },
     {
       icon: ShieldIcon,
-      text: `Buyer protection: pay through One Off and you’re covered if it doesn’t arrive or isn’t as described. ${PAYMENT_HELD}`,
+      text: `Buyer protection: pay through Off One and you’re covered if it doesn’t arrive or isn’t as described. ${PAYMENT_HELD}`,
     },
     ...(shipsFrom
       ? [{ icon: TruckIcon, text: `Ships from ${shipsFrom}.${shipping ? ` ${shipping}` : ''}` }]

@@ -145,7 +145,7 @@ export default async function MockCheckoutPage({
               <span>
                 I agree to the{' '}
                 <a href={session.termsUrl} className="underline">
-                  One Off terms
+                  Off One terms
                 </a>
                 , including the returns policy.
               </span>

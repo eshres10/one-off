@@ -98,7 +98,7 @@ export async function textBuyerShipped(fulfilmentId: string) {
   if (!o || !to || !(await buyerPrefs(o.userId)).delivery_sms) return;
   await sendSms(
     to,
-    `One Off: your piece from ${o.makerName} is on its way (order ${o.orderNumber}). Track it at ${env().APP_URL}/account/orders/${o.orderNumber}`,
+    `Off One: your piece from ${o.makerName} is on its way (order ${o.orderNumber}). Track it at ${env().APP_URL}/account/orders/${o.orderNumber}`,
     'buyer_shipped',
   );
 }
@@ -214,7 +214,7 @@ export async function notifyNewOrder(fulfilmentId: string) {
     const where = [f.address?.city, f.address?.state].filter(Boolean).join(' ');
     await sendSms(
       to,
-      `One Off: You made a sale! ${first.title}, size ${first.variant}${where ? `, to ${where}` : ''}. Ship by ${shipBy}. Add tracking: ${shortOrderLink(token)}`,
+      `Off One: You made a sale! ${first.title}, size ${first.variant}${where ? `, to ${where}` : ''}. Ship by ${shipBy}. Add tracking: ${shortOrderLink(token)}`,
       'new_order',
     );
   }

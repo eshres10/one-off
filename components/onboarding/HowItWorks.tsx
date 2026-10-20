@@ -134,7 +134,7 @@ export function HowItWorks({ images }: { images: string[] }) {
           if (i !== active) setActive(i);
         }}
         aria-roledescription="carousel"
-        aria-label="How One Off works"
+        aria-label="How Off One works"
         tabIndex={0}
         onKeyDown={(e) => {
           if (e.key === 'ArrowRight' && active < cards.length - 1) go(active + 1);

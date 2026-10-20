@@ -9,7 +9,7 @@ const when = (d: Date) =>
     timeZone: 'Australia/Melbourne',
   });
 
-/** A maker ↔ One Off conversation; `mine` is the side reading it. */
+/** A maker ↔ Off One conversation; `mine` is the side reading it. */
 export function SupportThread({
   messages,
   mine,
@@ -35,7 +35,7 @@ export function SupportThread({
               {m.body}
             </p>
             <span className="mt-1 text-[11px] text-muted-2">
-              {m.fromAdmin ? 'One Off' : 'You'} · {when(m.createdAt)}
+              {m.fromAdmin ? 'Off One' : 'You'} · {when(m.createdAt)}
             </span>
           </li>
         );

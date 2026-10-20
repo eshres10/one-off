@@ -32,7 +32,7 @@ export function StudioShell({
   launch = null,
   children,
 }: {
-  /** Before launch: when One Off opens to buyers (null once it's open). */
+  /** Before launch: when Off One opens to buyers (null once it's open). */
   launch?: { opensOn: string | null } | null;
   shop: StudioShop;
   counts: StudioCounts;
@@ -83,7 +83,7 @@ export function StudioShell({
           role="status"
           data-testid="launch-banner"
         >
-          One Off opens to buyers{' '}
+          Off One opens to buyers{' '}
           {launch.opensOn
             ? `on ${new Date(`${launch.opensOn}T00:00:00Z`).toLocaleDateString('en-AU', {
                 day: 'numeric',

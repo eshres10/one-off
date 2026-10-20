@@ -133,7 +133,7 @@ describe('fault claims', () => {
     expect(mail?.template).toBe('claim_escalated');
   });
 
-  it('lets the maker reply, but only One Off can close a claim without a remedy', async () => {
+  it('lets the maker reply, but only Off One can close a claim without a remedy', async () => {
     await respondToClaim(makerActor, claimId, {
       proposal: 'repair',
       message: 'So sorry — I’ll restitch the seam this week.',
@@ -141,7 +141,7 @@ describe('fault claims', () => {
     expect((await getClaim(b, claimId))?.sellerResponse).toMatch(/restitch/);
     await expect(
       resolveClaim(makerActor, claimId, { resolution: 'reject', note: 'Wear and tear only.' }),
-    ).rejects.toThrow(/Only One Off/);
+    ).rejects.toThrow(/Only Off One/);
   });
 
   it('refunds through Stripe when an admin resolves with a refund', async () => {

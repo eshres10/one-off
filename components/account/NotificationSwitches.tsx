@@ -14,7 +14,7 @@ const ROWS: Array<{ key: BuyerNotify; label: string; detail?: string }> = [
     detail: 'At most one email a week.',
   },
   { key: 'one_of_ones_in_size', label: 'One-of-ones in your size' },
-  { key: 'news', label: 'News from One Off' },
+  { key: 'news', label: 'News from Off One' },
 ];
 
 /** Each switch saves as it's flipped. Order and delivery updates are always on. */

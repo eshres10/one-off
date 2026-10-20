@@ -19,7 +19,7 @@ const day = (d: Date | null) =>
 
 const STATUSES = Object.keys(RETURN_STATUS_LABEL) as ReturnStatus[];
 
-/** Every change-of-mind return, filterable by status and maker, with One Off's overrides. */
+/** Every change-of-mind return, filterable by status and maker, with Off One's overrides. */
 export default async function AdminReturnsPage({
   searchParams,
 }: {
@@ -89,7 +89,7 @@ export default async function AdminReturnsPage({
                   {formatPrice(r.lineTotalCents)}
                 </p>
                 {r.makerNote && <p className="mt-1">Maker: “{r.makerNote}”</p>}
-                {r.adminNote && <p className="mt-1 text-muted">One Off: {r.adminNote}</p>}
+                {r.adminNote && <p className="mt-1 text-muted">Off One: {r.adminNote}</p>}
                 {r.claimId && (
                   <Link
                     href={`/admin/claims/${r.claimId}`}

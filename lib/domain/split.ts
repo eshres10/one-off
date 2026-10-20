@@ -15,9 +15,9 @@ export interface FulfilmentPlan {
   subtotalCents: number;
   /** What the maker is paid for shipping this parcel. */
   shippingCents: number;
-  /** What the buyer pays for this parcel (lower when One Off's shipping offer applies). */
+  /** What the buyer pays for this parcel (lower when Off One's shipping offer applies). */
   buyerShippingCents: number;
-  /** What One Off covers: shippingCents − buyerShippingCents. */
+  /** What Off One covers: shippingCents − buyerShippingCents. */
   shippingSubsidyCents: number;
   platformCommissionCents: number;
   /** Commission rate applied to this maker's items, in basis points (founding makers pay less). */
@@ -45,8 +45,8 @@ export interface OrderPlan {
  * Turns one buyer cart into one buyer-facing order and one fulfilment per maker.
  * Commission applies to item value only; shipping passes through to the maker who ships it.
  * `feeBps` is one rate for everyone, or a rate per maker (founding makers pay less).
- * `buyerShippingByMaker` is what the buyer pays per parcel when One Off's shipping offer lowers
- * it; the maker is still paid their full shipping and the difference is One Off's subsidy.
+ * `buyerShippingByMaker` is what the buyer pays per parcel when Off One's shipping offer lowers
+ * it; the maker is still paid their full shipping and the difference is Off One's subsidy.
  */
 export function splitOrder(
   lines: CartLine[],

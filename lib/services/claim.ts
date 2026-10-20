@@ -134,7 +134,7 @@ export async function claimPieces(makerId: string) {
     order by p.created_at`;
 }
 
-/** Step 1: show or hide a piece One Off listed (it goes live with the shop only if shown). */
+/** Step 1: show or hide a piece Off One listed (it goes live with the shop only if shown). */
 export async function setKeepOnClaim(user: User, productId: string, keep: boolean) {
   const shop = await ownShop(user);
   await sql()`update public.products set keep_on_claim = ${keep} where id = ${productId} and maker_id = ${shop.id}`;

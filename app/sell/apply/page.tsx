@@ -69,7 +69,7 @@ function Frame({
       </div>
       {note && (
         <div className="mt-5 bg-stone p-4" data-testid="review-note">
-          <p className="text-[11px] uppercase tracking-label text-muted-2">From One Off</p>
+          <p className="text-[11px] uppercase tracking-label text-muted-2">From Off One</p>
           <p className="mt-1 whitespace-pre-line text-[14px] leading-relaxed">{note}</p>
         </div>
       )}
@@ -136,13 +136,13 @@ function Welcome() {
           <Wordmark size="mobile" className="text-ground" />
         </Link>
         <div className="relative">
-          <p className="text-[11px] uppercase tracking-[0.2em] text-ground/80">Sell on One Off</p>
+          <p className="text-[11px] uppercase tracking-[0.2em] text-ground/80">Sell on Off One</p>
           <h1 className="mt-2 text-[48px] leading-[0.95]">You make it. We’ll do the rest.</h1>
         </div>
       </section>
       <div className="flex flex-1 flex-col px-5 py-7">
         <p className="text-[15px] leading-relaxed">
-          We review every maker by hand, so everything on One Off is genuinely made by the people
+          We review every maker by hand, so everything on Off One is genuinely made by the people
           selling it.
         </p>
         <ol className="mt-6 space-y-4" role="list">
@@ -224,7 +224,7 @@ export default async function ApplyPage({ searchParams }: { searchParams: { step
               href="/"
               className="flex min-h-[44px] items-center justify-center text-[12px] underline underline-offset-4"
             >
-              Back to One Off
+              Back to Off One
             </Link>
           </div>
         </Panel>
@@ -258,7 +258,7 @@ export default async function ApplyPage({ searchParams }: { searchParams: { step
       <Panel testId="apply-declined">
         <h1 className="mt-12 text-[40px] leading-[1.02]">Thank you for applying.</h1>
         <p className="mt-4 text-[15px] leading-relaxed">
-          We’re not able to offer {app!.answers.name || 'you'} a shop on One Off right now. We know
+          We’re not able to offer {app!.answers.name || 'you'} a shop on Off One right now. We know
           that’s disappointing, and we’re grateful you showed us your work.
         </p>
         {app!.reviewNote && (
@@ -273,7 +273,7 @@ export default async function ApplyPage({ searchParams }: { searchParams: { step
           href="/"
           className="mt-8 flex min-h-[44px] items-center text-[13px] underline underline-offset-4"
         >
-          Back to One Off
+          Back to Off One
         </Link>
       </Panel>
     );

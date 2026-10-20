@@ -1,7 +1,7 @@
 import { SITE } from '@/lib/site/config';
 
 /**
- * One Off's returns policy in words. The per-type copy (ready to ship, made to order, one of one,
+ * Off One's returns policy in words. The per-type copy (ready to ship, made to order, one of one,
  * custom) lives in lib/returns/policy.ts; this file holds the marketplace-wide lines used where
  * no single piece is in view (footer, pages, emails, checkout). Australian Consumer Law
  * guarantees can't be excluded, and ready-to-ship pieces can come back, so any line ruling out
@@ -57,7 +57,7 @@ export const RETURNS_POLICY_VERSION = '2026-10-20';
 /** Shown on Stripe Checkout above the pay button. */
 export const RETURNS_STRIPE_SUBMIT = `${RETURNS.checkoutFinePrint} Faulty or not as described items are repaired, replaced or refunded.`;
 
-/** Business days a maker has to respond to a claim before it escalates to One Off. */
+/** Business days a maker has to respond to a claim before it escalates to Off One. */
 export const CLAIM_RESPONSE_BUSINESS_DAYS = 2;
 
 export const CLAIM_REASONS = [

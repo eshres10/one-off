@@ -120,7 +120,7 @@ export async function onPaymentIntentSucceeded(paymentIntentId: string): Promise
   const pi = await payments().retrievePaymentIntent(paymentIntentId);
   if (pi.status !== 'succeeded') return;
   const orderId = pi.metadata.order_id;
-  if (!orderId) return; // not a One Off order (e.g. a commission deposit's own intent)
+  if (!orderId) return; // not an Off One order (e.g. a commission deposit's own intent)
   await finalizePaidOrder(orderId, {
     paymentIntentId: pi.id,
     chargeId: pi.chargeId,
@@ -438,11 +438,11 @@ export async function refundOrderItem(input: {
   });
 
   // Claw back the maker's proportional share of what they were transferred for this item. That's
-  // their net (item price less One Off's commission), so the commission is refunded to them.
+  // their net (item price less Off One's commission), so the commission is refunded to them.
   let reversalOutcome: 'none' | 'reversed' | 'deferred' = 'none';
   if (item.transferId) {
     const share = Math.round((amount * item.sellerNetCents) / item.lineTotalCents);
-    // The transfer can be smaller than the maker's share (One Off covered their shipping in a
+    // The transfer can be smaller than the maker's share (Off One covered their shipping in a
     // separate transfer): reverse what it holds; the rest comes off the covered shipping if it
     // hasn't been paid yet, and otherwise off the maker's next payouts.
     const reversal =

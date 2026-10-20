@@ -128,8 +128,8 @@ describe('multi-maker cart', () => {
     const nets = fulfilments.reduce((s, f) => s + f.sellerNetCents, 0);
     const fees = fulfilments.reduce((s, f) => s + f.processingFeeCents, 0);
     expect(fees).toBe(Math.round(order.totalCents * 0.0175) + 30);
-    // The buyer pays less shipping than the makers are paid when One Off's shipping offer
-    // applies; One Off covers the difference (shipping_subsidy_cents).
+    // The buyer pays less shipping than the makers are paid when Off One's shipping offer
+    // applies; Off One covers the difference (shipping_subsidy_cents).
     const covered = await sql()<{ buyer: number; subsidy: number }[]>`
       select coalesce(sum(buyer_shipping_cents), 0)::int as buyer, coalesce(sum(shipping_subsidy_cents), 0)::int as subsidy
       from public.fulfilments where order_id = ${orderId}`;

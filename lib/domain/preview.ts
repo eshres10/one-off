@@ -1,5 +1,5 @@
 /**
- * Sample listings shown while One Off gets ready to launch. A product tagged `preview-only` is
+ * Sample listings shown while Off One gets ready to launch. A product tagged `preview-only` is
  * labelled on cards and its page, and can never be added to a bag, even after checkout opens.
  */
 export const PREVIEW_ONLY_TAG = 'preview-only';

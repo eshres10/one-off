@@ -6,9 +6,9 @@ import type { MakerRates, Speed, Zone } from './estimate';
  *
  * 1. The maker's deals (maker-funded): free standard shipping over their threshold, or a bundle
  *    deal on 2+ pieces in one parcel. This changes what the maker is paid for shipping.
- * 2. One Off's offer (platform-funded): standard shipping across makers is capped (the first
+ * 2. Off One's offer (platform-funded): standard shipping across makers is capped (the first
  *    maker's rate, plus a small amount for each extra maker, never more than the cap) and free
- *    over a cart total. The maker is still paid their full rate; One Off covers the difference.
+ *    over a cart total. The maker is still paid their full rate; Off One covers the difference.
  *
  * Express parcels are never discounted by either layer. All amounts are integer cents.
  */
@@ -28,12 +28,12 @@ export interface ShippingOffer {
   capCents: number | null;
   /** Standard shipping is free when the bag's pieces reach this. Null: no threshold. */
   freeOverCents: number | null;
-  /** What One Off will cover in a calendar month before the offer pauses. Null: no limit. */
+  /** What Off One will cover in a calendar month before the offer pauses. Null: no limit. */
   monthlyBudgetCents: number | null;
 }
 
 /**
- * Off until One Off can afford it: the cap and free-shipping threshold are ready to switch on at
+ * Off until Off One can afford it: the cap and free-shipping threshold are ready to switch on at
  * Admin → Shipping offer. Makers' own bundle deals work either way (they fund those).
  */
 export const DEFAULT_SHIPPING_OFFER: ShippingOffer = {
@@ -115,18 +115,18 @@ export interface OfferResult {
   listTotalCents: number;
   makerTotalCents: number;
   buyerTotalCents: number;
-  /** What One Off covers: maker total − buyer total. */
+  /** What Off One covers: maker total − buyer total. */
   subsidyCents: number;
-  /** What the buyer saves against the makers' normal rates (maker deals + One Off's offer). */
+  /** What the buyer saves against the makers' normal rates (maker deals + Off One's offer). */
   savingCents: number;
-  /** Which of One Off's offers lowered the price, if any. */
+  /** Which of Off One's offers lowered the price, if any. */
   applied: 'cap' | 'free_over' | null;
   /** How much more in pieces gets free shipping (null when there's no threshold or it's met). */
   toFreeCents: number | null;
 }
 
 /**
- * Applies One Off's offer to a bag's parcels. Standard parcels: the dearest parcel is paid in
+ * Applies Off One's offer to a bag's parcels. Standard parcels: the dearest parcel is paid in
  * full, each other one adds at most `extraMakerCents`, the total never exceeds `capCents`, and
  * it's free once the pieces reach `freeOverCents`. The buyer never pays more than the makers'
  * own prices. The buyer's total is split back across parcels in proportion to each maker's

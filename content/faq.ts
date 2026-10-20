@@ -77,7 +77,7 @@ export const FAQ: FaqCategory[] = [
       {
         id: 'something-wrong',
         q: 'Something’s wrong with my piece. What do I do?',
-        a: `Choose ‘Report a problem’ on the piece in your order within ${RETURNS.reportWindowDays} days of delivery, with a photo. The maker replies within ${reply} business days with a repair, replacement or refund, and if you can’t agree, One Off steps in. Faulty or not as described is always covered, whatever kind of piece it is.`,
+        a: `Choose ‘Report a problem’ on the piece in your order within ${RETURNS.reportWindowDays} days of delivery, with a photo. The maker replies within ${reply} business days with a repair, replacement or refund, and if you can’t agree, Off One steps in. Faulty or not as described is always covered, whatever kind of piece it is.`,
       },
     ],
   },
@@ -93,7 +93,7 @@ export const FAQ: FaqCategory[] = [
       {
         id: 'when-is-the-maker-paid',
         q: 'When is the maker paid?',
-        a: `Your payment is held by One Off until your piece arrives. The maker is paid ${payDays} days after delivery, so if something’s wrong there’s time to sort it out.`,
+        a: `Your payment is held by Off One until your piece arrives. The maker is paid ${payDays} days after delivery, so if something’s wrong there’s time to sort it out.`,
       },
       {
         id: 'is-payment-secure',
@@ -104,17 +104,17 @@ export const FAQ: FaqCategory[] = [
   },
   {
     id: 'selling',
-    title: 'Selling on One Off',
+    title: 'Selling on Off One',
     items: [
       {
         id: 'who-can-sell',
-        q: 'Who can sell on One Off?',
+        q: 'Who can sell on Off One?',
         a: 'Emerging Australian designers who make their own clothes, themselves or with a small local team. We review every application by hand. No resellers or dropshipping.',
       },
       {
         id: 'cost-to-sell',
         q: 'What does it cost to sell?',
-        a: `Nothing to list. One Off takes ${TERMS.standardCommissionPct}% of each piece’s price when it sells, never on shipping. Founding makers pay ${TERMS.foundingCommissionPct}% for their first ${TERMS.foundingMonths} months.`,
+        a: `Nothing to list. Off One takes ${TERMS.standardCommissionPct}% of each piece’s price when it sells, never on shipping. Founding makers pay ${TERMS.foundingCommissionPct}% for their first ${TERMS.foundingMonths} months.`,
       },
       {
         id: 'when-do-makers-get-paid',
@@ -129,7 +129,7 @@ export const HELP_PAGE = {
   meta: {
     title: 'Help & FAQ',
     description:
-      'Answers about orders and delivery, made to order and sizing, returns, payments and selling on One Off.',
+      'Answers about orders and delivery, made to order and sizing, returns, payments and selling on Off One.',
   },
   kicker: 'Help & FAQ',
   title: 'How can we help?',

@@ -1,7 +1,7 @@
 import type { Config } from 'tailwindcss';
 
 /**
- * One Off design tokens. Colours are CSS variables defined in app/globals.css; see the
+ * Off One design tokens. Colours are CSS variables defined in app/globals.css; see the
  * living style guide at /design (development only). Legacy aliases (paper, ink-soft,
  * stone-light, clay, moss, alert) map onto the same palette so no new colours exist.
  */

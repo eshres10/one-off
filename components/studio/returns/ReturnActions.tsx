@@ -7,7 +7,7 @@ import { MAX_PHOTOS, upload } from '@/components/claims/upload';
 
 /**
  * "Mark as received" refunds the buyer straight away. "There's a problem with it" never rejects
- * the return by itself: it sends photos and a note to One Off, who decide.
+ * the return by itself: it sends photos and a note to Off One, who decide.
  */
 export function ReturnActions({ returnId, number }: { returnId: string; number: string }) {
   const router = useRouter();
@@ -57,7 +57,7 @@ export function ReturnActions({ returnId, number }: { returnId: string; number: 
   if (mode === 'sent')
     return (
       <p className="text-[13px]" role="status">
-        Sent to One Off. We’ll decide and let you both know.
+        Sent to Off One. We’ll decide and let you both know.
       </p>
     );
   return (
@@ -108,7 +108,7 @@ export function ReturnActions({ returnId, number }: { returnId: string; number: 
       {mode === 'problem' && (
         <div className="max-w-[420px] bg-stone p-4 text-[13px] md:ml-auto">
           <p>
-            Worn, damaged or missing tags? Tell us what’s wrong and add photos. One Off decides; the
+            Worn, damaged or missing tags? Tell us what’s wrong and add photos. Off One decides; the
             return isn’t rejected automatically.
           </p>
           <label className="mt-3 block">
@@ -145,7 +145,7 @@ export function ReturnActions({ returnId, number }: { returnId: string; number: 
               className={`${btn} glass-dark text-ground disabled:opacity-50`}
               data-testid="send-return-problem"
             >
-              {pending ? 'Sending…' : 'Send to One Off'}
+              {pending ? 'Sending…' : 'Send to Off One'}
             </button>
             <button
               type="button"

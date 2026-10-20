@@ -88,7 +88,7 @@ async function Welcome({ shop, children }: { shop: ClaimShop; children: React.Re
       </section>
       <div className="space-y-6 px-6 py-8">
         <p className="text-[15px] leading-relaxed">
-          Ena from One Off listed {pieces.length} of your pieces and wrote your maker page.
+          Ena from Off One listed {pieces.length} of your pieces and wrote your maker page.
         </p>
         <ul className="grid grid-cols-3 gap-2" role="list">
           {pieces.slice(0, 3).map((p) => (
@@ -213,7 +213,7 @@ export default async function ClaimPage({
         <Welcome shop={shop}>
           <p className="bg-stone p-3 text-[13px]">
             You’re signed in as {user.email}, which{' '}
-            {user.role === 'admin' ? 'is a One Off admin account' : 'already has a shop'}. Sign out
+            {user.role === 'admin' ? 'is an Off One admin account' : 'already has a shop'}. Sign out
             and open this link again with {shop.inviteEmail ?? 'the invited email'}.
           </p>
           <form action={logoutAction}>
@@ -335,7 +335,7 @@ export default async function ClaimPage({
           </div>
         ) : (
           <p className="text-[14px] text-muted">
-            One Off pays you through Stripe. They’ll ask for your ABN (or that you’re a sole
+            Off One pays you through Stripe. They’ll ask for your ABN (or that you’re a sole
             trader), your ID and your bank account. It takes about five minutes.
           </p>
         )}
@@ -419,7 +419,7 @@ export default async function ClaimPage({
       data-testid="claim-live"
     >
       <Monogram className="mx-auto h-20 w-20 text-ink" />
-      <h1 className="mt-8 text-[48px] leading-none">Welcome to One Off.</h1>
+      <h1 className="mt-8 text-[48px] leading-none">Welcome to Off One.</h1>
       <p className="mt-4 text-[14px] text-muted">Your shop is live at</p>
       <a href={shopUrl} className="link mt-1 break-all text-[15px]" data-testid="shop-url">
         {shopUrl.replace(/^https?:\/\//, '')}

@@ -48,14 +48,14 @@ export function DropAlertsSwitch() {
       </div>
       {state === 'denied' && (
         <p className="pb-3 text-[13px] text-muted" role="status" data-testid="drop-alerts-denied">
-          Notifications are blocked for One Off. To turn them back on: on iPhone, open Settings,
-          then Notifications, then One Off. On Android, press and hold the One Off icon, tap App
+          Notifications are blocked for Off One. To turn them back on: on iPhone, open Settings,
+          then Notifications, then Off One. On Android, press and hold the Off One icon, tap App
           info, then Notifications. Then come back and flip this on.
         </p>
       )}
       {state === 'unsupported' && (
         <p className="pb-3 text-[13px] text-muted" role="status">
-          This browser can’t show drop alerts. On iPhone, add One Off to your home screen and open
+          This browser can’t show drop alerts. On iPhone, add Off One to your home screen and open
           it from there (iOS 16.4 or later).
         </p>
       )}

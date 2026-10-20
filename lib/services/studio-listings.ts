@@ -317,7 +317,7 @@ export interface SaveResult {
  * Saves a piece from the editor. `autosave` keeps the status (a live piece is only autosaved
  * when it still passes the checklist); `publish` checks all five items, then makes it live if
  * the shop is live, or marks it to go live with the shop. Admins (`asAdmin`) list pieces into a
- * draft shop as One Off: they're saved as drafts flagged "Set up by One Off".
+ * draft shop as Off One: they're saved as drafts flagged "Set up by Off One".
  */
 export async function savePiece(
   actor: Actor,

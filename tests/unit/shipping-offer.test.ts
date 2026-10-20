@@ -96,7 +96,7 @@ describe('a maker’s parcel price', () => {
   });
 });
 
-describe('One Off’s shipping offer', () => {
+describe('Off One’s shipping offer', () => {
   it('changes nothing when it’s off', () => {
     const r = applyShippingOffer([std('a', 1200), std('b', 1200)], 10000, {
       ...OFFER,
@@ -164,7 +164,7 @@ describe('One Off’s shipping offer', () => {
     expect(r.buyerTotalCents).toBe(1800);
   });
 
-  it('counts a maker’s bundle deal in the saving but not in One Off’s subsidy', () => {
+  it('counts a maker’s bundle deal in the saving but not in Off One’s subsidy', () => {
     const r = applyShippingOffer([std('a', 0, 1200), std('b', 1000)], 10000, OFFER);
     expect(r.makerTotalCents).toBe(1000);
     expect(r.buyerTotalCents).toBe(1000);
@@ -232,7 +232,7 @@ describe('splitting an order with the shipping offer', () => {
     { makerId, shippingStandardCents: 1200, freeShippingOverCents: null, dispatchDays: 2 },
   ];
 
-  it('pays makers their full shipping and records what One Off covers', () => {
+  it('pays makers their full shipping and records what Off One covers', () => {
     const plan = splitOrder(
       [line('a', 10000), line('b', 10000)],
       new Map([ship('a'), ship('b')]),
@@ -260,7 +260,7 @@ describe('splitting an order with the shipping offer', () => {
   });
 });
 
-describe('splitting a payout when One Off covered shipping', () => {
+describe('splitting a payout when Off One covered shipping', () => {
   it('sends the buyer-funded part from the charge and the covered shipping separately', () => {
     expect(
       splitPayout({

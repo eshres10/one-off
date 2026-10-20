@@ -39,7 +39,7 @@ export const HELP: Record<string, HelpTopic> = {
     kicker: 'Sell with us',
     title: 'Make it. We’ll help you sell it.',
     intro:
-      'Makers from anywhere in Australia can apply to sell. We review every application by hand, so everything on One Off is genuinely made by the people selling it.',
+      'Makers from anywhere in Australia can apply to sell. We review every application by hand, so everything on Off One is genuinely made by the people selling it.',
     sections: [
       {
         heading: 'What we look for',

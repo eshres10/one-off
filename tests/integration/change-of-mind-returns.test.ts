@@ -188,7 +188,7 @@ describe('change-of-mind returns', () => {
     spy.mockRestore();
     const [adj] = await sql()<{ amountCents: number; reason: string }[]>`
       select amount_cents, reason from public.maker_adjustments where return_id = ${rb.id}`;
-    // The maker gives back their share only: One Off's commission is refunded to them.
+    // The maker gives back their share only: Off One's commission is refunded to them.
     expect(adj!.amountCents).toBe(b.item.sellerNetCents);
     expect(adj!.reason).toMatch(/^Return OO-R-/);
 

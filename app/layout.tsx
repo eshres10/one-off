@@ -6,6 +6,7 @@ import { ServiceWorker } from '@/components/install/ServiceWorker';
 import type { Metadata, Viewport } from 'next';
 import { Instrument_Serif, Jost } from 'next/font/google';
 import { BRAND } from '@/lib/brand';
+import { SITE } from '@/lib/site/config';
 import './globals.css';
 import { OfflineGate } from '@/components/states/OfflineGate';
 
@@ -29,7 +30,7 @@ const SHARE_DESCRIPTION =
   'Independent Australian designers who make their own pieces, in small runs or made to order. Australian-made, straight from the maker.';
 
 export const metadata: Metadata = {
-  title: { default: SHARE_TITLE, template: `%s · ${BRAND.name}` },
+  title: { default: SHARE_TITLE, template: `%s — ${BRAND.name}` },
   description: SHARE_DESCRIPTION,
   metadataBase: new URL(SITE_URL),
   applicationName: BRAND.name,
@@ -57,6 +58,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en-AU" className={`${display.variable} ${sans.variable}`}>
       <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'Organization',
+              name: BRAND.name,
+              url: BRAND.url,
+              logo: `${BRAND.url}/brand/one-off-icon-512.png`,
+              sameAs: [SITE.instagram],
+            }),
+          }}
+        />
         {/* Android's install prompt can fire before the app hydrates: keep it for InstallProvider. */}
         <script
           dangerouslySetInnerHTML={{

@@ -8,7 +8,7 @@ import { Img as Image } from '@/components/ui/Img';
 import { Wordmark } from '@/components/ui/Wordmark';
 
 export const dynamic = 'force-dynamic';
-export const metadata = { title: 'Join One Off' };
+export const metadata = { title: 'Join Off One' };
 
 const PROVIDERS = [
   { id: 'apple', label: 'Continue with Apple' },
@@ -36,7 +36,7 @@ export default async function JoinPage() {
           aria-hidden
           className="absolute inset-0 bg-gradient-to-b from-[rgba(17,17,17,0.35)] via-transparent to-[rgba(17,17,17,0.6)]"
         />
-        <Link href="/" aria-label="One Off home" className="relative w-fit">
+        <Link href="/" aria-label="Off One home" className="relative w-fit">
           <Wordmark className="text-ground" />
         </Link>
         <h1 className="relative max-w-[12ch] text-[48px] leading-[0.95] md:text-[72px]">

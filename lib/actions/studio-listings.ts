@@ -88,7 +88,7 @@ export async function setStockAction(variantId: string, stock: number): Promise<
   }
 }
 
-/** The editor saves through here (autosave, Save draft, Publish), as the maker or as One Off. */
+/** The editor saves through here (autosave, Save draft, Publish), as the maker or as Off One. */
 export async function savePieceAction(input: {
   id: string | null;
   makerId?: string;

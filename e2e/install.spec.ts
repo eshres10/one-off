@@ -275,7 +275,7 @@ test('9. accessibility: dialog, focus trap, Escape, focus back, reduced motion',
   await page.goto('/discover');
   const heart = page.getByTestId('save-button').first();
   await heart.click();
-  const dialog = page.getByRole('dialog', { name: 'One Off, on your home screen.' });
+  const dialog = page.getByRole('dialog', { name: 'Off One, on your home screen.' });
   await expect(dialog).toBeVisible();
   await expect(dialog).toHaveAttribute('aria-modal', 'true');
   await expect(page.getByTestId('install-primary')).toBeFocused();

@@ -10,7 +10,7 @@ export const SUPPORT_TOPICS = [
   { value: 'order', label: 'An order' },
   { value: 'returns', label: 'Returns or a problem' },
   { value: 'payments', label: 'Payments' },
-  { value: 'selling', label: 'Selling on One Off' },
+  { value: 'selling', label: 'Selling on Off One' },
   { value: 'other', label: 'Something else' },
 ] as const;
 

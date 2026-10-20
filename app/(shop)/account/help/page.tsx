@@ -9,7 +9,7 @@ export default function AccountHelpPage() {
       <section>
         <h1 className="text-[40px] leading-none">Help</h1>
         <p className="mt-3 text-[14px] text-muted">
-          New here, or want a refresher? Take the 30-second tour of One Off again.
+          New here, or want a refresher? Take the 30-second tour of Off One again.
         </p>
         <form action={replayTourAction} className="mt-5">
           <input type="hidden" name="kind" value="customer" />
@@ -32,7 +32,7 @@ export default function AccountHelpPage() {
         <ul className="space-y-3 text-[14px]" role="list">
           <li>
             <Link href="/how-it-works" className="underline underline-offset-4">
-              How One Off works
+              How Off One works
             </Link>
           </li>
           <li>

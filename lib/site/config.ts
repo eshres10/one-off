@@ -1,3 +1,5 @@
+import { BRAND } from '@/lib/brand';
+
 /**
  * Site-wide product decisions. Change them here rather than in components.
  */
@@ -31,8 +33,8 @@ export const SITE = {
    * per 24 hours, order-shipped included.
    */
   pushAlerts: { enabled: false, minHoursBetween: 24 },
-  /** One Off's Instagram, linked from the footer. */
-  instagram: 'https://www.instagram.com/shoponeoff',
+  /** Off One's Instagram, linked from the footer. */
+  instagram: `https://www.instagram.com/${BRAND.instagram}`,
   /** Makers from anywhere in Australia can apply; buyers can order from anywhere in Australia. */
   makerRegions: ['ACT', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA'] as const,
   /** Cities in the "By city" menu, linking to Discover filtered by the maker's city. */
@@ -87,7 +89,7 @@ export const SITE = {
      * businesses, so it stays hidden; see the checkout summary.
      */
     methods: ['card', 'apple_pay', 'google_pay', 'afterpay_clearpay', 'paypal'] as const,
-    /** [DECIDE] Who pays Afterpay's fee: 'platform' (One Off) or 'maker'. */
+    /** [DECIDE] Who pays Afterpay's fee: 'platform' (Off One) or 'maker'. */
     afterpayFeePaidBy: 'platform' as 'platform' | 'maker',
     /** Afterpay: 4 interest-free payments. */
     afterpayInstalments: 4,

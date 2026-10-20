@@ -85,7 +85,7 @@ export const CLAIM_STATUS_LABEL: Record<ClaimStatus, string> = {
   resolved_repair: 'Resolved — repair',
   resolved_replace: 'Resolved — replacement',
   resolved_refund: 'Resolved — refund',
-  escalated: 'With One Off',
+  escalated: 'With Off One',
   rejected: 'Closed',
 };
 

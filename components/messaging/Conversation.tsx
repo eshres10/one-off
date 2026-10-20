@@ -35,8 +35,8 @@ export function SafetyNotice({ viewer }: { viewer: 'buyer' | 'maker' }) {
       <ShieldIcon width={15} height={15} className="mt-px shrink-0" />
       <span>
         {viewer === 'buyer'
-          ? 'Pay through One Off and you’re covered by buyer protection. We’ll never ask you to pay by bank transfer.'
-          : 'Keep sales on One Off. Contact details and payment links are blocked, and off-platform sales can get your shop paused.'}
+          ? 'Pay through Off One and you’re covered by buyer protection. We’ll never ask you to pay by bank transfer.'
+          : 'Keep sales on Off One. Contact details and payment links are blocked, and off-platform sales can get your shop paused.'}
       </span>
     </p>
   );

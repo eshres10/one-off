@@ -2,7 +2,7 @@ import { formatPrice } from '@/lib/domain/money';
 
 /**
  * A delivery price, with the makers' normal price crossed out when the buyer pays less
- * (a maker's bundle deal or One Off's shipping offer). The crossed-out price is always the
+ * (a maker's bundle deal or Off One's shipping offer). The crossed-out price is always the
  * makers' real total, never an invented "was" price.
  */
 export function ShippingPrice({
@@ -59,7 +59,7 @@ export function ShippingSaving({
   );
 }
 
-/** Why shipping costs less: One Off's cap, its free-shipping threshold, or a maker's deal. */
+/** Why shipping costs less: Off One's cap, its free-shipping threshold, or a maker's deal. */
 export function savingReason(
   applied: 'cap' | 'free_over' | null,
   offer: { capCents: number | null; freeOverCents: number | null },

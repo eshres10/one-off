@@ -110,13 +110,13 @@ test.describe.serial('returns policy', () => {
     await expect(page.getByTestId('case-number')).toContainText(/OO-C-\d+/);
   });
 
-  test('a claim with no reply escalates to One Off after the deadline', async ({ page }) => {
+  test('a claim with no reply escalates to Off One after the deadline', async ({ page }) => {
     // The 2-business-day clock is unit-tested with an injected clock (tests/integration/claims);
     // here we move the deadline into the past and check the admin queue escalates it.
     await db`update public.return_claims set respond_by = now() - interval '1 minute' where status = 'open'`;
     await login(page, 'admin@oneoff.test', '/admin/claims');
     await expect(page.getByRole('heading', { name: /Escalated/ })).toContainText('(1)');
-    await expect(page.getByTestId('claim-list').first()).toContainText('With One Off');
+    await expect(page.getByTestId('claim-list').first()).toContainText('With Off One');
   });
 });
 

@@ -3,7 +3,7 @@ export const ABOUT = {
   meta: {
     title: 'Our story',
     description:
-      'One Off is a marketplace only for emerging Australian designers who make their own clothes. Made by someone, for someone.',
+      'Off One is a marketplace only for emerging Australian designers who make their own clothes. Made by someone, for someone.',
   },
   hero: {
     kicker: 'Our story',
@@ -15,7 +15,7 @@ export const ABOUT = {
     'Somewhere in Australia, right now, someone is hand-finishing a hem that nobody will ever see.',
   paragraphs: [
     'That care is everywhere in independent fashion, but it’s hard to find. Small labels get buried on Instagram between fast fashion ads and an algorithm that rewards volume. Shoppers who want something real end up scrolling past it.',
-    'One Off is a marketplace only for emerging designers who make their own clothes, themselves or with a small local team. No resellers, no dropshipping, no mass production. Just people who make things, and the people who want to wear something nobody else has.',
+    'Off One is a marketplace only for emerging designers who make their own clothes, themselves or with a small local team. No resellers, no dropshipping, no mass production. Just people who make things, and the people who want to wear something nobody else has.',
     'Many pieces are made to order in your size. Some are one of one. All of them come straight from the studio that made them.',
   ],
   images: [
@@ -48,9 +48,9 @@ export const ABOUT = {
   founder: {
     kicker: 'A note from the founder',
     quote:
-      '“I started One Off because the most beautiful clothes I own were made by people I found by accident. I wanted a place where you find them on purpose.”',
+      '“I started Off One because the most beautiful clothes I own were made by people I found by accident. I wanted a place where you find them on purpose.”',
     body: 'Every maker here applied and was reviewed by me. I’ve seen their work, their studios and their process. If something isn’t right with your order, it comes to me too.',
-    role: 'Founder, One Off',
+    role: 'Founder, Off One',
     image: '/seed/hero-velvet-sofa.jpg',
   },
   closing: {

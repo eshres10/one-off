@@ -2,4 +2,4 @@
 
 /** The Acknowledgement of Country, in the footer on every page. Exact wording; don't paraphrase. */
 export const ACKNOWLEDGEMENT =
-  'One Off acknowledges the Traditional Custodians of the lands across Australia on which our makers live and work, and pays respect to Elders past and present.';
+  'Off One acknowledges the Traditional Custodians of the lands across Australia on which our makers live and work, and pays respect to Elders past and present.';

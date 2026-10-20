@@ -371,7 +371,7 @@ export async function respondToClaim(
 
 /**
  * Closes a claim. Makers can resolve their own claims with a repair, replacement or refund;
- * only One Off (admin) can reject one. Refunds go through Stripe and reverse the maker's
+ * only Off One (admin) can reject one. Refunds go through Stripe and reverse the maker's
  * transfer for that item, so the money comes back out of the maker's balance.
  */
 export async function resolveClaim(
@@ -391,7 +391,7 @@ export async function resolveClaim(
     throw new UserError('Claim not found.');
   if (!isClaimActive(claim.status)) throw new UserError('This claim is already resolved.');
   if (input.resolution === 'reject' && !isAdmin)
-    throw new UserError('Only One Off can close a claim without a remedy. Propose a fix instead.');
+    throw new UserError('Only Off One can close a claim without a remedy. Propose a fix instead.');
   const note = input.note ? sanitizeText(input.note) : null;
   if (input.resolution === 'reject' && (!note || note.length < 10))
     throw new UserError('Explain to the buyer why the claim is being closed.');

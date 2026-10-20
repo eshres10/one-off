@@ -10,7 +10,7 @@ export default function NotFound() {
   return (
     <main id="main" className="flex min-h-screen flex-col bg-ground">
       <header className="flex justify-center py-6">
-        <Link href="/" aria-label="One Off home">
+        <Link href="/" aria-label="Off One home">
           <Wordmark className="h-7 w-auto" />
         </Link>
       </header>

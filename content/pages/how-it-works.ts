@@ -6,13 +6,13 @@ export const HOW_IT_WORKS = {
   meta: {
     title: 'How it works',
     description:
-      'Every piece on One Off comes from the person who made it. Ready to ship, made to order or a custom request: here’s how buying works.',
+      'Every piece on Off One comes from the person who made it. Ready to ship, made to order or a custom request: here’s how buying works.',
   },
   kicker: 'How it works',
   title: 'Straight from',
   titleItalic: 'the studio to you.',
   intro:
-    'One Off works like any shop, with one difference: every piece comes from the person who made it. Here’s what that means for your order.',
+    'Off One works like any shop, with one difference: every piece comes from the person who made it. Here’s what that means for your order.',
   waysKicker: 'Three ways to buy',
   ways: [
     {
@@ -57,7 +57,7 @@ export const HOW_IT_WORKS = {
     payment: {
       kicker: 'Payment',
       title: 'Held until it arrives.',
-      body: `You pay One Off at checkout. The maker is paid ${TERMS.releaseDaysAfterDelivery === 3 ? 'three' : TERMS.releaseDaysAfterDelivery} days after your piece is delivered, so your money is protected the whole way.`,
+      body: `You pay Off One at checkout. The maker is paid ${TERMS.releaseDaysAfterDelivery === 3 ? 'three' : TERMS.releaseDaysAfterDelivery} days after your piece is delivered, so your money is protected the whole way.`,
     },
     delivery: {
       kicker: 'Delivery',

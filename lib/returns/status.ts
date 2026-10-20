@@ -23,5 +23,5 @@ export const RETURN_STATUS_LABEL: Record<ReturnStatus, string> = {
   refunded: 'Refunded',
   rejected: 'Not accepted',
   cancelled: 'Cancelled',
-  disputed: 'With One Off',
+  disputed: 'With Off One',
 };

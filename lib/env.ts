@@ -42,7 +42,7 @@ const schema = z
 
     EMAIL_DRIVER: z.enum(['outbox', 'resend']).default('outbox'),
     RESEND_API_KEY: z.string().optional(),
-    EMAIL_FROM: z.string().default('One Off <hello@shoponeoff.com.au>'),
+    EMAIL_FROM: z.string().default('Off One <hello@shoponeoff.com.au>'),
     ADMIN_NOTIFICATION_EMAIL: z.string().email().default('admin@oneoff.test'),
 
     PLATFORM_FEE_BPS: z.coerce.number().int().min(0).max(5000).default(1500),

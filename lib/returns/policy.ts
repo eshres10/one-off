@@ -1,7 +1,7 @@
 import { SITE } from '@/lib/site/config';
 
 /**
- * One Off's returns policy by piece type: the single source for every surface (product page,
+ * Off One's returns policy by piece type: the single source for every surface (product page,
  * quick view, bag, checkout, emails, help, legal). Ready-to-ship pieces can be returned for a
  * change of mind within the window; made-to-order, custom and one-of-one pieces can't. Faulty or
  * not-as-described pieces are always covered through "Report a problem" (Australian Consumer Law).

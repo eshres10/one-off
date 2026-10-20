@@ -22,7 +22,7 @@ describe('tracking numbers in a maker’s reply', () => {
       'Will post tomorrow, sorry!',
       '--',
       'Halde · 0412345678',
-      'On Mon, 19 Oct 2026, One Off wrote:',
+      'On Mon, 19 Oct 2026, Off One wrote:',
       '> You made a sale · OO-1041 33ABC1234567',
     ].join('\n');
     expect(replyBody(text)).toBe('Will post tomorrow, sorry!');
@@ -31,7 +31,7 @@ describe('tracking numbers in a maker’s reply', () => {
   });
 
   it('reads the order token from the reply-to address', () => {
-    expect(tokenFrom('One Off <orders+Ab3_x-9Q@reply.shoponeoff.com.au>')).toBe('Ab3_x-9Q');
+    expect(tokenFrom('Off One <orders+Ab3_x-9Q@reply.shoponeoff.com.au>')).toBe('Ab3_x-9Q');
     expect(tokenFrom('hello@shoponeoff.com.au')).toBeNull();
   });
 });

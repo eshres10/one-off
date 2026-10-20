@@ -62,7 +62,7 @@ describe('telling makers about a sale', () => {
     const a = await sale(12);
     const [t] = await texts(a.product.title);
     expect(t!.body).toMatch(
-      /^One Off: You made a sale! .+, size .+, to Fitzroy VIC\. Ship by .+\. Add tracking: http.+\/o\//,
+      /^Off One: You made a sale! .+, size .+, to Fitzroy VIC\. Ship by .+\. Add tracking: http.+\/o\//,
     );
 
     await sql()`

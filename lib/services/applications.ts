@@ -25,7 +25,7 @@ export const DECLINE_REASONS = [
   {
     value: 'not_handmade',
     label: 'Not handmade by the applicant',
-    text: 'Everything on One Off is designed and made by the people selling it, and from your application we couldn’t see that your pieces are.',
+    text: 'Everything on Off One is designed and made by the people selling it, and from your application we couldn’t see that your pieces are.',
   },
   {
     value: 'categories',

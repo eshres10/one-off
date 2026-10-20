@@ -48,7 +48,7 @@ export function CustomerTour({ firstName }: { firstName: string }) {
       onComplete={() => completeTourAction('customer')}
       welcome={{
         title: `Welcome, ${firstName}`,
-        subtitle: 'You’re in. Here’s how One Off works.',
+        subtitle: 'You’re in. Here’s how Off One works.',
         intro:
           'Every piece is made by an independent Australian maker, and you buy straight from them.',
         tiles: [

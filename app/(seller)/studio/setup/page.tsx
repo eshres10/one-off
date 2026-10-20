@@ -124,7 +124,7 @@ export default async function SetupPage({
         ) : (
           <>
             <p className="text-[14px] text-muted">
-              One Off pays you through Stripe. They’ll ask for your ABN (or that you’re a sole
+              Off One pays you through Stripe. They’ll ask for your ABN (or that you’re a sole
               trader), your ID and your bank account. It takes about five minutes.
             </p>
             {shop.stripeAccountId && (

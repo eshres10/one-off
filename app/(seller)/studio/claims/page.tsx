@@ -36,7 +36,7 @@ export default async function SellerClaimsPage() {
         <p className="mt-2 max-w-2xl text-[14px] text-muted">
           Buyers can report a faulty or not-as-described piece within 7 days of delivery. Reply
           within 2 business days with a repair, replacement or refund. Your reply goes into your
-          messages with the buyer. After that, One Off steps in.
+          messages with the buyer. After that, Off One steps in.
         </p>
       </div>
       <section aria-labelledby="active-claims">

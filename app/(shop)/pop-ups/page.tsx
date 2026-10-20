@@ -3,7 +3,7 @@ import { ButtonLink } from '@/components/ui/Button';
 
 export const metadata = {
   title: 'Pop-ups & fittings',
-  description: 'Meet One Off makers in person at Melbourne pop-ups and studio fittings.',
+  description: 'Meet Off One makers in person at Melbourne pop-ups and studio fittings.',
 };
 
 /** Pop-ups and fittings. No events are scheduled yet, so this says so plainly. */

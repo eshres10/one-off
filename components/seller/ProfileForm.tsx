@@ -108,7 +108,7 @@ export function ProfileForm({ maker }: { maker: SellerMaker }) {
         </Field>
       </div>
       <p className="text-[13px] text-muted">
-        Returns follow One Off’s policy for every maker: {RETURNS.short}{' '}
+        Returns follow Off One’s policy for every maker: {RETURNS.short}{' '}
         <a href="/legal/seller-agreement#returns-and-faults" className="link">
           Seller terms
         </a>

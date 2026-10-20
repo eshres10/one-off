@@ -161,7 +161,7 @@ export function humanNote(f: ShipmentFacts): string {
       return `It’s on its way${f.carrier ? ` with ${f.carrier}` : ''}. Tracking updates can take a day to appear.`;
     case 'delivered':
       if (f.status === 'issue')
-        return `You’ve reported a problem. ${m} will reply in your messages, and One Off steps in if you can’t agree.`;
+        return `You’ve reported a problem. ${m} will reply in your messages, and Off One steps in if you can’t agree.`;
       return 'Delivered. We hope you love it. Something not right? Use “Report a problem” and we’ll sort it out with the maker.';
     default:
       return 'This part of your order was cancelled. Any refund goes back to how you paid.';

@@ -12,7 +12,7 @@ export const useStripeReady = () => useContext(StripeReady);
 let stripePromise: Promise<Stripe | null> | null = null;
 const stripeFor = (key: string) => (stripePromise ??= loadStripe(key));
 
-/** One Off's look for Stripe's fields: square corners, Jost, stone fields that turn ink on focus. */
+/** Off One's look for Stripe's fields: square corners, Jost, stone fields that turn ink on focus. */
 export const APPEARANCE: Appearance = {
   theme: 'flat',
   variables: {

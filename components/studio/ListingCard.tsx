@@ -44,7 +44,7 @@ export function ListingCard({ piece }: { piece: Card }) {
           </span>
           {piece.listedByAdmin && (
             <span className="bg-ink px-1.5 py-0.5 text-[9px] uppercase tracking-[0.14em] text-ground">
-              Set up by One Off
+              Set up by Off One
             </span>
           )}
         </div>

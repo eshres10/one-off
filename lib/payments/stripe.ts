@@ -12,7 +12,7 @@ export function createStripeDriver(secretKey: string): PaymentsDriver {
   const stripe = new Stripe(secretKey, {
     typescript: true,
     maxNetworkRetries: 2,
-    appInfo: { name: 'one-off', url: 'https://shoponeoff.com.au' },
+    appInfo: { name: 'off-one', url: 'https://shoponeoff.com.au' },
   });
 
   return {
@@ -70,7 +70,7 @@ export function createStripeDriver(secretKey: string): PaymentsDriver {
           custom_text: {
             submit: { message: input.submitMessage },
             terms_of_service_acceptance: {
-              message: `I agree to the [One Off terms](${input.termsUrl}), including the returns policy.`,
+              message: `I agree to the [Off One terms](${input.termsUrl}), including the returns policy.`,
             },
           },
           client_reference_id: input.orderId,
@@ -95,7 +95,7 @@ export function createStripeDriver(secretKey: string): PaymentsDriver {
           customer: input.customerId ?? undefined,
           setup_future_usage:
             input.customerId && input.savePaymentMethod ? 'on_session' : undefined,
-          description: `One Off order ${input.orderNumber}`,
+          description: `Off One order ${input.orderNumber}`,
           metadata: { order_id: input.orderId, order_number: input.orderNumber },
         },
         { idempotencyKey: input.idempotencyKey },

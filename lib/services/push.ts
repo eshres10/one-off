@@ -50,14 +50,14 @@ export function dropAlertPayload(
   if (pieces.length === 1) {
     const p = pieces[0]!;
     return {
-      title: 'One Off',
+      title: 'Off One',
       body: `New from ${p.maker}: ${p.title}`,
       url: `/products/${p.slug}`,
       tag: 'drop',
     };
   }
   return {
-    title: 'One Off',
+    title: 'Off One',
     body: `${pieces.length} new pieces from makers you follow`,
     url: '/?tab=following',
     tag: 'drop',
@@ -104,7 +104,7 @@ export async function sendOrderShippedPush(
   return sendPushToUser(
     o.buyerUserId,
     {
-      title: 'One Off',
+      title: 'Off One',
       body: 'Your order is on its way',
       url: `/account/orders/${orderId}`,
       tag: `order-${orderId}`,

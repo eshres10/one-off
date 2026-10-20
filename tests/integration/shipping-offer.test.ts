@@ -98,7 +98,7 @@ async function transfersFor(fulfilmentId: string) {
 }
 
 // Makers' own free-over thresholds would make most seeded parcels free on their own; switch
-// them off here so One Off's offer is what's tested, and put them back afterwards.
+// them off here so Off One's offer is what's tested, and put them back afterwards.
 let thresholds: Array<{ id: string; freeShippingOverCents: number | null }> = [];
 beforeAll(async () => {
   thresholds = await sql()`select id, free_shipping_over_cents from public.makers`;
@@ -114,7 +114,7 @@ afterAll(async () => {
 });
 
 describe('shipping across makers', () => {
-  it('caps what the buyer pays, pays each maker in full and records what One Off covers', async () => {
+  it('caps what the buyer pays, pays each maker in full and records what Off One covers', async () => {
     await setOffer({ freeOverCents: null });
     const { orderId } = await buyAndPay(await piecesFrom([1, 2, 3]), 'cap@buyer.test');
     const o = await order(orderId);
@@ -144,8 +144,8 @@ describe('shipping across makers', () => {
         f.subtotalCents - f.platformCommissionCents + f.shippingCents - f.processingFeeCents,
       );
     }
-    // Everything paid out (makers' nets, One Off's commission, Stripe's fee) is the buyer's
-    // total plus the shipping One Off covers.
+    // Everything paid out (makers' nets, Off One's commission, Stripe's fee) is the buyer's
+    // total plus the shipping Off One covers.
     const nets = fs.reduce((s, f) => s + f.sellerNetCents, 0);
     const fees = fs.reduce((s, f) => s + f.processingFeeCents, 0);
     const subsidy = fs.reduce((s, f) => s + f.shippingSubsidyCents, 0);
@@ -263,7 +263,7 @@ describe('maker bundle deals', () => {
   });
 });
 
-describe('paying makers when One Off covers shipping', () => {
+describe('paying makers when Off One covers shipping', () => {
   it('sends the maker’s net from the buyer’s charge and the covered shipping separately', async () => {
     await setOffer({ freeOverCents: 10000 });
     // Includes Halde Studio, a founding maker on 0% commission: there's no commission on that
@@ -298,7 +298,7 @@ describe('paying makers when One Off covers shipping', () => {
   });
 });
 
-describe('refunds on parcels where One Off covered shipping', () => {
+describe('refunds on parcels where Off One covered shipping', () => {
   it('reverses what the transfer holds and takes the rest off later payouts', async () => {
     await setOffer({ freeOverCents: 10000 });
     const { orderId } = await buyAndPay(await piecesFrom([2, 3], 4), 'refund-after@buyer.test');

@@ -17,7 +17,7 @@ function absolute(url: string | null): string | null {
 }
 
 /**
- * A 1080×1920 Instagram Story image: the cover photo full-bleed, the ONE OFF wordmark in white,
+ * A 1080×1920 Instagram Story image: the cover photo full-bleed, the OFF ONE wordmark in white,
  * and "Founding maker · link in bio" (or the piece's name). ?shop=<maker id> or ?product=<id>.
  */
 export async function GET(req: Request) {
@@ -50,7 +50,7 @@ export async function GET(req: Request) {
     if (!m) return new Response('Not found', { status: 404 });
     photo = absolute(m.image ?? m.cover);
     title = m.name;
-    line = m.founding ? 'Founding maker · link in bio' : 'Now on One Off · link in bio';
+    line = m.founding ? 'Founding maker · link in bio' : 'Now on Off One · link in bio';
   } else return new Response('Missing shop or product', { status: 400 });
 
   const logo = LOGOS.horizontal;

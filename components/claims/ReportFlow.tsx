@@ -148,7 +148,7 @@ export function ReportFlow({
           {[
             'They reply with a fix.',
             'If they need it back, we email you a prepaid label.',
-            `No reply, or no agreement? One Off decides within ${SITE.cases.platformDecisionBusinessDays} business days.`,
+            `No reply, or no agreement? Off One decides within ${SITE.cases.platformDecisionBusinessDays} business days.`,
           ].map((t, i) => (
             <li key={t} className="flex gap-4 text-[14px]">
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-circle border border-ink text-[12px]">

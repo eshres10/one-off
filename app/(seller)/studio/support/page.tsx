@@ -4,7 +4,7 @@ import { supportThread } from '@/lib/services/support';
 import { SupportComposer } from '@/components/support/SupportComposer';
 import { SupportThread } from '@/components/support/SupportThread';
 
-export const metadata = { title: 'Message One Off · Studio' };
+export const metadata = { title: 'Message Off One · Studio' };
 
 const TOPICS: Record<string, { topic: string; prompt: string }> = {
   'list-for-me': {
@@ -21,7 +21,7 @@ export default async function SupportPage({ searchParams }: { searchParams: { ab
   return (
     <div className="max-w-2xl space-y-8">
       <div>
-        <h1 className="text-[40px] leading-none md:text-[56px]">Message One Off</h1>
+        <h1 className="text-[40px] leading-none md:text-[56px]">Message Off One</h1>
         <p className="mt-3 text-[14px] text-muted">
           Questions about your shop, an order or getting paid. A real person replies, usually within
           a day.
@@ -32,7 +32,7 @@ export default async function SupportPage({ searchParams }: { searchParams: { ab
         action={sendSupportAction}
         hidden={about ? { topic: about.topic } : {}}
         defaultValue={about?.prompt}
-        placeholder="Write to the One Off team"
+        placeholder="Write to the Off One team"
       />
     </div>
   );

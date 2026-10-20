@@ -159,7 +159,7 @@ export function ResolveForm({
       {admin && (
         <div>
           <label htmlFor="resolve-internal" className="label">
-            Internal note (only One Off sees this)
+            Internal note (only Off One sees this)
           </label>
           <textarea
             id="resolve-internal"

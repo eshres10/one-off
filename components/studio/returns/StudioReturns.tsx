@@ -14,7 +14,7 @@ const day = (d: Date) =>
 /** What the maker is waiting for, and by when. */
 function due(r: ReturnView): string {
   if (r.status === 'refunded') return r.refundedAt ? `Refunded ${day(r.refundedAt)}` : 'Refunded';
-  if (r.status === 'disputed') return 'One Off is deciding';
+  if (r.status === 'disputed') return 'Off One is deciding';
   if (!['requested', 'in_transit'].includes(r.status)) return '—';
   if (r.confirmBy) return `Confirm by ${day(r.confirmBy)}`;
   return `Buyer posts by ${day(r.sendBy)}`;

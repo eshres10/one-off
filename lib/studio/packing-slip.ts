@@ -170,6 +170,6 @@ export async function packingSlipPdf(
     y -= 16;
   }
   y -= 8;
-  text(`${shop.displayName} on One Off · shoponeoff.com.au`, { size: 8, color: MUTED });
+  text(`${shop.displayName} on Off One · shoponeoff.com.au`, { size: 8, color: MUTED });
   return pdf.save();
 }

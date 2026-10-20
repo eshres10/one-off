@@ -1,4 +1,4 @@
-/* One Off service worker: makes the site installable and shows drop alerts.
+/* Off One service worker: makes the site installable and shows drop alerts.
    No offline caching yet: every request goes straight to the network. */
 
 self.addEventListener('install', () => self.skipWaiting());
@@ -12,9 +12,9 @@ self.addEventListener('push', (event) => {
   try {
     data = event.data ? event.data.json() : {};
   } catch {
-    data = { title: 'One Off', body: event.data ? event.data.text() : '' };
+    data = { title: 'Off One', body: event.data ? event.data.text() : '' };
   }
-  const title = data.title || 'One Off';
+  const title = data.title || 'Off One';
   event.waitUntil(
     self.registration.showNotification(title, {
       body: data.body || '',
@@ -32,13 +32,13 @@ self.addEventListener('notificationclick', (event) => {
     (event.notification.data && event.notification.data.url) || '/',
     self.location.origin,
   );
-  // Only ever open One Off pages.
+  // Only ever open Off One pages.
   if (url.origin !== self.location.origin) url = new URL('/', self.location.origin);
   url = url.href;
   event.waitUntil(
     (async () => {
       const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-      // Reuse an open One Off window: bring it forward and take it to the page.
+      // Reuse an open Off One window: bring it forward and take it to the page.
       for (const client of windows) {
         if (new URL(client.url).origin === self.location.origin) {
           await client.focus();

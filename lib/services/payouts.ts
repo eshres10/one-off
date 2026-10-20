@@ -48,7 +48,7 @@ export async function recordProcessingFees(orderId: string, chargeId: string | n
 }
 
 /**
- * Splits what a maker is owed into the part funded by the buyer's charge and the part One Off
+ * Splits what a maker is owed into the part funded by the buyer's charge and the part Off One
  * covers. The charge-funded part is at most net − subsidy − refunded share (so transfers from a
  * charge never add up to more than the buyer paid); the covered part tops up to what's owed and
  * is never more than the subsidy. Together they're exactly what's owed (or nothing).
@@ -183,7 +183,7 @@ export async function releaseDueTransfers(now = new Date()): Promise<ReleaseResu
       applied.push(a.id);
     }
     // It's paid in two parts. The buyer's charge only holds what the buyer paid, so the part
-    // funded from it (source_transaction) leaves out the shipping One Off covered; that part
+    // funded from it (source_transaction) leaves out the shipping Off One covered; that part
     // follows from the platform balance (releaseShippingSubsidies). Never more than owed.
     const { amount, subsidyDue } = splitPayout({
       owedCents: owedTotal,
@@ -236,7 +236,7 @@ export async function releaseDueTransfers(now = new Date()): Promise<ReleaseResu
 }
 
 /**
- * Pays makers the shipping One Off covered (the cross-maker cap or free-shipping threshold), once
+ * Pays makers the shipping Off One covered (the cross-maker cap or free-shipping threshold), once
  * their main transfer has gone out. It comes from the platform balance, not the buyer's charge,
  * so a low balance only delays this part: it's marked failed and retried on the next run.
  * Idempotent per attempt: the key is the fulfilment id plus the attempt number.

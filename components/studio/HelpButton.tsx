@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { replayTourAction } from '@/lib/actions/tour';
 
-/** The floating ? on every Studio page: replay the tour, guides, or message One Off. */
+/** The floating ? on every Studio page: replay the tour, guides, or message Off One. */
 export function HelpButton() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -48,7 +48,7 @@ export function HelpButton() {
             className={item}
             onClick={() => setOpen(false)}
           >
-            Message One Off
+            Message Off One
           </Link>
         </div>
       )}

@@ -18,7 +18,7 @@ export default async function AdminSupportThreadPage({ params }: { params: { use
       <SupportComposer
         action={adminReplyAction}
         hidden={{ userId: params.userId }}
-        placeholder="Reply as One Off"
+        placeholder="Reply as Off One"
         label="Send reply"
       />
     </div>

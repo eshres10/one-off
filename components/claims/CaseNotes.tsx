@@ -20,7 +20,7 @@ export function CaseNotes({
       <h2 id="case-notes" className="text-[24px] leading-none">
         Internal notes
       </h2>
-      <p className="mt-1 text-[12px] text-muted-2">Only One Off sees these.</p>
+      <p className="mt-1 text-[12px] text-muted-2">Only Off One sees these.</p>
       {notes.length > 0 && (
         <ul className="mt-4 space-y-3" data-testid="case-notes-list">
           {notes.map((n) => (

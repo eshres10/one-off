@@ -60,7 +60,7 @@ describe('service worker push (test 10)', () => {
     await fire(handlers.push!, {
       data: {
         json: () => ({
-          title: 'One Off',
+          title: 'Off One',
           body: 'Your order is on its way',
           url: '/account/orders/1',
           tag: 'o',
@@ -68,7 +68,7 @@ describe('service worker push (test 10)', () => {
       },
     });
     expect(calls.shown[0]).toMatchObject({
-      title: 'One Off',
+      title: 'Off One',
       body: 'Your order is on its way',
       icon: '/icon-192.png',
       badge: '/icon-192.png',
@@ -76,13 +76,13 @@ describe('service worker push (test 10)', () => {
     });
   });
 
-  it('a click with no One Off window open opens the URL', async () => {
+  it('a click with no Off One window open opens the URL', async () => {
     const { handlers, calls } = loadSw();
     await fire(handlers.notificationclick!, click('/products/butter-silk-slip'));
     expect(calls.opened).toEqual(['https://shoponeoff.com.au/products/butter-silk-slip']);
   });
 
-  it('a click with One Off already open focuses it and goes to the URL', async () => {
+  it('a click with Off One already open focuses it and goes to the URL', async () => {
     const { handlers, calls } = loadSw([{ url: 'https://shoponeoff.com.au/discover' }]);
     await fire(handlers.notificationclick!, click('/account/orders/abc'));
     expect(calls.focused).toBe(1);

@@ -99,7 +99,7 @@ const savedLabel = (at: number | null, now: number) => {
 /**
  * Add / edit a piece. Desktop: the form on the left, a sticky preview card and checklist on the
  * right, autosaving as you go. Phones: five steps (Photos, Details, The story, Sizes & price, Check it).
- * `mode="admin"` is One Off listing into a draft shop; `embedded` drops the page chrome so it
+ * `mode="admin"` is Off One listing into a draft shop; `embedded` drops the page chrome so it
  * can sit in a sheet (the claim flow's "Edit details").
  */
 export function PieceEditor({
@@ -831,7 +831,7 @@ export function PieceEditor({
               Similar{' '}
               {PIECE_CATEGORIES.find((c) => c.value === draft.category)?.label.toLowerCase() ??
                 'pieces'}{' '}
-              on One Off sell for {formatPrice(hint.low)}–{formatPrice(hint.high)}.
+              on Off One sell for {formatPrice(hint.low)}–{formatPrice(hint.high)}.
             </p>
           )}
         </div>
@@ -993,7 +993,7 @@ export function PieceEditor({
                     ? 'Live'
                     : 'Published · shows when your shop goes live'
                   : mode === 'admin'
-                    ? 'Draft · set up by One Off'
+                    ? 'Draft · set up by Off One'
                     : 'Draft'}
               </span>{' '}
               ·{' '}

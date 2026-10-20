@@ -20,7 +20,7 @@ export const getShippingOffer = cached(
   { revalidate: 60, tags: ['site'] },
 );
 
-/** What One Off has covered on shipping for orders paid this calendar month (Melbourne time). */
+/** What Off One has covered on shipping for orders paid this calendar month (Melbourne time). */
 export async function subsidySpentThisMonth(now = new Date()): Promise<number> {
   const [row] = await sql()<{ cents: number }[]>`
     select coalesce(sum(f.shipping_subsidy_cents), 0)::int as cents
@@ -33,7 +33,7 @@ export async function subsidySpentThisMonth(now = new Date()): Promise<number> {
 
 /**
  * The offer to price a bag with right now: the admin's settings, switched off for the rest of
- * the month once One Off's shipping budget is used up.
+ * the month once Off One's shipping budget is used up.
  */
 export async function activeShippingOffer(now = new Date()): Promise<ShippingOffer> {
   const offer = await getShippingOffer();

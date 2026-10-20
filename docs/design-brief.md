@@ -1,10 +1,10 @@
-# Claude Code prompt — One Off: implement the design system and extend it across the site
+# Claude Code prompt — Off One: implement the design system and extend it across the site
 
 Paste everything below the line into Claude Code, from the root of the repo. Put the PRD at `docs/PRD.md` first. If you export the design canvas as HTML (Share › Export), put the files in `docs/design-reference/` so Claude Code can open them.
 
 ---
 
-You are building the front end of **One Off**, a mobile-first marketplace for independent Australian fashion makers. The product requirements are in `docs/PRD.md`, and that document is the source of truth for scope, data model, payments and testing. This prompt is the source of truth for **look, feel and UI patterns**. If `docs/design-reference/` exists, treat those HTML mockups as the visual reference and match them closely.
+You are building the front end of **Off One**, a mobile-first marketplace for independent Australian fashion makers. The product requirements are in `docs/PRD.md`, and that document is the source of truth for scope, data model, payments and testing. This prompt is the source of truth for **look, feel and UI patterns**. If `docs/design-reference/` exists, treat those HTML mockups as the visual reference and match them closely.
 
 ## How to work
 
@@ -17,7 +17,7 @@ You are building the front end of **One Off**, a mobile-first marketplace for in
 
 ## Brand
 
-- **Name and wordmark:** "ONE OFF" (working name). Set it in **Bodoni Moda**, weight 500, uppercase, letter-spacing `-0.035em`, word-spacing `-0.08em`, line-height 1, with optical sizing on. Use 40px in the desktop header, 32px on mobile and 30px in footers. Build it as a `<Wordmark />` component; never type it ad hoc.
+- **Name and wordmark:** "OFF ONE" (working name). Set it in **Bodoni Moda**, weight 500, uppercase, letter-spacing `-0.035em`, word-spacing `-0.08em`, line-height 1, with optical sizing on. Use 40px in the desktop header, 32px on mobile and 30px in footers. Build it as a `<Wordmark />` component; never type it ad hoc.
 - **Feel:** premium, editorial, quiet. Think a high-fashion house's site, not Etsy, Amazon or a SaaS dashboard. Imagery carries the colour; the UI stays neutral.
 - **Voice:** short, plain, confident. Labels in sentence case, rendered uppercase via CSS where the style calls for it. No exclamation marks, emoji or hype.
 
@@ -179,6 +179,6 @@ Show these as visible `[placeholder]` text or config, and list them in your summ
 - Shipping price, which is a PRD open decision. The mockups used a sample flat A$12 per maker.
 - The ready-to-ship return window. The mockups assumed "exchange or return unworn within 14 days".
 - Maker ratings, response times and review counts. These come from data; never hard-code them.
-- Final brand name and trademark clearance. "One Off" is a working name.
+- Final brand name and trademark clearance. "Off One" is a working name.
 
 When you finish each milestone, report what you built, show the screenshots, list any deviations from this spec and why, and list open questions.

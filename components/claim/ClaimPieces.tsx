@@ -18,7 +18,7 @@ interface Row {
   keepOnClaim: boolean;
 }
 
-/** Step 1: every piece One Off listed, each with a show/hide switch and "Edit details". */
+/** Step 1: every piece Off One listed, each with a show/hide switch and "Edit details". */
 export function ClaimPieces({
   pieces,
   editable,

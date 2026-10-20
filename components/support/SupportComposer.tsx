@@ -5,7 +5,7 @@ import { useFormState } from 'react-dom';
 import type { FormState } from '@/lib/validation';
 import { SubmitButton } from '@/components/ui/SubmitButton';
 
-/** The reply box for a maker ↔ One Off conversation (either side). */
+/** The reply box for a maker ↔ Off One conversation (either side). */
 export function SupportComposer({
   action,
   hidden = {},

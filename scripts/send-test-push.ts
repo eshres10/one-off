@@ -30,7 +30,7 @@ async function main() {
       const res = await webpush.sendNotification(
         { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
         JSON.stringify({
-          title: 'One Off',
+          title: 'Off One',
           body: 'New from Halde Studio: Butter silk slip',
           url: '/discover',
           tag: 'test',

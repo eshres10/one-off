@@ -7,7 +7,7 @@ import { SubmitButton } from '@/components/ui/SubmitButton';
 import { FormAlert } from '@/components/ui/Field';
 import type { FormState } from '@/lib/validation';
 
-/** Photos plus a note; One Off lists the piece. */
+/** Photos plus a note; Off One lists the piece. */
 export function SendPhotosForm() {
   const [state, action] = useFormState<FormState, FormData>(listingRequestAction, undefined);
   if (state?.ok)
@@ -30,7 +30,7 @@ export function SendPhotosForm() {
         />
       </label>
       <FormAlert message={state?.message} tone="error" />
-      <SubmitButton>Send to One Off</SubmitButton>
+      <SubmitButton>Send to Off One</SubmitButton>
     </form>
   );
 }

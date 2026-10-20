@@ -28,7 +28,7 @@ export default async function AdminShopsPage() {
         </Link>
       </div>
       <p className="mb-6 text-sm text-ink-muted">
-        Shops One Off sets up for makers, from draft to live. Invited shops are pre-approved and
+        Shops Off One sets up for makers, from draft to live. Invited shops are pre-approved and
         never enter the{' '}
         <Link href="/admin/applications" className="link">
           applications

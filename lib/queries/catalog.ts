@@ -403,7 +403,7 @@ export interface MakerProfile {
   returnPolicy: string;
   followerCount: number;
   approvedAt: Date | null;
-  /** Null until a shop set up by One Off is claimed. */
+  /** Null until a shop set up by Off One is claimed. */
   userId: string | null;
 }
 

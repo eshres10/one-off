@@ -80,7 +80,7 @@ export interface CheckoutParcel {
   items: CheckoutItem[];
   /**
    * Each speed's price for this parcel: `cents` is the maker's price after their own deal,
-   * `listCents` their normal rate. One Off's cap applies across parcels, in the totals.
+   * `listCents` their normal rate. Off One's cap applies across parcels, in the totals.
    */
   options: Record<
     Speed,
@@ -120,7 +120,7 @@ export interface CheckoutView {
   shippingListCents: number;
   /** shippingListCents − shippingCents. */
   shippingSavingCents: number;
-  /** Which of One Off's offers lowered delivery ('cap' or 'free_over'), if any. */
+  /** Which of Off One's offers lowered delivery ('cap' or 'free_over'), if any. */
   shippingOffer: 'cap' | 'free_over' | null;
   /** How much more in pieces gets free standard delivery (null when met or not offered). */
   toFreeCents: number | null;
@@ -359,7 +359,7 @@ async function offerForOrder(orderId: string, now: Date, refresh: boolean): Prom
   return offer;
 }
 
-/** One Off's offer across the bag's parcels (each maker's price at its chosen speed). */
+/** Off One's offer across the bag's parcels (each maker's price at its chosen speed). */
 function offerFor(
   quotes: Array<{ makerId: string; speed: Speed; cents: number; listCents: number }>,
   subtotalCents: number,

@@ -54,7 +54,7 @@ export async function generateMetadata({
   const p = await getProduct(params.slug);
   if (!p) return { title: 'Not found' };
   const share = await productCard(params.slug);
-  const title = `${p.title} by ${p.maker.displayName} — One Off`;
+  const title = `${p.title} by ${p.maker.displayName} — Off One`;
   const description = p.description
     .replace(/^Preview only[^\n]*\n+/, '')
     .replace(/\s+/g, ' ')

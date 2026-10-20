@@ -63,7 +63,7 @@ export default async function AddressesPage() {
           </ul>
         )}
         <p className="mt-4 text-[13px] text-muted">
-          Card details are stored securely by Stripe. One Off never sees your full card number.
+          Card details are stored securely by Stripe. Off One never sees your full card number.
         </p>
       </section>
     </div>

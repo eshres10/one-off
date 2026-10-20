@@ -88,9 +88,9 @@ export function InstallSheet({
       ? 'No app store. Takes two seconds.'
       : variant === 'ios'
         ? 'Two taps, no app store.'
-        : `${appName ? `${appName}’s` : 'This app’s'} browser can’t save One Off to your home screen.`;
+        : `${appName ? `${appName}’s` : 'This app’s'} browser can’t save Off One to your home screen.`;
   const title =
-    variant === 'in-app' ? 'Open in your browser first.' : 'One Off, on your home screen.';
+    variant === 'in-app' ? 'Open in your browser first.' : 'Off One, on your home screen.';
 
   const steps: ReactNode =
     variant === 'android' ? (
@@ -109,7 +109,7 @@ export function InstallSheet({
           ]}
         />
         <p className="mt-4 text-[13px] text-muted">
-          Then open One Off from your home screen to turn on drop alerts.
+          Then open Off One from your home screen to turn on drop alerts.
         </p>
       </>
     ) : (

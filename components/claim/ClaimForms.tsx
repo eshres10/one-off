@@ -83,7 +83,7 @@ export function AgreeForm({
           className="mt-0.5 h-5 w-5 shrink-0 accent-[#111111]"
           data-testid="agree-box"
         />
-        I’ve read and agree to the One Off Seller Agreement, and I own or have permission to use
+        I’ve read and agree to the Off One Seller Agreement, and I own or have permission to use
         these photos.
       </label>
       <Error state={state} />

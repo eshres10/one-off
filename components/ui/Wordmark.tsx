@@ -1,7 +1,7 @@
 import { BRAND } from '@/lib/brand';
 
 /**
- * The ONE OFF logo, traced from the brand artwork. It inherits the text colour, so it is ink on
+ * The OFF ONE logo, traced from the brand artwork. It inherits the text colour, so it is ink on
  * light surfaces and ground on dark ones. Never set the brand name in type instead.
  */
 export const LOGOS = {

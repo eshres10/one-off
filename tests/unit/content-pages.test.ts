@@ -11,7 +11,7 @@ const ROOT = path.resolve(__dirname, '../..');
 describe('Acknowledgement of Country', () => {
   it('uses the Australia-wide wording', () => {
     expect(ACKNOWLEDGEMENT).toBe(
-      'One Off acknowledges the Traditional Custodians of the lands across Australia on which our makers live and work, and pays respect to Elders past and present.',
+      'Off One acknowledges the Traditional Custodians of the lands across Australia on which our makers live and work, and pays respect to Elders past and present.',
     );
   });
 
@@ -65,7 +65,7 @@ describe('legal documents', () => {
     const doc = await getLegalDoc('returns');
     expect(doc.sections.map((s) => s.heading)).toEqual([
       'What this covers',
-      'Buying on One Off',
+      'Buying on Off One',
       'Made-to-order pieces',
       'Faulty or not as described',
       'Change-of-mind returns',

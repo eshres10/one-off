@@ -30,7 +30,7 @@ export async function supportThread(
   return rows;
 }
 
-/** A maker writes to One Off; the team gets an email. */
+/** A maker writes to Off One; the team gets an email. */
 export async function sendSupportMessage(user: User, body: string, topic: string | null = null) {
   const text = sanitizeText(body).trim().slice(0, 4000);
   if (!text) throw new UserError('Write a message first.');
@@ -79,7 +79,7 @@ export async function adminThread(userId: string) {
   return who ? { ...who, messages } : null;
 }
 
-/** One Off replies; the maker gets an email with a link back to Studio. */
+/** Off One replies; the maker gets an email with a link back to Studio. */
 export async function adminReply(adminId: string, userId: string, body: string) {
   const text = sanitizeText(body).trim().slice(0, 4000);
   if (!text) throw new UserError('Write a reply first.');

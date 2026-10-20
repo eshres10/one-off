@@ -124,7 +124,7 @@ export async function adminReturnAction(
   input: z.infer<typeof settleSchema>,
 ): Promise<ActionResult> {
   const user = await getSessionUser();
-  if (!user || user.role !== 'admin') return { ok: false, message: 'Only One Off can do that.' };
+  if (!user || user.role !== 'admin') return { ok: false, message: 'Only Off One can do that.' };
   const parsed = settleSchema.safeParse(input);
   if (!parsed.success) return { ok: false, message: 'Please check the form.' };
   try {

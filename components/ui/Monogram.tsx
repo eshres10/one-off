@@ -1,5 +1,5 @@
 /**
- * The One Off monogram (public/brand/one-off-monogram.svg), inline so it takes the text colour.
+ * The Off One monogram (public/brand/one-off-monogram.svg), inline so it takes the text colour.
  * Decoration only: it is hidden from assistive technology.
  */
 export const D =

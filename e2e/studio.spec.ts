@@ -117,7 +117,7 @@ test.describe.serial('Studio', () => {
     const [mail] = await db<{ subject: string; bodyHtml: string }[]>`
       select subject, body_html from public.email_outbox where template = 'shop_invite'
       and to_email = ${`${slug}@maker.test`}`;
-    expect(mail!.subject).toBe('Your One Off shop is ready, E2E Atelier');
+    expect(mail!.subject).toBe('Your Off One shop is ready, E2E Atelier');
     expect(mail!.bodyHtml).toContain('This link is just for you and works for 7 days.');
   });
 

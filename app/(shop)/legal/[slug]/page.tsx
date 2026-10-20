@@ -20,7 +20,7 @@ export async function generateMetadata({
   return {
     title: doc.title,
     description:
-      doc.summary.filter((s) => s !== PLACEHOLDER).join(' ') || `${doc.title} for One Off.`,
+      doc.summary.filter((s) => s !== PLACEHOLDER).join(' ') || `${doc.title} for Off One.`,
   };
 }
 

@@ -97,6 +97,6 @@ export function sanitizeText(input: string): string {
 /** What the sender sees when a message is blocked (shown inline in the composer). */
 export function blockedMessage(sender: 'buyer' | 'maker'): string {
   const base =
-    'Contact details, bank details and payment links can’t be sent. Keep it on One Off so you’re covered by buyer protection.';
+    'Contact details, bank details and payment links can’t be sent. Keep it on Off One so you’re covered by buyer protection.';
   return sender === 'maker' ? `${base} Off-platform sales can get your shop paused.` : base;
 }

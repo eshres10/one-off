@@ -31,7 +31,7 @@ export async function generateMetadata({
   const data = await getMaker(params.slug);
   if (!data) return { title: 'Maker' };
   const share = await makerCard(params.slug);
-  const title = `${data.maker.displayName} — One Off`;
+  const title = `${data.maker.displayName} — Off One`;
   const description =
     data.maker.tagline ??
     `Original pieces by ${data.maker.displayName}, made in ${data.maker.city ?? 'Australia'}.`;
@@ -72,7 +72,7 @@ export default async function MakerPage({
   const user = await getSessionUser();
   let data = await getMaker(params.slug);
   let preview = false;
-  // "Preview, not live": One Off (and the shop's owner) can see a shop before it launches.
+  // "Preview, not live": Off One (and the shop's owner) can see a shop before it launches.
   if (!data && searchParams.preview === '1' && user) {
     const draft = await getMaker(params.slug, { preview: true });
     if (draft && (user.role === 'admin' || draft.maker.userId === user.id)) {

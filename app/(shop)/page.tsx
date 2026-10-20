@@ -101,7 +101,7 @@ async function HomeRails() {
       {newMakers.length > 0 && (
         <Rail
           title="New makers"
-          subtitle="Just joined One Off. Every studio visited in person before going live."
+          subtitle="Just joined Off One. Every studio visited in person before going live."
           viewAllHref="/makers"
           gapClass="gap-[10px] md:gap-4"
           testId="rail-new-makers"

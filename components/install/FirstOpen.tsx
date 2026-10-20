@@ -55,7 +55,7 @@ export function FirstOpen() {
   }, [stage, result]);
 
   if (stage === 'none') return null;
-  if (stage === 'loading') return <LoopLoader label="Opening One Off" />;
+  if (stage === 'loading') return <LoopLoader label="Opening Off One" />;
   const close = () => setStage('none');
 
   return (
@@ -76,7 +76,7 @@ export function FirstOpen() {
           You’re in.
         </h1>
         <p className="mt-5 max-w-[320px] text-[15px] leading-relaxed text-text2">
-          One Off now lives on your home screen. Want a nudge when a maker you follow drops
+          Off One now lives on your home screen. Want a nudge when a maker you follow drops
           something new?
         </p>
         {result === 'denied' && (
@@ -85,7 +85,7 @@ export function FirstOpen() {
             role="status"
             data-testid="first-open-denied"
           >
-            Notifications are off for One Off. You can turn them on any time in your phone’s
+            Notifications are off for Off One. You can turn them on any time in your phone’s
             Settings, under Notifications.
           </p>
         )}

@@ -173,7 +173,7 @@ test.describe.serial('seller applications', () => {
     expect((await shopOf(email)).shopStatus).toBe('approved');
     const [mail] = await db<{ subject: string }[]>`
       select subject from public.email_outbox where to_email = ${email} and template = 'application_approved'`;
-    expect(mail!.subject).toBe('You’re in. Welcome to One Off');
+    expect(mail!.subject).toBe('You’re in. Welcome to Off One');
 
     const page = await (
       await browser.newContext({ ...DESK, storageState: await ctx.storageState() })

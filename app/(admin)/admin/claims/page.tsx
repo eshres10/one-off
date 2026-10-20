@@ -16,7 +16,7 @@ export default async function AdminClaimsPage() {
       <h1 className="text-[40px] leading-none md:text-[48px]">Claims</h1>
       <section aria-labelledby="escalated">
         <h2 id="escalated" className="mb-3 text-[11px] uppercase tracking-label text-error">
-          Escalated — needs One Off ({escalated.length})
+          Escalated — needs Off One ({escalated.length})
         </h2>
         <ClaimList
           claims={escalated}

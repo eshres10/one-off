@@ -62,7 +62,7 @@ export interface BuyerOrder {
   totalCents: number;
   subtotalCents: number;
   shippingTotalCents: number;
-  /** What the buyer saved on shipping (makers' bundle deals and One Off's shipping offer). */
+  /** What the buyer saved on shipping (makers' bundle deals and Off One's shipping offer). */
   shippingSavingCents: number;
   refundedCents: number;
   createdAt: Date;

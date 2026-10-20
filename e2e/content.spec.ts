@@ -10,7 +10,7 @@ test.afterAll(() => db.end());
 
 const PAGES = ['/about', '/how-it-works', '/help', '/size-guide', '/legal/returns', '/legal/terms'];
 const ACK =
-  'One Off acknowledges the Traditional Custodians of the lands across Australia on which our makers live and work, and pays respect to Elders past and present.';
+  'Off One acknowledges the Traditional Custodians of the lands across Australia on which our makers live and work, and pays respect to Elders past and present.';
 
 /** How far the page reaches past the right edge, ignoring content inside sideways scrollers. */
 const overflow = (page: Page) =>

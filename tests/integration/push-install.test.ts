@@ -42,7 +42,7 @@ function recorder(fail?: { statusCode: number }) {
   return { sent, send };
 }
 
-const payload = { title: 'One Off', body: 'Hello', url: '/' };
+const payload = { title: 'Off One', body: 'Hello', url: '/' };
 
 describe('push subscriptions (test 10)', () => {
   it('subscribing twice from one browser keeps one row, and keeps the owner', async () => {

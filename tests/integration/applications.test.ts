@@ -93,7 +93,7 @@ describe('the applications queue', () => {
     expect(s.spotChecksLeft).toBe(3);
     expect((await outbox('application_approved'))[0]).toMatchObject({
       toEmail: user.email,
-      subject: 'You’re in. Welcome to One Off',
+      subject: 'You’re in. Welcome to Off One',
     });
     const [decision] = await sql()<{ decision: string }[]>`
       select decision from public.shop_applications where maker_id = ${makerId}`;

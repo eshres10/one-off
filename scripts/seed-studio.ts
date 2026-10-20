@@ -195,7 +195,7 @@ function thursday(weeksAgo: number) {
 
 /**
  * Studio demo: Halde Studio as founding maker Nº 07 with orders in every Studio state, payouts
- * and shipping rates; and Mira Atelier, a shop One Off set up and invited, ready to be claimed.
+ * and shipping rates; and Mira Atelier, a shop Off One set up and invited, ready to be claimed.
  */
 export async function seedStudio(
   db: Sql,
@@ -203,7 +203,7 @@ export async function seedStudio(
   hash: string,
   mockPayments: boolean,
 ): Promise<{ claimUrl: string }> {
-  // Halde Studio: listed by One Off, claimed a month ago, still founding.
+  // Halde Studio: listed by Off One, claimed a month ago, still founding.
   await db`
     update public.makers set founding_number = 7, founding_until = now() + interval '58 days',
       created_by_admin = true, claimed_at = now() - interval '32 days', went_live_at = now() - interval '32 days',
@@ -226,13 +226,13 @@ export async function seedStudio(
       on conflict (maker_id, region) do update set standard_cents = excluded.standard_cents,
         express_cents = excluded.express_cents, enabled = excluded.enabled`;
   }
-  // Everything but the shirt dress was listed by One Off; the maker has checked them.
+  // Everything but the shirt dress was listed by Off One; the maker has checked them.
   await db`
     update public.products set listed_by_admin = (slug <> 'elsie-shirt-dress'),
       reviewed_by_seller_at = now() - interval '32 days', mto_lead = case when product_type = 'made_to_order' then '2 weeks' end,
       mto_capacity = case when product_type = 'made_to_order' then 3 end, accepts_custom = (product_type = 'made_to_order')
     where maker_id = ${halde.id}`;
-  // A draft One Off prepared that the maker hasn't published yet.
+  // A draft Off One prepared that the maker hasn't published yet.
   const draftId = seedId('product:halde-corset-front-mini');
   await db`
     insert into public.products (id, maker_id, slug, title, description, category, tags, colours, price_cents, product_type,
@@ -386,7 +386,7 @@ export async function seedStudio(
       on conflict (id) do nothing`;
   }
 
-  // Mira Atelier: set up by One Off, three pieces listed, invite sent and waiting.
+  // Mira Atelier: set up by Off One, three pieces listed, invite sent and waiting.
   const mira = DEMO_INVITED_SHOP;
   await db`
     insert into public.makers (id, user_id, slug, display_name, tagline, story, location, city, state, avatar_url, cover_url,

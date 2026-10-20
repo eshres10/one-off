@@ -13,7 +13,7 @@ export default async function StudioHelpPage() {
         <p className="mt-3 text-[14px] text-muted">
           Handy guides, whenever you need them. Stuck?{' '}
           <Link href="/studio/support" className="underline underline-offset-4">
-            Message One Off
+            Message Off One
           </Link>
           .
         </p>

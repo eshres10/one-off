@@ -97,7 +97,7 @@ export function ClaimDetail({
           <p className="mt-1 text-[12px] text-muted" data-testid="case-admin-facts">
             {claim.pausedPayout ? 'Maker payout paused for this case. ' : ''}
             {claim.platformDueAt
-              ? `One Off decides by ${fmt(claim.platformDueAt, claim.makerTimezone)}.`
+              ? `Off One decides by ${fmt(claim.platformDueAt, claim.makerTimezone)}.`
               : ''}
           </p>
         )}
@@ -148,8 +148,8 @@ export function ClaimDetail({
         {claim.status === 'escalated' && (
           <p className="mt-3 bg-error-bg px-3 py-2 text-[13px] text-error">
             {viewer === 'buyer'
-              ? 'One Off has stepped in and will be in touch.'
-              : 'Escalated to One Off: the maker didn’t reply within 2 business days.'}
+              ? 'Off One has stepped in and will be in touch.'
+              : 'Escalated to Off One: the maker didn’t reply within 2 business days.'}
           </p>
         )}
       </section>
