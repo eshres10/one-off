@@ -548,6 +548,69 @@ async function seedCommissions(db: Sql) {
   }
 }
 
+/** Three shops open for "Have it made", so the matcher has someone to find locally. */
+const CUSTOM_SHOPS = [
+  {
+    slug: 'halde-studio',
+    postcode: '3066',
+    suburb: 'Collingwood',
+    spots: 3,
+    categories: ['Dresses', 'Slips', 'Bridal'],
+    fabrics: ['Silk', 'Satin', 'Linen'],
+    minPrice: 450,
+    weeks: '[3,5)',
+    fittings: true,
+    radius: 20,
+    posts: true,
+  },
+  {
+    slug: 'fern-and-thread',
+    postcode: '3065',
+    suburb: 'Fitzroy',
+    spots: 2,
+    categories: ['Dresses', 'Tops', 'Skirts'],
+    fabrics: ['Cotton', 'Linen'],
+    minPrice: 300,
+    weeks: '[2,4)',
+    fittings: false,
+    radius: null,
+    posts: true,
+  },
+  {
+    slug: 'lune-studio',
+    postcode: '3182',
+    suburb: 'St Kilda',
+    spots: 4,
+    categories: ['Dresses', 'Two-piece sets', 'Tailoring'],
+    fabrics: ['Silk', 'Wool'],
+    minPrice: 700,
+    weeks: '[5,7)',
+    fittings: true,
+    radius: 10,
+    posts: false,
+  },
+] as const;
+
+async function seedCustomSettings(db: Sql) {
+  for (const c of CUSTOM_SHOPS) {
+    await db`
+      update public.makers m set studio_postcode = ${c.postcode},
+        studio_lat = (select lat from public.postcodes where postcode = ${c.postcode} and suburb = ${c.suburb} limit 1),
+        studio_lng = (select lng from public.postcodes where postcode = ${c.postcode} and suburb = ${c.suburb} limit 1)
+      where m.slug = ${c.slug}`;
+    await db`
+      insert into public.maker_custom_settings (maker_id, open, spots_per_month, categories, fabrics, min_price,
+        lead_time_weeks, fittings_in_person, fitting_radius_km, posts_australia_wide)
+      select id, true, ${c.spots}, ${c.categories as unknown as string[]}, ${c.fabrics as unknown as string[]},
+        ${c.minPrice}, ${c.weeks}::int4range, ${c.fittings}, ${c.radius}, ${c.posts}
+      from public.makers where slug = ${c.slug}
+      on conflict (maker_id) do update set open = excluded.open, spots_per_month = excluded.spots_per_month,
+        categories = excluded.categories, fabrics = excluded.fabrics, min_price = excluded.min_price,
+        lead_time_weeks = excluded.lead_time_weeks, fittings_in_person = excluded.fittings_in_person,
+        fitting_radius_km = excluded.fitting_radius_km, posts_australia_wide = excluded.posts_australia_wide`;
+  }
+}
+
 export async function seed(databaseUrl: string) {
   const db = postgres(databaseUrl, { max: 1, onnotice: () => {} });
   const hash = bcrypt.hashSync(PASSWORD, 10);
@@ -632,6 +695,7 @@ export async function seed(databaseUrl: string) {
       await seedCommissions(tx);
       await refreshThreadState(tx);
       studio = await seedStudio(tx, upsertUser, hash, mockPayments);
+      await seedCustomSettings(tx);
       // Style tags for the taste picker and personal ranking (makers can change them).
       await tx`
         update public.products
