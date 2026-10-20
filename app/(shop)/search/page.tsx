@@ -132,7 +132,7 @@ function NoResults({ q }: { q: string }) {
           </div>
         )}
         <Link
-          href={`/custom${q ? `?q=${encodeURIComponent(q)}` : ''}`}
+          href={`/have-it-made${q ? `?q=${encodeURIComponent(q)}` : ''}`}
           className="mt-8 block bg-ink px-6 py-6 text-left text-ground"
           data-testid="have-it-made"
         >

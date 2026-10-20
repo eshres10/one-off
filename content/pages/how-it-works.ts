@@ -28,10 +28,10 @@ export const HOW_IT_WORKS = {
       href: '/discover?avail=mto',
     },
     {
-      badge: 'Custom request',
-      line: 'Describe what you want. Makers send you a quote, you choose.',
+      badge: 'Have it made',
+      line: 'Describe what you want. Up to three makers send you a quote, you choose.',
       image: '/seed/wine-satin-halter-set.jpg',
-      href: '/custom',
+      href: '/have-it-made',
     },
   ],
   stepsKicker: 'Your order, step by step',

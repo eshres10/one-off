@@ -15,6 +15,7 @@ export async function loadCandidates(): Promise<MatchCandidate[]> {
       city: string | null;
       postcodeSuburb: string | null;
       avatarUrl: string | null;
+      coverUrl: string | null;
       rating: string;
       reviewCount: number;
       replyHours: number;
@@ -39,7 +40,7 @@ export async function loadCandidates(): Promise<MatchCandidate[]> {
     select m.id as maker_id, m.display_name as name, m.slug, m.location, m.city,
       (select p.suburb from public.postcodes p where p.postcode = m.studio_postcode
         order by p.suburb limit 1) as postcode_suburb,
-      m.avatar_url, m.rating, m.review_count, m.response_time_hours as reply_hours,
+      m.avatar_url, m.cover_url, m.rating, m.review_count, m.response_time_hours as reply_hours,
       (m.status = 'approved' and m.shop_status in ('live', 'holiday')) as active,
       m.holiday_from, m.holiday_until,
       s.open, s.spots_per_month,
@@ -62,6 +63,7 @@ export async function loadCandidates(): Promise<MatchCandidate[]> {
     slug: r.slug,
     suburb: r.postcodeSuburb ?? ((r.location ?? '').split(',')[0]?.trim() || r.city || null),
     avatarUrl: r.avatarUrl,
+    imageUrl: r.coverUrl ?? r.avatarUrl,
     rating: Number(r.rating),
     reviewCount: r.reviewCount,
     replyHours: r.replyHours,

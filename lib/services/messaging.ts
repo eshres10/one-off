@@ -42,6 +42,9 @@ export interface ThreadContext {
   /** Set when the buyer messages from an order: the maker sees which order it's about. */
   orderNumber?: string;
   orderId?: string;
+  /** "Ask" from a Have it made quote: the conversation is about this request. */
+  customRequestId?: string;
+  customRequestNumber?: string;
 }
 
 export interface QuoteSnapshot {
@@ -124,6 +127,44 @@ export async function openProductThread(
     const [created] = await db<{ id: string }[]>`
       insert into public.message_threads (buyer_user_id, maker_id, product_id, context, kind)
       values (${buyer.id}, ${product.makerId}, ${product.id}, ${db.json(context as never)}, 'enquiry') returning id`;
+    return created!.id;
+  });
+}
+
+/**
+ * "Ask" on a quote: the buyer's conversation with that maker about their custom request. One per
+ * request and maker; the request is attached so both sides know what it's about.
+ */
+export async function openRequestThread(
+  buyer: Actor,
+  input: { requestId: string; makerId: string },
+): Promise<string> {
+  const [r] = await sql()<
+    { number: string; makerUserId: string; title: string | null; imageUrl: string | null }[]
+  >`
+    select r.number, m.user_id as maker_user_id,
+      (select product_title from public.order_items oi join public.custom_quotes q on q.id = oi.custom_quote_id
+        where q.request_id = r.id limit 1) as title,
+      (r.inspiration->>0) as image_url
+    from public.custom_requests r join public.makers m on m.id = ${input.makerId}
+    join public.custom_request_recipients x on x.request_id = r.id and x.maker_id = m.id
+    where r.id = ${input.requestId} and r.buyer_id = ${buyer.id}`;
+  if (!r) throw new UserError('We couldn’t find that request.');
+  if (r.makerUserId === buyer.id) throw new UserError('You can’t message yourself.');
+  const context: ThreadContext = {
+    customRequestId: input.requestId,
+    customRequestNumber: r.number,
+    productTitle: `Custom request ${r.number}`,
+    imageUrl: r.imageUrl,
+  };
+  return withUser(buyer, async (db) => {
+    const [existing] = await db<{ id: string }[]>`
+      select id from public.message_threads
+      where buyer_user_id = ${buyer.id} and maker_id = ${input.makerId} and custom_request_id = ${input.requestId}`;
+    if (existing) return existing.id;
+    const [created] = await db<{ id: string }[]>`
+      insert into public.message_threads (buyer_user_id, maker_id, custom_request_id, context, kind)
+      values (${buyer.id}, ${input.makerId}, ${input.requestId}, ${db.json(context as never)}, 'custom_request') returning id`;
     return created!.id;
   });
 }

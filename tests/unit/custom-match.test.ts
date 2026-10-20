@@ -32,6 +32,7 @@ const maker = (over: Partial<MatchCandidate> = {}): MatchCandidate => {
     slug: `maker-${n}`,
     suburb: 'Fitzroy',
     avatarUrl: null,
+    imageUrl: null,
     rating: 4.8,
     reviewCount: 10,
     replyHours: 12,

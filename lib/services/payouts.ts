@@ -135,6 +135,8 @@ export async function releaseDueTransfers(now = new Date()): Promise<ReleaseResu
       sellerNetCents: number;
       shippingSubsidyCents: number;
       refundedShare: number;
+      /** A custom order's fabric advance, already transferred (see payFabricAdvance). */
+      advanceCents: number;
       stripeAccountId: string | null;
       chargesEnabled: boolean;
       chargeId: string | null;
@@ -142,6 +144,7 @@ export async function releaseDueTransfers(now = new Date()): Promise<ReleaseResu
     }[]
   >`
     select f.id, f.order_id, f.maker_id, f.seller_net_cents, f.shipping_subsidy_cents, m.stripe_account_id,
+      coalesce(o.fabric_advance_cents, 0)::int as advance_cents,
       m.stripe_charges_enabled as charges_enabled, o.stripe_charge_id as charge_id,
       coalesce((select sum(round(oi.refunded_cents::numeric * oi.seller_net_cents / oi.line_total_cents))
                 from public.order_items oi where oi.fulfilment_id = f.id), 0)::int as refunded_share,
@@ -174,8 +177,9 @@ export async function releaseDueTransfers(now = new Date()): Promise<ReleaseResu
     const owed = await sql()<{ id: string; amountCents: number }[]>`
       select id, amount_cents from public.maker_adjustments
       where maker_id = ${f.makerId} and applied_at is null order by created_at`;
-    // What the maker is owed in total: their net, less refunds and anything they owe.
-    let owedTotal = f.sellerNetCents - f.refundedShare;
+    // What the maker is owed in total: their net, less refunds, any fabric advance already paid
+    // and anything they owe.
+    let owedTotal = f.sellerNetCents - f.refundedShare - f.advanceCents;
     const applied: string[] = [];
     for (const a of owed) {
       if (a.amountCents > owedTotal) break;
@@ -189,7 +193,7 @@ export async function releaseDueTransfers(now = new Date()): Promise<ReleaseResu
       owedCents: owedTotal,
       sellerNetCents: f.sellerNetCents,
       subsidyCents: f.shippingSubsidyCents,
-      refundedShareCents: f.refundedShare,
+      refundedShareCents: f.refundedShare + f.advanceCents,
     });
     try {
       let transferId: string | null = null;
@@ -221,7 +225,7 @@ export async function releaseDueTransfers(now = new Date()): Promise<ReleaseResu
       await audit(
         'transfer.created',
         { type: 'fulfilment', id: f.id },
-        { amount, subsidyDue, transferId, adjustments: applied },
+        { amount, subsidyDue, transferId, adjustments: applied, advance: f.advanceCents },
       );
       result.released++;
     } catch (err) {

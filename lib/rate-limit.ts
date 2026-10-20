@@ -12,6 +12,8 @@ export const LIMITS = {
   messageHourly: { windowSeconds: 3600, max: 60 },
   review: { windowSeconds: 3600, max: 10 },
   commission: { windowSeconds: 86_400, max: 5 },
+  customRequest: { windowSeconds: 86_400, max: 10 },
+  customQuote: { windowSeconds: 3600, max: 30 },
   auth: { windowSeconds: 300, max: 10 },
   checkout: { windowSeconds: 60, max: 10 },
   upload: { windowSeconds: 300, max: 30 },

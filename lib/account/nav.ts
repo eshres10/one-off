@@ -36,7 +36,7 @@ export function accountItems(s: AccountSummary): NavItem[] {
     { href: '/saved', label: 'Saved', value: s.saved ? String(s.saved) : undefined },
     { href: '/account/style', label: 'Your style' },
     { href: '/account/following', label: 'Following' },
-    { href: '/account/commissions', label: 'Custom requests' },
+    { href: '/account/requests', label: 'Custom requests', testId: 'nav-requests' },
     { href: '/account/help', label: 'Help' },
   ];
 }

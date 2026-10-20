@@ -222,7 +222,7 @@ export function PurchasePanel({
               ? {
                   ...makeToOrder,
                   price: formatPrice(priceCents),
-                  href: `${makeToOrder.href}&size=${encodeURIComponent(selected.size)}`,
+                  href: makeToOrder.href,
                 }
               : null
           }

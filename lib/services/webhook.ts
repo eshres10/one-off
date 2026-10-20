@@ -172,11 +172,19 @@ async function finalizePaidOrder(orderId: string, paid: PaidDetails): Promise<vo
     }
 
     const items = await db<
-      { id: string; variantId: string; quantity: number; lineTotalCents: number; makerId: string }[]
+      {
+        id: string;
+        variantId: string | null;
+        quantity: number;
+        lineTotalCents: number;
+        makerId: string;
+      }[]
     >`
       select id, variant_id, quantity, line_total_cents, maker_id from public.order_items where order_id = ${order.id}`;
     const oversold: Array<(typeof items)[number]> = [];
     for (const item of items) {
+      // A custom piece has no stock behind it.
+      if (!item.variantId) continue;
       const [stock] = await db<
         { ok: boolean }[]
       >`select public.decrement_stock(${item.variantId}, ${item.quantity}) as ok`;
@@ -206,12 +214,26 @@ async function finalizePaidOrder(orderId: string, paid: PaidDetails): Promise<vo
       null,
       db,
     );
-    const soldVariants = items.filter((i) => !oversold.includes(i)).map((i) => i.variantId);
-    return { order, oversold, email, soldVariants };
+    const soldVariants = items
+      .filter((i) => !oversold.includes(i))
+      .map((i) => i.variantId)
+      .filter((v): v is string => Boolean(v));
+    const [kind] = await db<
+      { orderType: string }[]
+    >`select order_type from public.orders where id = ${order.id}`;
+    return { order, oversold, email, soldVariants, custom: kind?.orderType === 'custom' };
   });
   if (!result) return;
 
-  const { order, oversold, email, soldVariants } = result;
+  const { order, oversold, email, soldVariants, custom } = result;
+
+  // An accepted quote: the request closes and the other makers hear.
+  if (custom) {
+    const { onCustomOrderPaid } = await import('./custom-orders');
+    await onCustomOrderPaid(order.id).catch((err) =>
+      reportError(err, { orderId: order.id, where: 'custom order paid' }),
+    );
+  }
 
   // Oversold pieces (two buyers raced for the last unit) are refunded immediately.
   for (const item of oversold) {
@@ -531,6 +553,6 @@ export async function refundOrderItem(input: {
 async function bumpPurchaseTaste(orderId: string) {
   const rows = await sql()<{ userId: string | null; productId: string }[]>`
     select o.buyer_user_id as user_id, oi.product_id from public.order_items oi
-    join public.orders o on o.id = oi.order_id where oi.order_id = ${orderId}`;
+    join public.orders o on o.id = oi.order_id where oi.order_id = ${orderId} and oi.product_id is not null`;
   for (const r of rows) await bumpTaste(r.userId, r.productId, 3);
 }

@@ -25,6 +25,8 @@ export interface MatchCandidate {
   slug: string;
   suburb: string | null;
   avatarUrl: string | null;
+  /** The shop's cover, for the match card. */
+  imageUrl: string | null;
   rating: number;
   reviewCount: number;
   replyHours: number;
@@ -51,6 +53,7 @@ export interface Match {
   slug: string;
   suburb: string | null;
   avatarUrl: string | null;
+  imageUrl: string | null;
   rating: number;
   reviewCount: number;
   distanceKm: number | null;
@@ -182,6 +185,7 @@ function toMatch(brief: MatchBrief, k: Checked, warning: string | null): Match {
     slug: k.c.slug,
     suburb: k.c.suburb,
     avatarUrl: k.c.avatarUrl,
+    imageUrl: k.c.imageUrl,
     rating: k.c.rating,
     reviewCount: k.c.reviewCount,
     distanceKm: k.distanceKm == null ? null : Math.round(k.distanceKm),

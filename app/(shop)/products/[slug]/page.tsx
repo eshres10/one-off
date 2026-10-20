@@ -147,9 +147,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
   const custom = isCustomType(product.productType);
   // A sold one-of-one keeps its page (links and search still work), shown greyed with a stamp.
   const soldOne = product.productType === 'one_of_one' && totalStock === 0;
-  const similarHref = m.customCommissionsEnabled
-    ? `/makers/${m.slug}/commission?product=${product.id}`
-    : `/custom?q=${encodeURIComponent(`Something like ${product.title}`)}`;
+  const similarHref = `/have-it-made?source_listing_id=${product.id}`;
   const previewOnly = isPreviewOnly(product.tags);
   const saved = savedIds.has(product.id);
   const sale = shopBuyable(m);
@@ -354,11 +352,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
                   colours={product.colours}
                   variants={product.variants}
                   askHref={`/products/${product.slug}`}
-                  requestHref={
-                    m.customCommissionsEnabled
-                      ? `/makers/${m.slug}/commission?product=${product.id}`
-                      : undefined
-                  }
+                  requestHref={similarHref}
                   modelLine={modelLine}
                   savedSizes={fit}
                   sizeNotes={m.sizeNotes}
@@ -370,7 +364,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
                       ? {
                           makerName: m.displayName,
                           leadDays: product.leadTimeDays ?? 14,
-                          href: `/makers/${m.slug}/commission?product=${product.id}`,
+                          href: similarHref,
                         }
                       : null
                   }

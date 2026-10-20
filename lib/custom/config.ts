@@ -54,6 +54,18 @@ export const CUSTOM = {
   cityRadiusKm: 30,
   /** The maker gets this share of the item price when they mark the fabric bought. */
   advancePct: 30,
+  /**
+   * [DECIDE] A maker cancels after the fabric advance: the buyer is refunded in full and the
+   * advance is recovered from the maker's later payouts (an admin can waive it when the fabric
+   * goes to the buyer). Needs a seller agreement clause.
+   */
+  cancelAfterAdvance: 'recover_from_payouts' as 'recover_from_payouts' | 'write_off',
+  /** Makers are reminded once, this long after a request with no reply. */
+  reminderHours: 24,
+  /** "Your quote expires tomorrow" goes this many days after the quote. */
+  quoteExpiryWarningDay: 6,
+  /** The Loop loader shows for at least this long, so the search feels considered. */
+  findingMs: 1600,
   /** Score weights (each part is 0–1 before weighting). */
   weights: {
     fabric: 0.25,

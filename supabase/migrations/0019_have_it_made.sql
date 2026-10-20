@@ -186,6 +186,16 @@ alter table public.orders add column if not exists order_type text not null defa
 alter table public.orders add column if not exists custom_quote_id uuid references public.custom_quotes (id) on delete set null;
 -- { sketch_shared | fabric_bought | fitting | made | sent: { at, photo?, note? } }
 alter table public.orders add column if not exists milestones jsonb not null default '{}';
+-- The 30% paid to the maker when they mark the fabric bought (the rest follows delivery).
+alter table public.orders add column if not exists fabric_advance_cents integer;
+alter table public.orders add column if not exists fabric_advance_transfer_id text;
+-- Checkout orders belong to a bag; a custom order comes from an accepted quote instead.
+alter table public.orders alter column cart_id drop not null;
+-- "Not what we agreed", for custom orders.
+alter type claim_reason add value if not exists 'not_as_agreed';
+-- "Ask" from a quote opens a conversation about the request.
+alter table public.message_threads add column if not exists custom_request_id uuid
+  references public.custom_requests (id) on delete set null;
 -- A custom piece has no listing or size behind it.
 alter table public.order_items alter column product_id drop not null;
 alter table public.order_items alter column variant_id drop not null;

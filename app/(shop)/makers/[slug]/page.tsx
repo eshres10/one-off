@@ -169,8 +169,8 @@ export default async function MakerPage({
                 <button className={boxButtonClass('w-full')}>Ask a question</button>
               </form>
               {maker.customCommissionsEnabled && (
-                <Link href={`/makers/${maker.slug}/commission`} className={boxButtonClass()}>
-                  Request a custom piece
+                <Link href="/have-it-made" className={boxButtonClass()}>
+                  Have it made
                 </Link>
               )}
             </BoxButtonGroup>

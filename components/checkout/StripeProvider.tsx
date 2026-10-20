@@ -64,11 +64,33 @@ export function StripeProvider({
   publishableKey: string;
   children: React.ReactNode;
 }) {
-  const save = view.signedIn || view.saveDetails;
+  return (
+    <StripeElements
+      amountCents={view.totalCents}
+      save={view.signedIn || view.saveDetails}
+      publishableKey={publishableKey}
+    >
+      {children}
+    </StripeElements>
+  );
+}
+
+/** The same Elements set-up for a payment that isn't a bag checkout (an accepted quote). */
+export function StripeElements({
+  amountCents,
+  save,
+  publishableKey,
+  children,
+}: {
+  amountCents: number;
+  save: boolean;
+  publishableKey: string;
+  children: React.ReactNode;
+}) {
   const options = useMemo(
     () => ({
       mode: 'payment' as const,
-      amount: Math.max(50, view.totalCents),
+      amount: Math.max(50, amountCents),
       currency: 'aud',
       setupFutureUsage: save ? ('on_session' as const) : undefined,
       appearance: APPEARANCE,
@@ -83,7 +105,7 @@ export function StripeProvider({
   return (
     <Elements stripe={stripeFor(publishableKey)} options={options}>
       <StripeReady.Provider value>
-        <AmountSync amount={Math.max(50, view.totalCents)} save={save} />
+        <AmountSync amount={Math.max(50, amountCents)} save={save} />
         {children}
       </StripeReady.Provider>
     </Elements>

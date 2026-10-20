@@ -18,7 +18,8 @@ describe('Acknowledgement of Country', () => {
   it('no longer names a single nation anywhere in the repo', () => {
     // git grep covers every tracked file (code, emails, content, seed, tests' fixtures).
     const out = execSync(
-      `git grep -n -i -E "wurundjeri|kulin" -- . ':!tests/unit/content-pages.test.ts' || true`,
+      // The postcode data names the WA town of Kulin, which isn't the nation.
+      `git grep -n -i -E "wurundjeri|kulin" -- . ':!tests/unit/content-pages.test.ts' ':!supabase/seed/postcodes.sql' || true`,
       { cwd: ROOT, encoding: 'utf8' },
     );
     expect(out.trim()).toBe('');

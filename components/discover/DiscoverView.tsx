@@ -357,15 +357,17 @@ export function DiscoverView({
                       ]
                     : [
                         {
-                          label: 'Request a custom piece',
-                          href: params.q ? `/custom?q=${encodeURIComponent(params.q)}` : '/custom',
+                          label: 'Have it made',
+                          href: params.q
+                            ? `/have-it-made?q=${encodeURIComponent(params.q)}`
+                            : '/have-it-made',
                         },
                       ]),
                   // Only a search word is on: clearing it is the button above, so offer a maker instead.
                   relax.active === 1 && params.q
                     ? {
                         label: 'Have it made',
-                        href: `/custom?q=${encodeURIComponent(params.q)}`,
+                        href: `/have-it-made?q=${encodeURIComponent(params.q)}`,
                         testId: 'have-it-made',
                       }
                     : {
@@ -381,7 +383,7 @@ export function DiscoverView({
                 title="Nothing here, yet."
                 body="New pieces arrive every week. Ask a maker to make it for you in the meantime."
                 actions={[
-                  { label: 'Request a custom piece', href: '/custom' },
+                  { label: 'Have it made', href: '/have-it-made' },
                   { label: 'See all pieces', href: discoverHref({ ...EMPTY }) },
                 ]}
               />

@@ -206,7 +206,7 @@ export function BuyerPanel({
           {thread.kind === 'enquiry' && (
             <p className="mt-3 text-center">
               <Link
-                href={`/makers/${thread.makerSlug}/commission?product=${piece.id}`}
+                href={`/have-it-made?source_listing_id=${piece.id}`}
                 className="text-[13px] underline underline-offset-[5px]"
               >
                 Want it different? Request a custom version
