@@ -7,6 +7,8 @@ import { BoxIcon, ChatIcon, PlusSquareIcon, SunIcon, WalletIcon } from '@/compon
 export interface StudioCounts {
   toShip: number;
   needsReply: number;
+  /** Custom requests waiting for a quote or pass. */
+  requests: number;
 }
 
 const isActive = (pathname: string, href: string) =>
@@ -21,6 +23,7 @@ export function StudioNav({ counts }: { counts: StudioCounts }) {
     { href: '/studio', label: 'Overview' },
     { href: '/studio/orders', label: 'Orders', count: counts.toShip },
     { href: '/studio/listings', label: 'Listings' },
+    { href: '/studio/requests', label: 'Custom requests', count: counts.requests },
     { href: '/studio/messages', label: 'Messages', count: counts.needsReply },
     { href: '/studio/payouts', label: 'Payouts' },
   ];
@@ -32,7 +35,7 @@ export function StudioNav({ counts }: { counts: StudioCounts }) {
           <Link
             key={l.href}
             href={l.href}
-            data-tour={`nav-${l.label.toLowerCase()}`}
+            data-tour={`nav-${l.label.toLowerCase().replace(/\s+/g, '-')}`}
             aria-current={on ? 'page' : undefined}
             className={`flex min-h-[44px] items-center gap-1.5 text-[11px] uppercase tracking-label underline-offset-[7px] ${on ? 'underline decoration-1' : 'text-ground/75 hover:text-ground'}`}
           >

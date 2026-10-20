@@ -7,6 +7,8 @@ import { carrierLabel, trackingUrl, type StudioOrderDetail } from '@/lib/service
 import { Img as Image } from '@/components/ui/Img';
 import { MakingSteps, ShipForm, ShipmentSteps } from './OrderForms';
 import { OrderStatusPill } from './StatusPill';
+import { CustomMilestones } from './requests/Milestones';
+import { advanceLine } from '@/lib/services/custom-orders';
 
 const SALE_TYPE: Record<string, string> = {
   ready_to_ship: 'Ready to ship',
@@ -46,9 +48,12 @@ export function OrderPanelTitle({ order }: { order: StudioOrderDetail }) {
 
 /** Everything about one order: the piece, making progress, shipping, payout and actions. */
 export function OrderPanel({ order }: { order: StudioOrderDetail }) {
-  const canShip =
-    ['paid', 'preparing', 'ready'].includes(order.status) ||
-    (order.status === 'making' && order.mtoStep >= 3);
+  const custom = order.orderType === 'custom';
+  const dispatched = ['shipped', 'delivered', 'completed', 'issue'].includes(order.status);
+  const canShip = custom
+    ? Boolean(order.milestones.made) && !dispatched
+    : ['paid', 'preparing', 'ready'].includes(order.status) ||
+      (order.status === 'making' && order.mtoStep >= 3);
   const shipDays = daysUntil(order.shipBy);
   const urgent = shipDays !== null && shipDays <= 0 && canShip;
   const to = order.shipTo ?? {};
@@ -105,7 +110,19 @@ export function OrderPanel({ order }: { order: StudioOrderDetail }) {
         )}
       </Section>
 
-      {!['refunded', 'cancelled'].includes(order.status) && (
+      {custom && !['refunded', 'cancelled'].includes(order.status) && (
+        <Section title="Making it">
+          <CustomMilestones
+            orderId={order.orderId}
+            milestones={order.milestones}
+            shipped={dispatched}
+          />
+          <p className="mt-2 text-[12px] text-muted">
+            The buyer follows each step from their order page and hears about every one.
+          </p>
+        </Section>
+      )}
+      {!custom && !['refunded', 'cancelled'].includes(order.status) && (
         <Section title="Progress">
           <ShipmentSteps
             fulfilmentId={order.id}
@@ -230,6 +247,12 @@ export function OrderPanel({ order }: { order: StudioOrderDetail }) {
             <dd data-testid="panel-you-get">{formatPrice(order.sellerNetCents)}</dd>
           </div>
         </dl>
+        {custom && (
+          <p className="mt-2 text-[12px]" data-testid="panel-advance">
+            Custom ·{' '}
+            {advanceLine(order.subtotalCents, order.sellerNetCents, order.fabricAdvanceCents)}
+          </p>
+        )}
         <p className="mt-2 text-[12px] text-muted">
           {order.transferReleasedAt
             ? `Released ${dayLabel(new Date(order.transferReleasedAt))}, paid out on your next ${TERMS.payoutWeekday[0]!.toUpperCase()}${TERMS.payoutWeekday.slice(1)} payout.`

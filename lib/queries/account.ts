@@ -69,6 +69,9 @@ export interface BuyerOrder {
   paidAt: Date | null;
   shippingAddress: Record<string, string> | null;
   agreedSpec: AgreedSpecData | null;
+  /** 'custom' for an accepted Have it made quote. */
+  orderType: 'standard' | 'custom';
+  milestones: Record<string, { at: string; photo?: string | null; note?: string | null }>;
   fulfilments: BuyerFulfilment[];
 }
 
@@ -78,7 +81,7 @@ export async function getBuyerOrders(user: Actor, orderRef?: string): Promise<Bu
   return withUser(user, async (db) => {
     const orders = await db<Omit<BuyerOrder, 'fulfilments'>[]>`
       select id, order_number, status, total_cents, subtotal_cents, shipping_total_cents, shipping_saving_cents, refunded_cents, created_at, paid_at,
-             shipping_address, agreed_spec
+             shipping_address, agreed_spec, order_type, milestones
       from public.orders
       where buyer_user_id = ${user.id} and status <> 'pending' and status <> 'failed'
         ${orderRef ? (byId ? db`and id = ${orderRef}` : db`and order_number = ${orderRef}`) : db``}

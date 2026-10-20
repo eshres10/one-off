@@ -196,6 +196,15 @@ alter type claim_reason add value if not exists 'not_as_agreed';
 -- "Ask" from a quote opens a conversation about the request.
 alter table public.message_threads add column if not exists custom_request_id uuid
   references public.custom_requests (id) on delete set null;
+-- Makers read orders through order_summaries: it carries the custom columns too.
+create or replace view public.order_summaries with (security_barrier = true) as
+  select o.id, o.order_number, o.buyer_user_id, o.buyer_name, o.status, o.subtotal_cents, o.shipping_total_cents,
+    o.total_cents, o.refunded_cents, o.currency, o.shipping_address, o.gift_note, o.agreed_spec, o.returns_ack_at,
+    o.external_store, o.paid_at, o.created_at, o.updated_at,
+    o.order_type, o.milestones, o.fabric_advance_cents
+  from public.orders o
+  where o.buyer_user_id = auth.uid() or public.is_order_maker(o.id) or public.is_admin();
+grant select on public.order_summaries to authenticated;
 -- A custom piece has no listing or size behind it.
 alter table public.order_items alter column product_id drop not null;
 alter table public.order_items alter column variant_id drop not null;

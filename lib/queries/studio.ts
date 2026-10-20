@@ -24,12 +24,14 @@ export async function getStudioShop(makerId: string): Promise<StudioShop> {
 
 /** Badge counts for the Studio nav. */
 export async function getStudioCounts(makerId: string) {
-  const [row] = await sql()<{ toShip: number; needsReply: number }[]>`
+  const [row] = await sql()<{ toShip: number; needsReply: number; requests: number }[]>`
     select
       (select count(*) from public.fulfilments f join public.orders o on o.id = f.order_id
         where f.maker_id = ${makerId} and f.status in ${sql().unsafe(TO_SHIP)}
           and o.status in ('paid', 'partially_refunded'))::int as to_ship,
       (select count(*) from public.message_threads t
-        where t.maker_id = ${makerId} and t.maker_needs_reply)::int as needs_reply`;
+        where t.maker_id = ${makerId} and t.maker_needs_reply)::int as needs_reply,
+      (select count(*) from public.custom_request_recipients x join public.custom_requests r on r.id = x.request_id
+        where x.maker_id = ${makerId} and x.status = 'pending' and r.status in ('sent', 'quoted'))::int as requests`;
   return row!;
 }

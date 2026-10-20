@@ -118,6 +118,10 @@ export interface StudioOrderDetail extends StudioOrderRow {
   shippedAt: Date | null;
   deliveredAt: Date | null;
   transferReleasedAt: Date | null;
+  /** 'custom' for an accepted Have it made quote: the panel shows milestones, not making steps. */
+  orderType: 'standard' | 'custom';
+  milestones: Record<string, { at: string; photo?: string | null; note?: string | null }>;
+  fabricAdvanceCents: number | null;
   items: Array<{
     id: string;
     productId: string;
@@ -145,7 +149,8 @@ export async function getStudioOrder(
       select ${db.unsafe(ROW)}, o.id as order_id, o.buyer_user_id, o.shipping_address as ship_to,
         f.shipping_cents, f.shipping_method, f.subtotal_cents, coalesce(f.commission_pct_applied, 15) as commission_pct,
         f.platform_commission_cents as commission_cents, f.processing_fee_cents, f.seller_net_cents, o.gift_note,
-        f.carrier, f.tracking_number, f.shipped_at, f.delivered_at, f.transfer_released_at
+        f.carrier, f.tracking_number, f.shipped_at, f.delivered_at, f.transfer_released_at,
+        o.order_type, o.milestones, o.fabric_advance_cents
       ${db.unsafe(FROM)}
       where f.id = ${fulfilmentId} and f.maker_id = ${seller.makerId!}`;
     if (!row) return null;

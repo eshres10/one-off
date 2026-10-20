@@ -8,6 +8,8 @@ import { formatPrice } from '@/lib/domain/money';
 import { gstIncluded } from '@/lib/services/checkout';
 import { SITE } from '@/lib/site/config';
 import { AutoRefresh } from '@/components/ui/AutoRefresh';
+import { CustomProgress } from '@/components/custom/CustomProgress';
+import { customOrderFacts } from '@/lib/services/custom-orders';
 
 export const metadata = { title: 'Order' };
 
@@ -35,6 +37,7 @@ export default async function OrderPage({ params }: { params: { id: string } }) 
   );
   if (!order) notFound();
   const to = deliveringTo(order.shippingAddress);
+  const custom = order.orderType === 'custom' ? await customOrderFacts(order.id) : null;
   return (
     <div className="max-w-3xl">
       <AutoRefresh />
@@ -61,6 +64,11 @@ export default async function OrderPage({ params }: { params: { id: string } }) 
         </a>
       </header>
 
+      {custom && (
+        <div className="mt-6">
+          <CustomProgress facts={custom} shippedAt={order.fulfilments[0]?.shippedAt ?? null} />
+        </div>
+      )}
       <div className="mt-6">
         {order.fulfilments.map((f) => (
           <Parcel

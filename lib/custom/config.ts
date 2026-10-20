@@ -77,5 +77,26 @@ export const CUSTOM = {
   },
 } as const;
 
+/** Fabric chips in Custom work settings. */
+export const FABRIC_OPTIONS = [
+  'Silk',
+  'Satin',
+  'Linen',
+  'Cotton',
+  'Lace',
+  'Wool',
+  'Denim',
+  'Velvet',
+  'Knit',
+] as const;
+
+/** Fitting radius chips; null is "My city" (CUSTOM.cityRadiusKm). */
+export const RADIUS_OPTIONS = [
+  { value: null, label: 'My city' },
+  { value: 10, label: '10 km' },
+  { value: 20, label: '20 km' },
+  { value: 50, label: '50 km' },
+] as const;
+
 export const kindCategories = (kind: string): readonly string[] =>
   CUSTOM_KINDS.find((k) => k.value === kind)?.categories ?? CUSTOM_CATEGORIES;
