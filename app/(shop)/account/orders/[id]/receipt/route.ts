@@ -17,7 +17,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   return new NextResponse(Buffer.from(bytes), {
     headers: {
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="one-off-receipt-${order.orderNumber}.pdf"`,
+      'Content-Disposition': `attachment; filename="off-one-receipt-${order.orderNumber}.pdf"`,
       'Cache-Control': 'private, no-store',
     },
   });

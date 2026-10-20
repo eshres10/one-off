@@ -139,6 +139,12 @@ export default defineConfig({
       dependencies: ['install'],
       use: { browserName: 'chromium' },
     },
+    {
+      name: 'brand',
+      testMatch: 'brand.spec.ts',
+      dependencies: ['story'],
+      use: { browserName: 'chromium', viewport: { width: 1280, height: 860 } },
+    },
   ],
   webServer: {
     command:

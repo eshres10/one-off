@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import postgres from 'postgres';
 import { BUYERS, PASSWORD } from '../scripts/seed-data';
+import { jsonLd } from './json-ld';
 
 const db = postgres(
   process.env.E2E_DATABASE_URL ?? 'postgres://postgres@127.0.0.1:54329/marketplace_e2e',
@@ -89,8 +90,7 @@ test.describe('content pages', () => {
       'aria-expanded',
       'true',
     );
-    const json = await page.locator('script[type="application/ld+json"]').first().textContent();
-    const data = JSON.parse(json!);
+    const data = (await jsonLd(page, 'FAQPage'))!;
     expect(data['@type']).toBe('FAQPage');
     expect(data.mainEntity.length).toBeGreaterThan(10);
     expect(data.mainEntity[0]).toMatchObject({

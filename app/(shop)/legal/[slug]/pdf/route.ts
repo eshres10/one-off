@@ -15,7 +15,7 @@ export async function GET(_req: Request, { params }: { params: { slug: string } 
   return new Response(Buffer.from(bytes), {
     headers: {
       'content-type': 'application/pdf',
-      'content-disposition': `inline; filename="one-off-${doc.slug}.pdf"`,
+      'content-disposition': `inline; filename="off-one-${doc.slug}.pdf"`,
     },
   });
 }

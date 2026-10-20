@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import postgres from 'postgres';
 import { MAKERS, PASSWORD } from '../scripts/seed-data';
+import { jsonLd } from './json-ld';
 
 const db = postgres(
   process.env.E2E_DATABASE_URL ?? 'postgres://postgres@127.0.0.1:54329/marketplace_e2e',
@@ -160,9 +161,7 @@ test.describe('story of the garment', () => {
     await expect(page).toHaveURL(/#story$/);
     await expect(page.locator('#story')).toBeInViewport();
     // The inspiration goes into the product's structured data.
-    const ld = JSON.parse(
-      (await page.locator('script[type="application/ld+json"]').first().textContent())!,
-    );
+    const ld = (await jsonLd(page, 'Product'))!;
     expect(ld['@type']).toBe('Product');
     expect(ld.description).toContain('my nan’s 1970s nightdress');
     expect(ld.description.length).toBeLessThanOrEqual(5000);
