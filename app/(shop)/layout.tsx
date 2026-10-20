@@ -1,6 +1,4 @@
-import { SiteFooter } from '@/components/layout/SiteFooter';
-import { SiteHeader } from '@/components/layout/SiteHeader';
-import { AppTabBar } from '@/components/layout/AppTabBar';
+import { AppShell } from '@/components/app/AppShell';
 import { QuickViewLinks } from '@/components/quickview/QuickViewLinks';
 import { CustomerTourGate } from '@/components/tour/CustomerTourGate';
 
@@ -14,16 +12,10 @@ export default function ShopLayout({
   modal: React.ReactNode;
 }) {
   return (
-    <>
-      <SiteHeader />
-      <main id="main" className="pt-[var(--header-h)]">
-        {children}
-      </main>
-      <SiteFooter />
-      <AppTabBar />
-      {modal}
+    <AppShell modal={modal}>
+      {children}
       <QuickViewLinks />
       <CustomerTourGate />
-    </>
+    </AppShell>
   );
 }

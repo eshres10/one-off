@@ -314,13 +314,13 @@ html {
   --tabbar-h: 0px;
 }
 @media (max-width: 767px) {
-  :root:has([data-tabbar]) {
+  :root:has([data-tabbar]:not([data-tabbar='tablet'])) {
     --tabbar-h: calc(64px + env(safe-area-inset-bottom));
   }
 }
-/* The shop's tab bar also shows on tablets (the Studio's is phone only). */
-@media (max-width: 1279px) {
-  :root:has([data-tabbar='shop']) {
+/* Tablets keep the older shop bar (the Studio's and the phone app's are phone only). */
+@media (min-width: 768px) and (max-width: 1279px) {
+  :root:has([data-tabbar='tablet']) {
     --tabbar-h: calc(64px + env(safe-area-inset-bottom));
   }
 }
@@ -581,4 +581,193 @@ html {
     animation: none;
     stroke-dashoffset: 0;
   }
+}
+
+/*
+ * The phone app (components/app). Below md the site is an app shell: rounded shapes, no tap
+ * flash, no rubber-banding past a scroll area, 16px inputs so iOS doesn't zoom. At md and up
+ * every token here is 0 and the desktop stays exactly as it is.
+ */
+:root {
+  --r-card: 0px;
+  --r-sheet: 0px;
+  --r-pill: 0px;
+  --phone-bar-h: 52px;
+}
+@media (max-width: 767px) {
+  :root {
+    --r-card: 14px;
+    --r-sheet: 20px;
+    --r-pill: 999px;
+  }
+  /* The app shell replaces the site header: pages start at the top, under the sticky phone bar. */
+  :root:has([data-app-shell]) {
+    --header-h: 0px;
+    --header-offset: var(--phone-bar-h);
+    --strip-h: 0px;
+  }
+  :root:has([data-app-shell]):not(:has([data-phone-bar])) {
+    --header-offset: 0px;
+  }
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+  [data-app-shell] button,
+  [data-app-shell] [role='tab'],
+  [data-app-shell] [role='button'],
+  [data-app-shell] [data-chip],
+  [data-app-shell] nav a,
+  [data-studio] button,
+  [data-studio] nav a {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  input,
+  select,
+  textarea {
+    font-size: max(16px, 1em);
+  }
+  [data-scroll-area],
+  main {
+    overscroll-behavior-y: contain;
+  }
+  .phone-only-min-tap {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Pushed screens slide in from the right (and back out) with the View Transitions API. */
+@keyframes vt-in-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes vt-out-left {
+  from {
+    transform: none;
+  }
+  to {
+    transform: translateX(-28%);
+    opacity: 0.6;
+  }
+}
+@keyframes vt-in-left {
+  from {
+    transform: translateX(-28%);
+    opacity: 0.6;
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes vt-out-right {
+  from {
+    transform: none;
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+@media (max-width: 767px) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 340ms;
+    animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+    mix-blend-mode: normal;
+  }
+  html[data-nav-dir='push']::view-transition-old(root) {
+    animation-name: vt-out-left;
+  }
+  html[data-nav-dir='push']::view-transition-new(root) {
+    animation-name: vt-in-right;
+  }
+  html[data-nav-dir='back']::view-transition-old(root) {
+    animation-name: vt-out-right;
+  }
+  html[data-nav-dir='back']::view-transition-new(root) {
+    animation-name: vt-in-left;
+  }
+  /* The bars stay put while the screen slides. */
+  [data-tabbar],
+  [data-phone-bar] {
+    view-transition-name: oo-bars;
+  }
+  ::view-transition-old(oo-bars),
+  ::view-transition-new(oo-bars) {
+    animation: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+/* Hearts pop (1 → 1.4 → 1, 320ms) and the big heart that appears on a double-tapped photo. */
+@keyframes heart-pop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.4);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.heart-pop {
+  animation: heart-pop 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes heart-burst {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  30% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+.heart-burst {
+  animation: heart-burst 700ms ease-out both;
+}
+
+/* Toast: rises from behind the tab bar. */
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.toast-in {
+  animation: toast-in 180ms ease-out both;
+}
+
+/* Skeleton shimmer for the phone app. */
+@keyframes shimmer {
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+.skeleton-shimmer {
+  background: linear-gradient(90deg, var(--stone) 25%, #f3f0ea 50%, var(--stone) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
 }

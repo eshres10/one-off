@@ -80,6 +80,8 @@ export const SITE = {
     >,
     /** Express saves this many business days on the later end of the range. */
     expressSavesBusinessDays: 1,
+    /** Prepaid Australia Post labels from the ship sheet: "Coming soon" until it's connected. */
+    auspostLabels: false,
   },
 
   payments: {
@@ -139,6 +141,22 @@ export const SITE = {
 
   /** One-of-one pieces are held for a buyer at payment for this long. */
   reservationMinutes: 10,
+
+  /** The phone app shell (components/app): everything below `phoneBreakpoint` px. */
+  app: {
+    phoneBreakpoint: 768,
+    /** How long a toast stays. */
+    toastMs: 2200,
+  },
+
+  payouts: {
+    /**
+     * [DECIDE] false (default): the 30% fabric advance applies to Have it made (custom) orders
+     * only; a standard made-to-order piece pays 3 days after delivery. true: "Fabric bought" on
+     * a standard made-to-order order also releases the advance. Copy follows the flag.
+     */
+    advanceOnMadeToOrder: false,
+  },
 };
 
 /**

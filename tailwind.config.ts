@@ -22,6 +22,10 @@ const config: Config = {
       '3xl': '0',
       full: '0',
       circle: '9999px',
+      // Phones only (the tokens are 0 at md and up, see globals.css): cards and buttons, sheets, pills.
+      app: 'var(--r-card)',
+      sheet: 'var(--r-sheet)',
+      pill: 'var(--r-pill)',
     },
     extend: {
       borderColor: { DEFAULT: 'var(--line)' },
