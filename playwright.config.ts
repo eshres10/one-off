@@ -133,6 +133,12 @@ export default defineConfig({
       dependencies: ['content'],
       use: { browserName: 'chromium' },
     },
+    {
+      name: 'story',
+      testMatch: 'story.spec.ts',
+      dependencies: ['install'],
+      use: { browserName: 'chromium' },
+    },
   ],
   webServer: {
     command:
