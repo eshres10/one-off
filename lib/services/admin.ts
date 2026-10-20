@@ -185,52 +185,6 @@ export async function savePlacement(
   await audit('admin.placement_saved', { type: 'editorial_placement', id: input.id }, {}, actorId);
 }
 
-export async function assignCommission(actorId: string, requestId: string, makerId: string) {
-  const [m] = await sql()<{ email: string }[]>`
-    select u.email from public.makers m join public.users u on u.id = m.user_id where m.id = ${makerId} and m.status = 'approved'`;
-  if (!m) throw new UserError('Choose an approved maker.');
-  const [req] = await sql()<
-    { garmentType: string; budgetMinCents: number; budgetMaxCents: number }[]
-  >`
-    update public.commission_requests set maker_id = ${makerId}, status = 'submitted' where id = ${requestId}
-    returning garment_type, budget_min_cents, budget_max_cents`;
-  if (!req) throw new UserError('Request not found.');
-  // Reassigning moves the conversation; a first assignment opens it.
-  await sql()`update public.message_threads set maker_id = ${makerId} where commission_request_id = ${requestId}`;
-  const { ensureCommissionThread } = await import('./messaging');
-  await ensureCommissionThread(requestId);
-  await sendEmail(
-    emails.commissionRequestMaker(
-      m.email,
-      requestId,
-      req.garmentType,
-      `A$${req.budgetMinCents / 100}–A$${req.budgetMaxCents / 100}`,
-    ),
-  );
-  await audit(
-    'admin.commission_assigned',
-    { type: 'commission_request', id: requestId },
-    { makerId },
-    actorId,
-  );
-}
-
-export async function updateCommissionAdmin(
-  actorId: string,
-  requestId: string,
-  status: string,
-  adminNotes?: string,
-) {
-  await sql()`update public.commission_requests set status = ${status}::commission_status, admin_notes = coalesce(${adminNotes ?? null}, admin_notes)
-              where id = ${requestId}`;
-  await audit(
-    'admin.commission_status',
-    { type: 'commission_request', id: requestId },
-    { status },
-    actorId,
-  );
-}
-
 export async function sendManualEmail(
   actorId: string,
   input: { to: string; subject: string; body: string },

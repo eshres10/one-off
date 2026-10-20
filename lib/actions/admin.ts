@@ -5,7 +5,6 @@ import { z } from 'zod';
 import { requireAdmin } from '@/lib/auth/session';
 import { isOwnImageUrl } from '@/lib/storage';
 import {
-  assignCommission,
   reorderCollections,
   setCollectionHero,
   createSeller,
@@ -16,7 +15,6 @@ import {
   setFeatured,
   setListingStatus,
   setMakerStatus,
-  updateCommissionAdmin,
 } from '@/lib/services/admin';
 import { refundOrderItem } from '@/lib/services/webhook';
 import {
@@ -156,39 +154,6 @@ export async function placementAction(form: FormData) {
   await savePlacement(admin.id, input);
   revalidatePath('/admin/collections');
   revalidatePath('/');
-}
-
-export async function assignCommissionAction(form: FormData) {
-  const admin = await requireAdmin();
-  const input = z.object({ requestId: uuid, makerId: uuid }).parse(Object.fromEntries(form));
-  await assignCommission(admin.id, input.requestId, input.makerId);
-  revalidatePath('/admin/commissions');
-}
-
-export async function commissionAdminAction(form: FormData) {
-  const admin = await requireAdmin();
-  const input = z
-    .object({
-      requestId: uuid,
-      status: z.enum([
-        'submitted',
-        'reviewing',
-        'quoted',
-        'accepted',
-        'declined',
-        'completed',
-        'cancelled',
-      ]),
-      adminNotes: z.string().trim().max(2000).optional(),
-    })
-    .parse(Object.fromEntries(form));
-  await updateCommissionAdmin(
-    admin.id,
-    input.requestId,
-    input.status,
-    input.adminNotes || undefined,
-  );
-  revalidatePath('/admin/commissions');
 }
 
 export async function manualEmailAction(_prev: FormState, form: FormData): Promise<FormState> {

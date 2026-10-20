@@ -9,7 +9,6 @@ import { createSavedReplyAction, sendMessageAction } from '@/lib/actions/message
 import type { QuoteSnapshot, ThreadMessage } from '@/lib/services/messaging';
 import { messageSchema, type FormState } from '@/lib/validation';
 import { CloseIcon, ImageIcon, PlusIcon, ShieldIcon } from '@/components/ui/icons';
-import { QuotePanel } from './QuotePanel';
 
 type Msg = Omit<ThreadMessage, 'createdAt'> & { createdAt: string | Date };
 
@@ -43,7 +42,6 @@ export function SafetyNotice({ viewer }: { viewer: 'buyer' | 'maker' }) {
 }
 
 function QuoteCard({ quote, status }: { quote: QuoteSnapshot; status: string }) {
-  const deposit = Math.round((quote.price_cents * quote.deposit_pct) / 100);
   return (
     <div className="w-[280px] max-w-full border border-ink bg-surface p-4" data-testid="quote-card">
       <p className="text-[11px] uppercase tracking-label">Quote sent · {status}</p>
@@ -51,10 +49,6 @@ function QuoteCard({ quote, status }: { quote: QuoteSnapshot; status: string }) 
         <div className="flex justify-between">
           <dt className="text-muted">Price</dt>
           <dd>{formatPrice(quote.price_cents)}</dd>
-        </div>
-        <div className="flex justify-between">
-          <dt className="text-muted">Deposit ({quote.deposit_pct}%)</dt>
-          <dd>{formatPrice(deposit)}</dd>
         </div>
         <div className="flex justify-between">
           <dt className="text-muted">Made in</dt>
@@ -146,7 +140,6 @@ function Composer({
   chips,
   savedReplies,
   blocked,
-  quote,
   onSent,
 }: {
   threadId: string;
@@ -154,7 +147,6 @@ function Composer({
   chips: string[];
   savedReplies: Array<{ title: string; body: string }>;
   blocked: string | null;
-  quote?: { requestId: string } | null;
   onSent: () => void;
 }) {
   const [state, action] = useFormState<FormState, FormData>(sendMessageAction, undefined);
@@ -163,7 +155,6 @@ function Composer({
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [newReply, setNewReply] = useState(false);
-  const [quoting, setQuoting] = useState(false);
   const area = useRef<HTMLTextAreaElement>(null);
   const file = useRef<HTMLInputElement>(null);
 
@@ -309,17 +300,6 @@ function Composer({
           aria-describedby={`feedback-${threadId}`}
           className="input min-h-[48px] flex-1 resize-none py-3"
         />
-        {quote && viewer === 'maker' && (
-          <button
-            type="button"
-            onClick={() => setQuoting((q) => !q)}
-            aria-expanded={quoting}
-            data-testid="send-quote-toggle"
-            className="min-h-[48px] shrink-0 border border-ink px-3 text-[11px] uppercase tracking-label"
-          >
-            Send quote
-          </button>
-        )}
         <SendButton disabled={!valid || Boolean(warning) || uploading} />
       </form>
       <div id={`feedback-${threadId}`} aria-live="polite">
@@ -334,16 +314,6 @@ function Composer({
         )}
         {uploadError && <p className="text-[12px] text-error">{uploadError}</p>}
       </div>
-      {quoting && quote && (
-        <QuotePanel
-          threadId={threadId}
-          onClose={() => setQuoting(false)}
-          onSent={() => {
-            setQuoting(false);
-            onSent();
-          }}
-        />
-      )}
       {newReply && <NewReplyModal onClose={() => setNewReply(false)} />}
     </div>
   );
@@ -391,8 +361,7 @@ export function Conversation({
   otherName,
   chips = [],
   savedReplies = [],
-  quoteStatus = 'Awaiting buyer',
-  quote,
+  quoteStatus = 'Sent',
   blocked = null,
   realtime = false,
   header,
@@ -404,9 +373,8 @@ export function Conversation({
   otherName: string;
   chips?: string[];
   savedReplies?: Array<{ title: string; body: string }>;
+  /** Label on quote messages from the old concierge flow. */
   quoteStatus?: string;
-  /** Present on custom requests: lets the maker send a quote. */
-  quote?: { requestId: string } | null;
   blocked?: string | null;
   realtime?: boolean;
   header?: ReactNode;
@@ -574,7 +542,6 @@ export function Conversation({
           chips={chips}
           savedReplies={savedReplies}
           blocked={blocked}
-          quote={quote}
           onSent={onSent}
         />
       </div>

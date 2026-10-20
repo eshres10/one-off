@@ -339,63 +339,6 @@ export const emails = {
     related: { type: 'product', id: product.id },
   }),
 
-  commissionRequestMaker: (
-    to: string,
-    requestId: string,
-    garment: string,
-    budget: string,
-  ): EmailMessage => ({
-    to,
-    template: 'commission_request_maker',
-    subject: `New custom commission request: ${garment}`,
-    text: `A buyer has requested a custom ${garment.toLowerCase()} (budget ${budget}).\n\nReview the brief and accept, decline or send a quote: ${url(
-      `/studio/commissions/${requestId}`,
-    )}\n\nCommissions are a concierge pilot — our team coordinates payment once you and the buyer agree.${sign}`,
-    related: { type: 'commission_request', id: requestId },
-  }),
-
-  commissionRequestAdmin: (
-    to: string,
-    requestId: string,
-    garment: string,
-    assigned: boolean,
-  ): EmailMessage => ({
-    to,
-    template: 'commission_request_admin',
-    subject: `Commission request: ${garment}${assigned ? '' : ' (needs a maker)'}`,
-    text: `A new commission request was submitted.${assigned ? '' : ' It has no maker yet — please assign one.'}\n\n${url(`/admin/commissions`)}`,
-    related: { type: 'commission_request', id: requestId },
-  }),
-
-  commissionQuoteBuyer: (
-    to: string,
-    requestId: string,
-    maker: string,
-    totalCents: number,
-    depositCents: number,
-  ): EmailMessage => ({
-    to,
-    template: 'commission_quote_buyer',
-    subject: `${maker} sent you a quote`,
-    text: `${maker} has quoted ${formatPrice(totalCents)} for your custom piece (deposit ${formatPrice(depositCents)}).\n\nView the quote: ${url(
-      `/account/commissions/${requestId}`,
-    )}\n\nAccept it from your messages to pay the deposit securely through checkout.${sign}`,
-    related: { type: 'commission_request', id: requestId },
-  }),
-
-  commissionStatusBuyer: (
-    to: string,
-    requestId: string,
-    maker: string,
-    status: string,
-  ): EmailMessage => ({
-    to,
-    template: 'commission_status_buyer',
-    subject: `Update on your custom request with ${maker}`,
-    text: `Your custom request is now: ${status}.\n\n${url(`/account/commissions/${requestId}`)}${sign}`,
-    related: { type: 'commission_request', id: requestId },
-  }),
-
   makerApproved: (to: string, maker: string): EmailMessage => ({
     to,
     template: 'maker_approved',

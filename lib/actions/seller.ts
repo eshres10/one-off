@@ -11,7 +11,6 @@ import { env } from '@/lib/env';
 import { sanitizeText } from '@/lib/domain/moderation';
 import { mockPaymentsReachable } from '@/lib/features';
 import { payments } from '@/lib/payments';
-import { createQuote, respondToCommission } from '@/lib/services/commissions';
 import { updateFulfilment } from '@/lib/services/fulfilment';
 import {
   archiveListing,
@@ -22,7 +21,6 @@ import {
 } from '@/lib/services/listings';
 import { isOwnImageUrl } from '@/lib/storage';
 import {
-  commissionQuoteSchema,
   fieldErrors,
   fulfilmentUpdateSchema,
   listingSchema,
@@ -207,28 +205,6 @@ export async function syncStripeAccount(makerId: string) {
               bank_name = coalesce(${a.bankName}, bank_name), bank_last4 = coalesce(${a.bankLast4}, bank_last4)
               where id = ${makerId}`;
   await goLiveIfReady(makerId);
-}
-
-export async function commissionResponseAction(form: FormData) {
-  const seller = await requireSeller();
-  const { requestId, decision } = z
-    .object({ requestId: z.string().uuid(), decision: z.enum(['accept', 'decline']) })
-    .parse(Object.fromEntries(form));
-  await respondToCommission(seller, requestId, decision);
-  revalidatePath(`/studio/commissions/${requestId}`);
-}
-
-export async function quoteAction(_prev: FormState, form: FormData): Promise<FormState> {
-  const seller = await requireSeller();
-  const parsed = commissionQuoteSchema.safeParse(Object.fromEntries(form));
-  if (!parsed.success) return { ok: false, errors: fieldErrors(parsed.error) };
-  try {
-    await createQuote(seller, parsed.data);
-  } catch (err) {
-    return toFormState(err);
-  }
-  revalidatePath(`/studio/commissions/${parsed.data.requestId}`);
-  return { ok: true, message: 'Quote sent — the buyer has been emailed.' };
 }
 
 export async function saveTemplateAction(form: FormData) {

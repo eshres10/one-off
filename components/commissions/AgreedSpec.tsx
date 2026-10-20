@@ -10,7 +10,6 @@ export interface AgreedSpecData {
   deadlineDate?: string | null;
   quote?: {
     totalPriceCents?: number;
-    depositCents?: number;
     productionDays?: number;
     revisionsIncluded?: number;
     shippingCents?: number;
@@ -41,7 +40,6 @@ export function AgreedSpec({ spec, agreedAt }: { spec: AgreedSpecData; agreedAt?
     ['Notes', spec.notes],
     ['Needed by', fmtDate(spec.deadlineDate)],
     ['Price', q.totalPriceCents != null ? formatPrice(q.totalPriceCents) : null],
-    ['Deposit', q.depositCents != null ? formatPrice(q.depositCents) : null],
     ['Shipping', q.shippingCents != null ? formatPrice(q.shippingCents) : null],
     ['Production', q.productionDays != null ? `${q.productionDays} days` : null],
     ['Alterations included', q.revisionsIncluded != null ? String(q.revisionsIncluded) : null],

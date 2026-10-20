@@ -1,7 +1,6 @@
 import Link from 'next/link';
-import { acceptQuoteAction } from '@/lib/actions/messages';
 import { formatPrice } from '@/lib/domain/money';
-import type { PieceInfo, QuoteView, ThreadDetail } from '@/lib/services/messaging';
+import type { PieceInfo, ThreadDetail } from '@/lib/services/messaging';
 import { ChevronIcon, StarIcon } from '@/components/ui/icons';
 import { Img as Image } from '@/components/ui/Img';
 import { AddToBagButton } from './AddToBagButton';
@@ -18,7 +17,6 @@ export function ThreadTop({
   title,
   subtitle,
   piece,
-  quote,
   checkoutOn,
   actions,
 }: {
@@ -28,7 +26,6 @@ export function ThreadTop({
   title: string;
   subtitle: string;
   piece: PieceInfo | null;
-  quote: QuoteView | null;
   checkoutOn: boolean;
   actions?: React.ReactNode;
 }) {
@@ -38,11 +35,15 @@ export function ThreadTop({
   ]
     .filter(Boolean)
     .join(' · ');
-  const canAccept =
-    viewer === 'buyer' &&
-    quote &&
-    !quote.depositPaidAt &&
-    ['pending', 'accepted'].includes(quote.quoteStatus);
+  const request = thread.context.customRequestNumber
+    ? {
+        number: thread.context.customRequestNumber,
+        href:
+          viewer === 'buyer'
+            ? `/account/requests/${thread.context.customRequestNumber}`
+            : `/studio/requests?id=${thread.context.customRequestId}`,
+      }
+    : null;
   return (
     <>
       <div className="hidden items-start justify-between gap-4 border-b border-line px-6 py-4 md:flex">
@@ -73,7 +74,7 @@ export function ThreadTop({
           </div>
           {actions}
         </div>
-        {(piece || quote) && (
+        {(piece || request) && (
           <div
             className="glass-nav relative flex items-center gap-3 px-3 py-2.5"
             data-testid="piece-strip"
@@ -91,31 +92,23 @@ export function ThreadTop({
             )}
             <div className="min-w-0 flex-1 text-[12px]">
               <p className="truncate text-[13px]">
-                {piece?.title ?? thread.context.commissionGarment ?? 'Custom piece'}
+                {piece?.title ?? (request ? `Custom request ${request.number}` : 'Custom piece')}
               </p>
               <p className="text-muted">
-                {quote
-                  ? `Quote ${formatPrice(quote.totalPriceCents)}`
-                  : piece
-                    ? `${formatPrice(piece.priceCents)} · ${TYPE_LABEL[piece.productType]}`
-                    : ''}
+                {piece ? `${formatPrice(piece.priceCents)} · ${TYPE_LABEL[piece.productType]}` : ''}
               </p>
             </div>
+            {request && (
+              <Link
+                href={request.href}
+                className="min-h-[44px] shrink-0 border border-ink px-3 text-[10px] uppercase leading-[44px] tracking-label"
+                data-testid="thread-request-link"
+              >
+                View request
+              </Link>
+            )}
             {viewer === 'buyer' &&
-              (thread.kind === 'custom_request' ? (
-                canAccept ? (
-                  <form action={acceptQuoteAction}>
-                    <input type="hidden" name="requestId" value={quote!.requestId} />
-                    <button
-                      disabled={!checkoutOn}
-                      className="glass-dark min-h-[44px] px-3 text-[10px] uppercase tracking-label disabled:opacity-50"
-                      data-testid="accept-quote-mobile"
-                    >
-                      Accept quote
-                    </button>
-                  </form>
-                ) : null
-              ) : piece ? (
+              (thread.kind === 'custom_request' ? null : piece ? (
                 <AddToBagButton
                   productId={piece.id}
                   productSlug={piece.slug}

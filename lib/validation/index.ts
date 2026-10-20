@@ -119,69 +119,6 @@ export const reviewSchema = z.object({
   body: z.string().trim().min(10, 'Tell other shoppers a little more (10+ characters)').max(2000),
 });
 
-export const commissionRequestSchema = z
-  .object({
-    makerId: z
-      .string()
-      .uuid()
-      .optional()
-      .or(z.literal('').transform(() => undefined)),
-    sourceProductId: z
-      .string()
-      .uuid()
-      .optional()
-      .or(z.literal('').transform(() => undefined)),
-    garmentType: trimmed(80).min(2, 'What would you like made?'),
-    occasion: optionalText(160),
-    budgetMin: dollarsToCents,
-    budgetMax: dollarsToCents,
-    deadline: z
-      .string()
-      .optional()
-      .transform((v) => (v ? v : undefined))
-      .refine(
-        (v) => !v || (!Number.isNaN(Date.parse(v)) && Date.parse(v) > Date.now()),
-        'Choose a future date',
-      ),
-    measurements: optionalText(1000),
-    fabricPreferences: optionalText(500),
-    colourPreferences: optionalText(500),
-    notes: optionalText(2000),
-    inspirationImageUrls: z.array(z.string().max(500)).max(6).default([]),
-  })
-  .refine((v) => v.budgetMax >= v.budgetMin, {
-    message: 'Maximum budget must be at least the minimum',
-    path: ['budgetMax'],
-  })
-  .refine((v) => v.budgetMin >= 5_000, {
-    message: 'Custom pieces start from A$50',
-    path: ['budgetMin'],
-  });
-
-export const commissionQuoteSchema = z
-  .object({
-    requestId: z.string().uuid(),
-    totalPrice: dollarsToCents,
-    deposit: z.coerce
-      .number()
-      .min(0)
-      .max(100_000)
-      .transform((v) => Math.round(v * 100)),
-    productionDays: z.coerce.number().int().min(1).max(180),
-    revisionsIncluded: z.coerce.number().int().min(0).max(10),
-    shipping: z.coerce
-      .number()
-      .min(0)
-      .max(500)
-      .transform((v) => Math.round(v * 100)),
-    estimatedDeliveryDate: z.string().refine((v) => !Number.isNaN(Date.parse(v)), 'Choose a date'),
-    message: optionalText(2000),
-  })
-  .refine((v) => v.deposit <= v.totalPrice, {
-    message: 'Deposit can’t exceed the total',
-    path: ['deposit'],
-  });
-
 export const PRODUCT_CATEGORIES = [
   'dresses',
   'occasionwear',

@@ -1,7 +1,6 @@
 import { afterAll, describe, expect, it } from 'vitest';
 import { closeDb, sql, withUser } from '@/lib/db';
 import { submitReview } from '@/lib/services/reviews';
-import { createCommissionRequest, createQuote, decideQuote } from '@/lib/services/commissions';
 import { ModerationError, sendMessage, startProductThread } from '@/lib/services/messaging';
 import { updateFulfilment } from '@/lib/services/fulfilment';
 import { MAKERS, PRODUCTS, buyAndPay, buyer, pickVariant, seller } from './helpers';
@@ -57,61 +56,6 @@ describe('reviews', () => {
     await expect(
       submitReview(buyer(5), { orderItemId: item.id, rating: 1, body: 'Not my order at all' }),
     ).rejects.toThrow(/Only the buyer/);
-  });
-});
-
-describe('commission requests', () => {
-  it('creates a request, notifies the maker by email, and supports quote → accept', async () => {
-    const maker = MAKERS.find((m) => m.customCommissions)!;
-    const b = buyer(3);
-    const id = await createCommissionRequest(b, {
-      makerId: maker.id,
-      garmentType: 'Midi dress',
-      occasion: 'Wedding',
-      budgetMin: 30_000,
-      budgetMax: 45_000,
-      inspirationImageUrls: [],
-    });
-    const mail = await sql()<{ toEmail: string; template: string }[]>`
-      select to_email, template from public.email_outbox where related_entity_id = ${id}`;
-    expect(mail).toContainEqual({ toEmail: maker.email, template: 'commission_request_maker' });
-    expect(mail.map((m) => m.template)).toContain('commission_request_admin');
-
-    const s = {
-      id: maker.userId,
-      role: 'seller' as const,
-      makerId: maker.id,
-      email: maker.email,
-      displayName: maker.displayName,
-    };
-    await createQuote(s, {
-      requestId: id,
-      totalPrice: 42_000,
-      deposit: 21_000,
-      productionDays: 28,
-      revisionsIncluded: 2,
-      shipping: 1200,
-      estimatedDeliveryDate: '2030-01-01',
-    });
-    await decideQuote(b, id, 'accepted');
-    const [req] = await sql()<
-      { status: string }[]
-    >`select status from public.commission_requests where id = ${id}`;
-    expect(req!.status).toBe('accepted');
-
-    // Another maker cannot quote on it.
-    const other = seller(MAKERS.findIndex((m) => m.id !== maker.id));
-    await expect(
-      createQuote(other, {
-        requestId: id,
-        totalPrice: 1000,
-        deposit: 0,
-        productionDays: 1,
-        revisionsIncluded: 0,
-        shipping: 0,
-        estimatedDeliveryDate: '2030-01-01',
-      }),
-    ).rejects.toThrow();
   });
 });
 

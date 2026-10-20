@@ -145,6 +145,31 @@ export default defineConfig({
       dependencies: ['story'],
       use: { browserName: 'chromium', viewport: { width: 1280, height: 860 } },
     },
+    // Have it made, recorded: the phone flow, then the desktop flow with Studio and admin.
+    {
+      name: 'have-it-made-390',
+      testMatch: 'have-it-made.spec.ts',
+      dependencies: ['brand'],
+      use: {
+        browserName: 'chromium',
+        viewport: { width: 390, height: 844 },
+        deviceScaleFactor: 1,
+        isMobile: true,
+        hasTouch: true,
+        video: { mode: 'on', size: { width: 390, height: 844 } },
+      },
+    },
+    {
+      name: 'have-it-made-1280',
+      testMatch: 'have-it-made.spec.ts',
+      dependencies: ['have-it-made-390'],
+      use: {
+        browserName: 'chromium',
+        viewport: { width: 1280, height: 900 },
+        deviceScaleFactor: 1,
+        video: { mode: 'on', size: { width: 1280, height: 900 } },
+      },
+    },
   ],
   webServer: {
     command:

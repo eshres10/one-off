@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { formatPrice } from '@/lib/domain/money';
-import type { BuyerInfo, PieceInfo, QuoteView, ThreadDetail } from '@/lib/services/messaging';
+import type { BuyerInfo, PieceInfo, ThreadDetail } from '@/lib/services/messaging';
 import { buttonClass } from '@/components/ui/Button';
 import { Img as Image } from '@/components/ui/Img';
 import { TYPE_LABEL } from './BuyerPanel';
@@ -12,11 +12,9 @@ function stockLine(p: PieceInfo) {
   return `${p.totalStock} in stock`;
 }
 
-function tip(thread: ThreadDetail, piece: PieceInfo | null, quote: QuoteView | null) {
-  if (thread.kind === 'custom_request' && !quote)
-    return 'Send a quote from the composer. Buyers can accept it and pay the deposit in one step.';
-  if (thread.kind === 'custom_request' && quote?.depositPaidAt)
-    return 'The deposit is paid. Share progress photos here so the buyer knows how it’s going.';
+function tip(thread: ThreadDetail, piece: PieceInfo | null) {
+  if (thread.kind === 'custom_request')
+    return 'Answer their questions here. Quotes go from Custom requests, so both of you have one record.';
   if (piece && piece.productType === 'made_to_order')
     return 'Shoppers asking about fit buy more often when you confirm their size from their measurements.';
   if (piece && piece.totalStock > 0 && piece.totalStock <= 2)
@@ -29,12 +27,10 @@ export function SellerPanel({
   thread,
   buyer,
   piece,
-  quote,
 }: {
   thread: ThreadDetail;
   buyer: BuyerInfo | null;
   piece: PieceInfo | null;
-  quote: QuoteView | null;
 }) {
   return (
     <div className="flex h-full flex-col gap-3 overflow-y-auto p-4">
@@ -70,21 +66,18 @@ export function SellerPanel({
           </dl>
         </section>
       )}
-      {quote && (
-        <section className="shrink-0 border border-ink bg-surface p-4" aria-label="Quote">
+      {thread.context.customRequestNumber && (
+        <section className="shrink-0 border border-ink bg-surface p-4" aria-label="Custom request">
           <p className="text-[11px] uppercase tracking-label">
-            {quote.depositPaidAt
-              ? 'Deposit paid'
-              : quote.quoteStatus === 'accepted'
-                ? 'Quote accepted'
-                : quote.quoteStatus === 'pending'
-                  ? 'Quote sent · Awaiting buyer'
-                  : 'Quote declined'}
+            Custom request {thread.context.customRequestNumber}
           </p>
-          <p className="mt-2 text-[13px]">
-            {formatPrice(quote.totalPriceCents)} · deposit {formatPrice(quote.depositCents)} · made
-            in {Math.round(quote.productionDays / 7)} weeks
-          </p>
+          <Link
+            href={`/studio/requests?id=${thread.context.customRequestId}`}
+            className={buttonClass('secondary', 'md', 'mt-3 w-full')}
+            data-testid="panel-request-link"
+          >
+            Open the request
+          </Link>
         </section>
       )}
       {piece && (
@@ -136,7 +129,7 @@ export function SellerPanel({
       )}
       <section className="shrink-0 bg-stone-light p-4 text-[12px] text-text2" aria-label="Tip">
         <p className="text-[10px] uppercase tracking-label text-muted-2">Tip</p>
-        <p className="mt-1">{tip(thread, piece, quote)}</p>
+        <p className="mt-1">{tip(thread, piece)}</p>
       </section>
     </div>
   );

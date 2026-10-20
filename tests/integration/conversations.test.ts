@@ -1,17 +1,11 @@
 import { afterAll, describe, expect, it } from 'vitest';
 import { closeDb, sql, withUser } from '@/lib/db';
 import {
-  createCommissionRequest,
-  onDepositPaid,
-  startDepositCheckout,
-} from '@/lib/services/commissions';
-import {
   getThread,
   inboxCounts,
   ModerationError,
   openProductThread,
   sendMessage,
-  sendQuote,
   unreadCount,
 } from '@/lib/services/messaging';
 import { MAKERS, PRODUCTS, buyer } from './helpers';
@@ -83,54 +77,5 @@ describe('product conversations', () => {
         insert into public.messages (thread_id, sender_user_id, body) values (${id}, ${b.id}, 'paypal me')`,
       ),
     ).rejects.toThrow(/can.t be sent/);
-  });
-});
-
-describe('custom requests', () => {
-  it('opens a conversation, takes a quote and records the deposit', async () => {
-    const m = MAKERS.find((x) => x.customCommissions)!;
-    const maker = makerActor(m);
-    const b = { ...buyer(8), displayName: 'Test', makerId: null };
-    const requestId = await createCommissionRequest(b, {
-      makerId: m.id,
-      garmentType: 'Slip dress',
-      budgetMin: 20_000,
-      budgetMax: 40_000,
-      inspirationImageUrls: [],
-    });
-    const [thread] = await sql()<{ id: string; kind: string }[]>`
-      select id, kind from public.message_threads where commission_request_id = ${requestId}`;
-    expect(thread?.kind).toBe('custom_request');
-
-    await sendQuote(maker, { threadId: thread!.id, priceCents: 36_000, depositPct: 30, weeks: 3 });
-    const [quoteMsg] = await sql()<{ kind: string; quote: { deposit_pct: number } }[]>`
-      select kind, quote from public.messages where thread_id = ${thread!.id} and kind = 'quote'`;
-    expect(quoteMsg?.quote.deposit_pct).toBe(30);
-
-    const url = await startDepositCheckout(b, requestId);
-    expect(url).toContain('/dev/checkout/');
-    const [req] = await sql()<
-      { status: string; agreedSpec: unknown; stripeDepositSessionId: string }[]
-    >`
-      select status, agreed_spec, stripe_deposit_session_id from public.commission_requests where id = ${requestId}`;
-    expect(req?.status).toBe('accepted');
-    expect(req?.agreedSpec).toBeTruthy();
-
-    await onDepositPaid({
-      id: req!.stripeDepositSessionId,
-      amountTotal: 10_800,
-      paymentIntentId: 'pi_test_deposit',
-      metadata: { kind: 'commission_deposit', commission_request_id: requestId },
-    });
-    await onDepositPaid({
-      id: req!.stripeDepositSessionId,
-      amountTotal: 10_800,
-      paymentIntentId: 'pi_test_deposit',
-      metadata: { kind: 'commission_deposit', commission_request_id: requestId },
-    });
-    const system = await sql()<{ body: string }[]>`
-      select body from public.messages where thread_id = ${thread!.id} and kind = 'system' and body like 'Deposit%'`;
-    expect(system).toHaveLength(1);
-    await expect(startDepositCheckout(b, requestId)).rejects.toThrow(/already paid/);
   });
 });

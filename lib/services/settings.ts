@@ -64,7 +64,6 @@ export interface ShopSettings {
   mtoWeeklyCapacity: number | null;
   acceptsCustom: boolean;
   customFromCents: number | null;
-  customDepositPct: number | null;
   customReplyWithin: string;
   customBlurb: string;
   policyExtra: string;
@@ -145,7 +144,6 @@ export async function getSettings(seller: Seller): Promise<ShopSettings> {
     mtoWeeklyCapacity: (m.mtoWeeklyCapacity as number | null) ?? null,
     acceptsCustom: Boolean(m.customCommissionsEnabled),
     customFromCents: (m.customFromCents as number | null) ?? null,
-    customDepositPct: (m.customDepositPct as number | null) ?? null,
     customReplyWithin: String(m.customReplyWithin ?? REPLY_WITHIN[1]),
     customBlurb: String(m.customBlurb ?? ''),
     policyExtra: String(m.policyExtra ?? ''),
@@ -234,8 +232,6 @@ export async function saveSettings(seller: Seller, s: ShopSettings) {
   const lead = (TERMS.mtoLeadOptions as readonly string[]).includes(s.mtoDefaultLead)
     ? s.mtoDefaultLead
     : TERMS.mtoLeadOptions[1];
-  if (s.customDepositPct !== null && (s.customDepositPct < 0 || s.customDepositPct > 100))
-    throw new UserError('Deposit should be between 0% and 100%.');
   const abn = s.abn.replace(/\s+/g, '');
   if (abn && !/^\d{11}$/.test(abn)) throw new UserError('An ABN is 11 digits.');
   const mobile = s.mobile.replace(/[^\d+]/g, '');
@@ -287,7 +283,7 @@ export async function saveSettings(seller: Seller, s: ShopSettings) {
         mto_weekly_capacity = ${s.mtoWeeklyCapacity && s.mtoWeeklyCapacity > 0 ? Math.min(500, Math.round(s.mtoWeeklyCapacity)) : null},
         custom_commissions_enabled = ${s.acceptsCustom},
         custom_from_cents = ${s.customFromCents ? cents(s.customFromCents, 10_000_000) : null},
-        custom_deposit_pct = ${s.customDepositPct}, custom_reply_within = ${s.customReplyWithin.slice(0, 20) || null},
+        custom_reply_within = ${s.customReplyWithin.slice(0, 20) || null},
         custom_blurb = ${sanitizeText(s.customBlurb).slice(0, 600) || null},
         policy_extra = ${sanitizeText(s.policyExtra).slice(0, 300) || null},
         return_address = ${sanitizeText(s.returnAddress ?? '').slice(0, 400) || null},

@@ -40,7 +40,6 @@ const schema = z.object({
   mtoWeeklyCapacity: z.number().int().min(0).max(500).nullable(),
   acceptsCustom: z.boolean(),
   customFromCents: z.number().int().min(0).max(10_000_000).nullable(),
-  customDepositPct: z.number().int().min(0).max(100).nullable(),
   customReplyWithin: z.string().max(20),
   customBlurb: z.string().max(800),
   policyExtra: z.string().max(400),

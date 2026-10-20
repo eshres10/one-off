@@ -594,20 +594,21 @@ export function SettingsForm({
                     onChange={(e) => set('customFromCents', toCents(e.target.value))}
                   />
                 </Field>
-                <Field id="set-deposit" label="Deposit (%)">
-                  <input
-                    id="set-deposit"
-                    type="number"
-                    min={0}
-                    max={100}
-                    className="input"
-                    value={s.customDepositPct ?? ''}
-                    onChange={(e) =>
-                      set('customDepositPct', e.target.value ? Number(e.target.value) : null)
-                    }
-                  />
-                </Field>
               </div>
+              <p
+                className="bg-stone p-4 text-[13px] leading-relaxed"
+                data-testid="custom-work-pointer"
+              >
+                Spots, what you make, fabrics, lead time, fittings and where you work live in{' '}
+                <a
+                  href="/studio/requests?tab=settings"
+                  className="underline underline-offset-[3px]"
+                >
+                  Custom work settings
+                </a>
+                . Buyers pay in full when they accept your quote; you get 30% when you mark the
+                fabric bought and the rest after delivery.
+              </p>
               <fieldset>
                 <legend className="label">You reply within</legend>
                 <Chips

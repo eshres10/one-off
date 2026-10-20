@@ -4,7 +4,6 @@ import { checkoutEnabled } from '@/lib/features';
 import { getReplyTemplates } from '@/lib/queries/seller';
 import {
   getBuyerInfo,
-  getLatestQuote,
   getMessageStats,
   getPieceInfo,
   inboxCounts,
@@ -53,7 +52,7 @@ export async function SellerInbox({
 }) {
   const tab = rawTab === 'needs-reply' || rawTab === 'requests' ? rawTab : 'all';
   const checkoutOn = await checkoutEnabled();
-  const [threads, counts, stats, templates, piece, quote, buyer] = await Promise.all([
+  const [threads, counts, stats, templates, piece, buyer] = await Promise.all([
     listThreads(seller, 'maker', {
       kind: tab === 'requests' ? 'custom_request' : undefined,
       needsReply: tab === 'needs-reply',
@@ -62,9 +61,6 @@ export async function SellerInbox({
     getMessageStats(seller),
     getReplyTemplates(seller),
     thread?.productId ? getPieceInfo(thread.productId) : Promise.resolve(null),
-    thread?.commissionRequestId
-      ? getLatestQuote(thread.commissionRequestId)
-      : Promise.resolve(null),
     thread ? getBuyerInfo(seller, thread.id) : Promise.resolve(null),
   ]);
   const replies = [
@@ -147,14 +143,6 @@ export async function SellerInbox({
               initial={thread.messages}
               otherName={thread.buyerName}
               savedReplies={replies}
-              quote={thread.commissionRequestId ? { requestId: thread.commissionRequestId } : null}
-              quoteStatus={
-                quote?.depositPaidAt
-                  ? 'Deposit paid'
-                  : quote?.quoteStatus === 'accepted'
-                    ? 'Accepted'
-                    : 'Awaiting buyer'
-              }
               realtime={env().AUTH_DRIVER === 'supabase'}
               header={
                 <ThreadTop
@@ -168,7 +156,6 @@ export async function SellerInbox({
                     'General question'
                   }
                   piece={piece}
-                  quote={quote}
                   checkoutOn={checkoutOn}
                   actions={
                     <ThreadActions
@@ -188,7 +175,7 @@ export async function SellerInbox({
         )}
 
         <aside className="hidden min-h-0 md:block md:border-l md:border-line" aria-label="Details">
-          {thread && <SellerPanel thread={thread} buyer={buyer} piece={piece} quote={quote} />}
+          {thread && <SellerPanel thread={thread} buyer={buyer} piece={piece} />}
         </aside>
       </div>
     </div>

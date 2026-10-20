@@ -8,7 +8,6 @@ import { withUser } from '@/lib/db';
 import { sanitizeText } from '@/lib/domain/moderation';
 import { isOwnImageUrl } from '@/lib/storage';
 import { MESSAGE_MEDIA_PREFIX } from '@/lib/message-media';
-import { startDepositCheckout } from '@/lib/services/commissions';
 import {
   blockBuyer,
   openMakerThread,
@@ -16,7 +15,6 @@ import {
   openProductThread,
   reportThread,
   sendMessage,
-  sendQuote,
   setNeedsReply,
   startMakerThread,
   startProductThread,
@@ -136,45 +134,6 @@ export async function sendMessageAction(_prev: FormState, form: FormData): Promi
   }
   revalidateThread(threadId.data);
   return { ok: true };
-}
-
-const quoteSchema = z.object({
-  threadId: uuid,
-  price: z.coerce
-    .number({ invalid_type_error: 'Enter a price' })
-    .min(20, 'Quotes start at A$20')
-    .max(20000, 'That’s above the maximum quote'),
-  depositPct: z.coerce.number().int().min(0).max(100),
-  weeks: z.coerce.number().int().min(1, 'At least 1 week').max(52, 'At most 52 weeks'),
-  note: z.string().max(1000).optional(),
-});
-
-export async function sendQuoteAction(_prev: FormState, form: FormData): Promise<FormState> {
-  const seller = await requireSeller();
-  const parsed = quoteSchema.safeParse(Object.fromEntries(form));
-  if (!parsed.success) return { ok: false, errors: fieldErrors(parsed.error) };
-  try {
-    await sendQuote(seller, {
-      threadId: parsed.data.threadId,
-      priceCents: Math.round(parsed.data.price * 100),
-      depositPct: parsed.data.depositPct,
-      weeks: parsed.data.weeks,
-      note: parsed.data.note,
-    });
-  } catch (err) {
-    return toFormState(err);
-  }
-  revalidateThread(parsed.data.threadId);
-  return { ok: true, message: 'Quote sent' };
-}
-
-/** Buyer: accept the quote and go to Checkout for the deposit. */
-export async function acceptQuoteAction(form: FormData): Promise<void> {
-  const user = await getSessionUser();
-  if (!user) redirect('/login?next=/messages');
-  const requestId = uuid.parse(form.get('requestId'));
-  const url = await startDepositCheckout(user, requestId);
-  redirect(url);
 }
 
 export async function setNeedsReplyAction(form: FormData): Promise<void> {

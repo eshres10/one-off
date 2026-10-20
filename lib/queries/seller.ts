@@ -193,43 +193,6 @@ export async function getReplyTemplates(s: Seller) {
   );
 }
 
-export interface SellerCommission {
-  id: string;
-  garmentType: string;
-  occasion: string | null;
-  status: string;
-  budgetMinCents: number;
-  budgetMaxCents: number;
-  deadlineDate: Date | null;
-  measurements: string | null;
-  fabricPreferences: string | null;
-  colourPreferences: string | null;
-  notes: string | null;
-  inspirationImageUrls: string[];
-  buyerName: string | null;
-  createdAt: Date;
-  agreedSpec: AgreedSpecData | null;
-  agreedAt: Date | null;
-}
-
-export async function getSellerCommissions(s: Seller, id?: string) {
-  return withUser(s, async (db) => {
-    const requests = await db<SellerCommission[]>`
-      select c.id, c.garment_type, c.occasion, c.status, c.budget_min_cents, c.budget_max_cents, c.deadline_date, c.measurements,
-             c.fabric_preferences, c.colour_preferences, c.notes, c.inspiration_image_urls, c.created_at,
-             c.agreed_spec, c.agreed_at, public.user_first_name(c.buyer_user_id) as buyer_name
-      from public.commission_requests c
-      where c.maker_id = ${s.makerId} ${id ? db`and c.id = ${id}` : db``}
-      order by c.created_at desc`;
-    const quotes = id
-      ? await db`select id, total_price_cents, deposit_cents, production_days, revisions_included, shipping_cents,
-                   estimated_delivery_date, message, status, created_at
-                 from public.commission_quotes where commission_request_id = ${id} order by created_at desc`
-      : [];
-    return { requests, quotes };
-  });
-}
-
 /** Daily product views for the maker over the last `days` days (zero-filled). */
 export async function getDailyViews(
   s: Seller,

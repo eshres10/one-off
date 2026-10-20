@@ -72,40 +72,6 @@ export function createMockDriver(): PaymentsDriver {
       return { id, url: `${env().APP_URL}/dev/checkout/${id}` };
     },
 
-    async createDepositSession(input) {
-      const id = `cs_mock_${randomUUID().replace(/-/g, '')}`;
-      await put(id, 'checkout.session', {
-        id,
-        paymentStatus: 'unpaid',
-        status: 'open',
-        amountTotal: input.amountCents,
-        currency: 'aud',
-        paymentIntentId: null,
-        chargeId: null,
-        customerEmail: input.customerEmail ?? null,
-        customerName: null,
-        shippingAddress: null,
-        metadata: {
-          kind: 'commission_deposit',
-          commission_request_id: input.requestId,
-          quote_id: input.quoteId,
-        },
-        lineItems: [
-          {
-            name: input.title,
-            description: input.description,
-            amountCents: input.amountCents,
-            quantity: 1,
-          },
-        ],
-        successUrl: input.successUrl,
-        cancelUrl: input.cancelUrl,
-        shippingLabel: 'Shipping is added to the balance',
-        shippingCents: 0,
-      });
-      return { id, url: `${env().APP_URL}/dev/checkout/${id}` };
-    },
-
     async createPaymentIntent(input) {
       const existing = await get<{ id: string }>(`idem:${input.idempotencyKey}`);
       if (existing) return (await get<PaymentIntentInfo>(existing.id))!;

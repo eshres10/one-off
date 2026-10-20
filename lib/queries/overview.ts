@@ -149,12 +149,20 @@ export async function getOverview(seller: Seller): Promise<Overview> {
     order by t.reply_due_at nulls last limit 10`;
 
   const customs = await db<
-    { id: string; garment: string; buyerName: string | null; createdAt: Date; budgetMax: number }[]
+    {
+      id: string;
+      garment: string;
+      buyerName: string | null;
+      createdAt: Date;
+      budgetMax: number;
+      replyBy: Date | null;
+    }[]
   >`
-    select c.id, c.garment_type as garment, public.user_first_name(c.buyer_user_id) as buyer_name, c.created_at,
-      c.budget_max_cents as budget_max
-    from public.commission_requests c where c.maker_id = ${makerId} and c.status in ('submitted', 'reviewing')
-    order by c.created_at limit 10`;
+    select r.id, r.kind as garment, case when r.anonymous then null else public.user_first_name(r.buyer_id) end as buyer_name,
+      x.created_at, coalesce(r.budget_max, r.budget_min, 0) * 100 as budget_max, x.reply_by
+    from public.custom_request_recipients x join public.custom_requests r on r.id = x.request_id
+    where x.maker_id = ${makerId} and x.status = 'pending' and r.status in ('sent', 'quoted')
+    order by x.reply_by limit 10`;
 
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(new Date());
   const needs: NeedsRow[] = [];
@@ -201,17 +209,17 @@ export async function getOverview(seller: Seller): Promise<Overview> {
     });
   }
   for (const c of customs) {
-    const waited = (Date.now() - new Date(c.createdAt).getTime()) / 3_600_000;
+    const left = c.replyBy ? (new Date(c.replyBy).getTime() - Date.now()) / 3_600_000 : 48;
     needs.push({
       id: `custom-${c.id}`,
       kind: 'custom',
-      title: `Custom ${c.garment.toLowerCase()} for ${c.buyerName ?? 'a buyer'}`,
+      title: `Custom ${c.garment.replace(/_/g, ' ')} for ${c.buyerName ?? 'a buyer'}`,
       sub: `Budget up to A$${Math.round(c.budgetMax / 100)}`,
-      tag: 'Waiting for a quote',
-      urgent: waited > 48,
-      href: `/studio/commissions/${c.id}`,
+      tag: left <= 0 ? 'Reply time passed' : `Quote within ${Math.ceil(left)}h`,
+      urgent: left <= 12,
+      href: `/studio/requests?id=${c.id}`,
       imageUrl: null,
-      sort: 48 - waited,
+      sort: left,
     });
   }
   needs.sort((a, b) => Number(b.urgent) - Number(a.urgent) || a.sort - b.sort);

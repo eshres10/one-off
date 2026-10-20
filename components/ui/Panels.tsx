@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-/** Stone info panel for lead time, delivery range, condition and deposit notes. */
+/** Stone info panel for lead time, delivery range, condition and payment notes. */
 export function InfoPanel({
   children,
   className = '',

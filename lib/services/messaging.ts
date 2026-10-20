@@ -468,58 +468,6 @@ async function notify(sender: Actor, thread: ThreadRow, fromBuyer: boolean) {
     );
 }
 
-export interface QuoteInputShort {
-  threadId: string;
-  priceCents: number;
-  depositPct: number;
-  weeks: number;
-  note?: string;
-}
-
-/** Maker sends a quote inside a custom-request conversation. */
-export async function sendQuote(maker: Actor, input: QuoteInputShort): Promise<void> {
-  const [thread] = await withUser(
-    maker,
-    (db) => db<(ThreadRow & { commissionRequestId: string | null; kind: string })[]>`
-      select id, buyer_user_id, maker_id, context, buyer_blocked_at, commission_request_id, kind
-      from public.message_threads where id = ${input.threadId} and maker_id = ${maker.makerId ?? null}`,
-  );
-  if (!thread?.commissionRequestId)
-    throw new UserError('Quotes can only be sent on custom requests.');
-  const note = input.note ? sanitizeText(input.note) : '';
-  if (note && !moderateMessage(note).allowed) throw new ModerationError(blockedMessage('maker'));
-  const deposit = Math.round((input.priceCents * input.depositPct) / 100);
-  const days = input.weeks * 7;
-  const { createQuote } = await import('./commissions');
-  const quoteId = await createQuote(maker, {
-    requestId: thread.commissionRequestId,
-    totalPrice: input.priceCents,
-    deposit,
-    productionDays: days,
-    revisionsIncluded: 1,
-    shipping: 0,
-    estimatedDeliveryDate: new Date(Date.now() + (days + 7) * 86_400_000)
-      .toISOString()
-      .slice(0, 10),
-    message: note || undefined,
-  });
-  const quote: QuoteSnapshot = {
-    price_cents: input.priceCents,
-    deposit_pct: input.depositPct,
-    weeks: input.weeks,
-    note: note || null,
-    quote_id: quoteId,
-  };
-  await withUser(maker, async (db) => {
-    await db`
-      insert into public.messages (thread_id, sender_user_id, body, kind, quote)
-      values (${thread.id}, ${maker.id}, ${`Quote: ${formatPrice(input.priceCents)}, ${input.depositPct}% deposit, made in ${input.weeks} ${input.weeks === 1 ? 'week' : 'weeks'}`},
-        'quote', ${db.json(quote as never)})`;
-    await bumpCounters(db, thread, false);
-  });
-  await refreshResponseTime(thread.makerId);
-}
-
 // ---------------------------------------------------------------------------
 // Maker tools
 // ---------------------------------------------------------------------------
@@ -811,27 +759,6 @@ export async function getBuyerInfo(maker: Actor, threadId: string): Promise<Buye
       .slice(0, 2)
       .toUpperCase() || '?';
   return { ...info, initials };
-}
-
-export interface QuoteView {
-  requestId: string;
-  status: string;
-  totalPriceCents: number;
-  depositCents: number;
-  productionDays: number;
-  quoteStatus: string;
-  depositPaidAt: Date | null;
-}
-
-export async function getLatestQuote(requestId: string): Promise<QuoteView | null> {
-  const [q] = await sql()<QuoteView[]>`
-    select c.id as request_id, c.status, q.total_price_cents, q.deposit_cents, q.production_days, q.status as quote_status,
-           c.deposit_paid_at
-    from public.commission_requests c
-    join public.commission_quotes q on q.commission_request_id = c.id
-    where c.id = ${requestId}
-    order by q.created_at desc limit 1`;
-  return q ?? null;
 }
 
 export interface MessageStats {

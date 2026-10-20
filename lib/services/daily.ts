@@ -8,6 +8,7 @@ import { holidayTransitions } from './settings';
 import { sendRestockAlerts } from './restock';
 import { sendDropAlerts } from './push';
 import { autoMarkDelivered, pollCarrierDeliveries, releaseDueTransfers } from './payouts';
+import { customRequestsTick } from './custom-cron';
 
 /** Hour of the day in the admin's time zone (SITE.adminTimeZone) for `at`. */
 export function adminHour(at: Date): number {
@@ -36,6 +37,7 @@ export async function runDailyJobs(now: Date) {
     ['autoDelivered', () => autoMarkDelivered(now)],
     ['returns', () => processReturns(now)],
     ['transfers', () => releaseDueTransfers(now)],
+    ['customRequests', () => customRequestsTick(now)],
     ['holidays', () => holidayTransitions(now)],
     ['restockAlerts', () => sendRestockAlerts()],
     ['dropAlerts', () => sendDropAlerts(now)],

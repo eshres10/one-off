@@ -90,12 +90,6 @@ export async function onCheckoutCompleted(sessionId: string): Promise<void> {
     );
     return;
   }
-  if (session.metadata.kind === 'commission_deposit') {
-    const { onDepositPaid } = await import('./commissions');
-    await onDepositPaid(session);
-    return;
-  }
-
   const [row] = await sql()<{ id: string }[]>`
     select id from public.orders where stripe_checkout_session_id = ${sessionId}`;
   if (!row) throw new Error(`No order for checkout session ${sessionId}`);

@@ -3,7 +3,6 @@ import type { SessionUser } from '@/lib/auth/session';
 import { env } from '@/lib/env';
 import { checkoutEnabled } from '@/lib/features';
 import {
-  getLatestQuote,
   getPieceInfo,
   inboxCounts,
   listThreads,
@@ -41,16 +40,13 @@ export async function BuyerInbox({
 }) {
   const tab = params.tab === 'requests' ? 'requests' : 'chats';
   const unreadOnly = params.unread === '1';
-  const [threads, counts, piece, quote] = await Promise.all([
+  const [threads, counts, piece] = await Promise.all([
     listThreads(user, 'buyer', {
       kind: tab === 'requests' ? 'custom_request' : 'enquiry',
       unreadOnly,
     }),
     inboxCounts(user, 'buyer'),
     thread?.productId ? getPieceInfo(thread.productId) : Promise.resolve(null),
-    thread?.commissionRequestId
-      ? getLatestQuote(thread.commissionRequestId)
-      : Promise.resolve(null),
   ]);
   const checkoutOn = await checkoutEnabled();
   const listQs = qs({ tab, unread: unreadOnly });
@@ -141,13 +137,6 @@ export async function BuyerInbox({
             initial={thread.messages}
             otherName={thread.makerName}
             chips={thread.kind === 'enquiry' && thread.productId ? BUYER_CHIPS : []}
-            quoteStatus={
-              quote?.depositPaidAt
-                ? 'Deposit paid'
-                : quote?.quoteStatus === 'accepted'
-                  ? 'Accepted'
-                  : 'Awaiting buyer'
-            }
             blocked={thread.buyerBlocked ? 'This maker isn’t accepting messages from you.' : null}
             realtime={env().AUTH_DRIVER === 'supabase'}
             header={
@@ -158,7 +147,6 @@ export async function BuyerInbox({
                 title={thread.makerName}
                 subtitle={`${thread.makerRating.toFixed(1)} · Usually replies within ${thread.makerResponseHours} h`}
                 piece={piece}
-                quote={quote}
                 checkoutOn={checkoutOn}
               />
             }
@@ -176,9 +164,7 @@ export async function BuyerInbox({
       )}
 
       <aside className="hidden min-h-0 md:block md:border-l md:border-line" aria-label="Details">
-        {thread && (
-          <BuyerPanel thread={thread} piece={piece} quote={quote} checkoutOn={checkoutOn} />
-        )}
+        {thread && <BuyerPanel thread={thread} piece={piece} checkoutOn={checkoutOn} />}
       </aside>
     </div>
   );

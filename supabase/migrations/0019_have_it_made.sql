@@ -153,6 +153,8 @@ create table if not exists public.custom_quotes (
   status text not null default 'sent' check (status in ('sent', 'accepted', 'withdrawn', 'expired')),
   valid_until timestamptz not null default (now() + interval '7 days'),
   edited_at timestamptz,
+  -- "Your quote expires tomorrow" went out.
+  expiry_warned_at timestamptz,
   created_at timestamptz not null default now(),
   unique (request_id, maker_id)
 );

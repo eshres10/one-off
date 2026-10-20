@@ -464,90 +464,6 @@ async function refreshThreadState(db: Sql) {
         limit 1)`;
 }
 
-async function seedCommissions(db: Sql) {
-  const mara = makerBySlug('mara-kovac');
-  const requests = [
-    {
-      buyer: 0,
-      maker: mara,
-      garment: 'Satin halter set',
-      occasion: 'a summer wedding',
-      min: 30000,
-      max: 45000,
-      status: 'quoted',
-    },
-    {
-      buyer: 10,
-      maker: null,
-      garment: 'Skirt',
-      occasion: 'Work events',
-      min: 15000,
-      max: 25000,
-      status: 'submitted',
-    },
-  ];
-  for (const [i, req] of requests.entries()) {
-    const id = seedId(`commission:${i}`);
-    const buyer = BUYERS[req.buyer]!;
-    await db`
-      insert into public.commission_requests (id, buyer_user_id, maker_id, garment_type, occasion, budget_min_cents, budget_max_cents,
-        deadline_date, measurements, fabric_preferences, colour_preferences, notes, status, created_at)
-      values (${id}, ${buyer.id}, ${req.maker?.id ?? null}, ${req.garment}, ${req.occasion}, ${req.min}, ${req.max},
-        ${toIsoDate(new Date(Date.now() + 60 * DAY))}, 'Bust 88, waist 70, hips 96, height 165cm', 'Heavy satin, nothing sheer',
-        'Emerald or deep green', 'Like the wine halter set, but in emerald with a longer trouser.', ${req.status}::commission_status, ${daysAgo(3 - i)})
-      on conflict (id) do update set buyer_user_id = excluded.buyer_user_id, maker_id = excluded.maker_id,
-        garment_type = excluded.garment_type, occasion = excluded.occasion, notes = excluded.notes`;
-    if (req.status !== 'quoted' || !req.maker) continue;
-
-    const quoteId = seedId(`quote:${i}`);
-    await db`
-      insert into public.commission_quotes (id, commission_request_id, maker_id, total_price_cents, deposit_cents, production_days,
-        revisions_included, shipping_cents, estimated_delivery_date, message)
-      values (${quoteId}, ${id}, ${req.maker.id}, 42000, 12600, 21, 1, 0,
-        ${toIsoDate(new Date(Date.now() + 30 * DAY))}, 'Includes a calico fitting so the halter sits just right.')
-      on conflict (id) do nothing`;
-
-    // The request's conversation: a summary, a question, then the maker's quote.
-    const threadId = seedId(`thread:commission:${i}`);
-    const start = daysAgo(3 - i);
-    const context = { commissionGarment: req.garment };
-    await db`
-      insert into public.message_threads (id, buyer_user_id, maker_id, commission_request_id, kind, context, last_message_at, created_at)
-      values (${threadId}, ${buyer.id}, ${req.maker.id}, ${id}, 'custom_request', ${db.json(context)}, ${new Date(start.getTime() + 3 * 3_600_000)}, ${start})
-      on conflict (id) do update set context = excluded.context, last_message_at = excluded.last_message_at`;
-    await db`delete from public.messages where thread_id = ${threadId}`;
-    const quote = {
-      price_cents: 42000,
-      deposit_pct: 30,
-      weeks: 3,
-      note: 'Includes a calico fitting.',
-      quote_id: quoteId,
-    };
-    const lines: Array<[string, string, string, Record<string, unknown> | null]> = [
-      [
-        buyer.id,
-        'system',
-        `Custom request: ${req.garment} for ${req.occasion}. Budget A$300–A$450.\n\nLike the wine halter set, but in emerald with a longer trouser.`,
-        null,
-      ],
-      [
-        req.maker.userId,
-        'text',
-        'I’d love to make this. Is a 3cm longer inseam right for 165cm in a flat sandal?',
-        null,
-      ],
-      [buyer.id, 'text', 'Yes, perfect — flats mostly.', null],
-      [req.maker.userId, 'quote', 'Quote: A$420, 30% deposit, made in 3 weeks', quote],
-    ];
-    for (const [k, [sender, kind, body, q]] of lines.entries()) {
-      await db`
-        insert into public.messages (id, thread_id, sender_user_id, body, kind, quote, created_at)
-        values (${seedId(`message:commission:${i}:${k}`)}, ${threadId}, ${sender}, ${body}, ${kind}::message_kind,
-          ${q ? db.json(q as never) : null}, ${new Date(start.getTime() + k * 3_600_000)})`;
-    }
-  }
-}
-
 /** Three shops open for "Have it made", so the matcher has someone to find locally. */
 const CUSTOM_SHOPS = [
   {
@@ -692,7 +608,6 @@ export async function seed(databaseUrl: string) {
       await seedOrders(tx);
       await seedSocial(tx);
       await seedMessages(tx);
-      await seedCommissions(tx);
       await refreshThreadState(tx);
       studio = await seedStudio(tx, upsertUser, hash, mockPayments);
       await seedCustomSettings(tx);

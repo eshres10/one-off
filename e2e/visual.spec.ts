@@ -94,8 +94,8 @@ test.describe.serial('visual', () => {
     await expect(page.getByTestId('thread-context')).toBeVisible();
     await snap(page, 'ask-the-maker');
 
-    await page.goto(`/makers/${maker.slug}/commission`);
-    await snap(page, 'request-custom-piece');
+    await page.goto('/have-it-made');
+    await snap(page, 'have-it-made-intro');
   });
 });
 

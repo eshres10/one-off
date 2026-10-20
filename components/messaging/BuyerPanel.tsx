@@ -1,9 +1,8 @@
 import Link from 'next/link';
-import { acceptQuoteAction } from '@/lib/actions/messages';
 import { RETURNS } from '@/lib/content/returns';
 import { getReturnPolicy } from '@/lib/returns/policy';
 import { formatPrice } from '@/lib/domain/money';
-import type { PieceInfo, QuoteView, ThreadDetail } from '@/lib/services/messaging';
+import type { PieceInfo, ThreadDetail } from '@/lib/services/messaging';
 import { buttonClass } from '@/components/ui/Button';
 import { CheckIcon, StarIcon } from '@/components/ui/icons';
 import { Img as Image } from '@/components/ui/Img';
@@ -75,68 +74,36 @@ function MakerCard({ t }: { t: ThreadDetail }) {
   );
 }
 
-export function QuoteBox({ quote, checkoutOn }: { quote: QuoteView; checkoutOn: boolean }) {
-  const pending = quote.quoteStatus === 'pending';
-  const accepted = quote.quoteStatus === 'accepted';
-  return (
-    <section className="shrink-0 border border-ink bg-surface p-4" aria-label="Quote">
-      <p className="text-[11px] uppercase tracking-label">
-        {quote.depositPaidAt
-          ? 'Deposit paid'
-          : pending
-            ? 'Quote'
-            : accepted
-              ? 'Quote accepted'
-              : 'Quote declined'}
-      </p>
-      <dl className="mt-3 space-y-1.5 text-[13px]">
-        <div className="flex justify-between">
-          <dt className="text-muted">Price</dt>
-          <dd>{formatPrice(quote.totalPriceCents)}</dd>
-        </div>
-        <div className="flex justify-between">
-          <dt className="text-muted">Deposit</dt>
-          <dd>{formatPrice(quote.depositCents)}</dd>
-        </div>
-        <div className="flex justify-between">
-          <dt className="text-muted">Made in</dt>
-          <dd>{Math.round(quote.productionDays / 7)} weeks</dd>
-        </div>
-      </dl>
-      {!quote.depositPaidAt && (pending || accepted) && (
-        <form action={acceptQuoteAction} className="mt-4">
-          <input type="hidden" name="requestId" value={quote.requestId} />
-          <button
-            disabled={!checkoutOn}
-            className={buttonClass('primary', 'md', 'w-full disabled:opacity-50')}
-            data-testid="accept-quote"
-          >
-            {checkoutOn ? 'Accept quote & pay deposit' : 'Payments open at launch'}
-          </button>
-        </form>
-      )}
-    </section>
-  );
-}
-
 /** Right column of the buyer's conversation: who you're talking to and what about. */
 export function BuyerPanel({
   thread,
   piece,
-  quote,
   checkoutOn,
 }: {
   thread: ThreadDetail;
   piece: PieceInfo | null;
-  quote: QuoteView | null;
   checkoutOn: boolean;
 }) {
   const shipping = piece ? shippingFor(piece) : 0;
   return (
     <div className="flex h-full flex-col gap-3 overflow-y-auto p-4">
       <MakerCard t={thread} />
-      {thread.kind === 'custom_request' && quote && (
-        <QuoteBox quote={quote} checkoutOn={checkoutOn} />
+      {thread.context.customRequestNumber && (
+        <section className="shrink-0 border border-ink bg-surface p-4" aria-label="Custom request">
+          <p className="text-[11px] uppercase tracking-label">
+            Custom request {thread.context.customRequestNumber}
+          </p>
+          <p className="mt-2 text-[13px] text-muted">
+            Their quote, and Accept, are on your request page.
+          </p>
+          <Link
+            href={`/account/requests/${thread.context.customRequestNumber}`}
+            className={buttonClass('secondary', 'md', 'mt-3 w-full')}
+            data-testid="panel-request-link"
+          >
+            View request
+          </Link>
+        </section>
       )}
       {piece && (
         <section className="shrink-0 border border-line bg-surface p-4" aria-label="The piece">
