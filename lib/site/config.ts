@@ -19,7 +19,7 @@ export const SITE = {
     triggers: ['saved_piece', 'third_product_view', 'second_visit', 'order_placed'] as const,
     cooldownDays: 14,
     maxDismissals: 3,
-    neverOnPaths: ['/checkout', '/signup', '/login', '/sell/apply', '/studio', '/admin'],
+    neverOnPaths: ['/checkout', '/signup', '/login', '/sell/apply', '/studio', '/admin', '/survey'],
     /** A new session this long after the last activity counts as a second visit. */
     secondVisitAfterMinutes: 30,
   },
