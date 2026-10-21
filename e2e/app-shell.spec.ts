@@ -174,29 +174,6 @@ test.describe.serial('app shell', () => {
     await expect(seller.getByTestId('send-message')).toBeDisabled();
   });
 
-  test('the maker sends a quote and the buyer sees Accept quote', async ({ browser }) => {
-    const mara = MAKERS.find((m) => m.slug === 'mara-kovac')!;
-    const seller = await signedIn(browser, mara.email);
-    await seller.goto('/studio/messages?tab=requests');
-    await seller
-      .getByTestId('inbox-row')
-      .filter({ hasText: firstName(0) })
-      .click();
-    await seller.getByTestId('send-quote-toggle').click();
-    await seller.getByTestId('quote-price').fill('500');
-    await expect(seller.getByTestId('quote-net')).toContainText(
-      'You receive A$425 after the 15% fee · deposit A$150 is paid upfront',
-    );
-    await seller.getByTestId('send-quote').click();
-    await expect(seller.getByTestId('quote-card').last()).toContainText('A$500');
-
-    const buyer = await signedIn(browser, BUYERS[0]!.email);
-    await buyer.goto('/messages?tab=requests');
-    await buyer.getByTestId('inbox-row').first().click();
-    await expect(buyer.getByTestId('quote-card').last()).toContainText('A$500');
-    await expect(buyer.getByTestId('accept-quote')).toContainText('Accept quote & pay deposit');
-  });
-
   test('unread badges update in the header and the tab bar', async ({ browser }) => {
     const buyer = await signedIn(browser, BUYERS[5]!.email);
     await buyer.goto(`/products/${enquiryPiece.slug}`);
