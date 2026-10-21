@@ -32,6 +32,7 @@ export function Sheet({
         <Drawer.Overlay className="fixed inset-0 z-[70] bg-[rgba(17,17,17,0.35)]" />
         <Drawer.Content
           data-testid={testId}
+          aria-modal="true"
           aria-describedby={undefined}
           className="fixed inset-x-0 bottom-0 z-[71] flex max-h-[90dvh] flex-col rounded-t-[var(--r-sheet)] bg-ground outline-none"
         >
