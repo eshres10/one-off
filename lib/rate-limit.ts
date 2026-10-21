@@ -26,6 +26,8 @@ export const LIMITS = {
   question: { windowSeconds: 3600, max: 10 },
   waitlist: { windowSeconds: 3600, max: 10 },
   clientError: { windowSeconds: 300, max: 20 },
+  /** The maker survey: per daily IP hash (lib/services/survey.ts). */
+  survey: { windowSeconds: 86_400, max: 5 },
 } as const;
 
 /** Throws RateLimitError when `key` has exceeded the limit for the current window. */
