@@ -245,6 +245,7 @@ export function Survey({ src, refTag }: { src: string | null; refTag: string | n
             <div
               className="h-[3px] w-full bg-stone-light"
               role="progressbar"
+              aria-label="Survey progress"
               aria-valuemin={0}
               aria-valuemax={FOLLOW}
               aria-valuenow={progressN}
