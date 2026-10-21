@@ -33,6 +33,7 @@ import { SuggestedMakers } from '@/components/states/SuggestedMakers';
 import { suggestedMakers } from '@/lib/queries/states';
 import { BoxButtonGroup, ButtonLink, boxButtonClass } from '@/components/ui/Button';
 import { Img as Image } from '@/components/ui/Img';
+import { PhoneHome } from '@/components/app/home/PhoneHome';
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -245,79 +246,85 @@ export default async function DiscoverPage({ searchParams }: { searchParams: Sea
 
   return (
     <div>
-      {isDefault && (
-        <section
-          data-hero
-          aria-labelledby="hero-title"
-          className="relative z-0 -mt-[var(--header-h)] flex h-[100svh] min-h-[560px] items-center justify-center overflow-hidden text-ground md:sticky md:top-0"
-        >
-          {hero.imageUrl && (
-            <Image
-              src={hero.imageUrl}
-              alt=""
-              fill
-              priority
-              sizes="100vw"
-              quality={70}
-              className="object-cover object-[center_30%]"
-            />
-          )}
-          <span aria-hidden className="absolute inset-0 bg-[rgba(0,0,0,0.28)]" />
-          <div className="relative px-4 pt-[var(--header-h)] text-center">
-            {hero.subtitle && (
-              <p className="text-[11px] uppercase tracking-wide2">{hero.subtitle}</p>
-            )}
-            <h1
-              id="hero-title"
-              className="mx-auto mt-4 max-w-[17ch] text-[clamp(64px,9vw,136px)] leading-[0.92]"
-            >
-              {hero.title}
-            </h1>
-            <BoxButtonGroup className="mt-10">
-              <Link href={hero.href} className={boxButtonClass('min-w-[150px] md:min-w-[220px]')}>
-                Shop the edit
-              </Link>
-              <Link href="/makers" className={boxButtonClass('min-w-[150px] md:min-w-[220px]')}>
-                Meet the makers
-              </Link>
-            </BoxButtonGroup>
-          </div>
-        </section>
-      )}
-      {!isDefault && <h1 className="sr-only">Discover</h1>}
-
-      {/* From tablet up the hero stays put and everything after it slides over like a shutter. */}
-      <div
-        className={isDefault ? 'shutter relative z-[1] bg-ground' : undefined}
-        data-shutter={isDefault ? '' : undefined}
-      >
-        <div className="space-y-6 pt-10 md:pt-14">
-          <FeedTabs active={filters.tab} />
-          {filters.tab !== 'collections' && (
-            <CollectionChips collections={collections.slice(0, 5)} />
-          )}
-        </div>
-        <div className="mt-6">
-          {filters.tab !== 'collections' && <FilterBar options={options} />}
-        </div>
-
-        <section id="pieces" aria-labelledby="pieces-title" className="mt-[2px]">
-          <h2 id="pieces-title" className="sr-only">
-            Pieces
-          </h2>
-          <Suspense key={JSON.stringify(filters)} fallback={<ProductGridSkeleton />}>
-            <Feed filters={filters} />
-          </Suspense>
-        </section>
-
+      {/* Phones: the app's Home (components/app/home). */}
+      <div className="md:hidden">
+        <PhoneHome filters={filters} hero={hero} />
+      </div>
+      <div className="max-md:hidden">
         {isDefault && (
-          <>
-            <HomeRails />
-            <div className="mt-16">
-              <TrustStrip />
+          <section
+            data-hero
+            aria-labelledby="hero-title"
+            className="relative z-0 -mt-[var(--header-h)] flex h-[100svh] min-h-[560px] items-center justify-center overflow-hidden text-ground md:sticky md:top-0"
+          >
+            {hero.imageUrl && (
+              <Image
+                src={hero.imageUrl}
+                alt=""
+                fill
+                priority
+                sizes="100vw"
+                quality={70}
+                className="object-cover object-[center_30%]"
+              />
+            )}
+            <span aria-hidden className="absolute inset-0 bg-[rgba(0,0,0,0.28)]" />
+            <div className="relative px-4 pt-[var(--header-h)] text-center">
+              {hero.subtitle && (
+                <p className="text-[11px] uppercase tracking-wide2">{hero.subtitle}</p>
+              )}
+              <h1
+                id="hero-title"
+                className="mx-auto mt-4 max-w-[17ch] text-[clamp(64px,9vw,136px)] leading-[0.92]"
+              >
+                {hero.title}
+              </h1>
+              <BoxButtonGroup className="mt-10">
+                <Link href={hero.href} className={boxButtonClass('min-w-[150px] md:min-w-[220px]')}>
+                  Shop the edit
+                </Link>
+                <Link href="/makers" className={boxButtonClass('min-w-[150px] md:min-w-[220px]')}>
+                  Meet the makers
+                </Link>
+              </BoxButtonGroup>
             </div>
-          </>
+          </section>
         )}
+        {!isDefault && <h1 className="sr-only">Discover</h1>}
+
+        {/* From tablet up the hero stays put and everything after it slides over like a shutter. */}
+        <div
+          className={isDefault ? 'shutter relative z-[1] bg-ground' : undefined}
+          data-shutter={isDefault ? '' : undefined}
+        >
+          <div className="space-y-6 pt-10 md:pt-14">
+            <FeedTabs active={filters.tab} />
+            {filters.tab !== 'collections' && (
+              <CollectionChips collections={collections.slice(0, 5)} />
+            )}
+          </div>
+          <div className="mt-6">
+            {filters.tab !== 'collections' && <FilterBar options={options} />}
+          </div>
+
+          <section id="pieces" aria-labelledby="pieces-title" className="mt-[2px]">
+            <h2 id="pieces-title" className="sr-only">
+              Pieces
+            </h2>
+            <Suspense key={JSON.stringify(filters)} fallback={<ProductGridSkeleton />}>
+              <Feed filters={filters} />
+            </Suspense>
+          </section>
+
+          {isDefault && (
+            <>
+              <HomeRails />
+              <div className="mt-16">
+                <TrustStrip />
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

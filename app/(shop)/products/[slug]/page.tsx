@@ -45,6 +45,8 @@ import { ProductBadgePill } from '@/components/ui/Badge';
 import { Accordion, InfoPanel, SectionTitle } from '@/components/ui/Panels';
 import { TrustList } from '@/components/ui/TrustList';
 import { ChevronIcon } from '@/components/ui/icons';
+import { PhoneProduct } from '@/components/app/product/PhoneProduct';
+import { isFollowing } from '@/lib/queries/catalog';
 
 export async function generateMetadata({
   params,
@@ -217,305 +219,330 @@ export default async function ProductPage({ params }: { params: { slug: string }
     </>
   );
 
+  const checkoutOn = await checkoutEnabled();
+  const following = user ? await isFollowing(user.id, m.id) : false;
   return (
-    // Phones: the site header steps aside (data-immersive), the photos stay fixed at the top and
-    // the content card slides up over them. Desktop: the gallery stays pinned while the details
-    // column scrolls, then releases when it ends.
-    <div className="pb-28 max-md:-mt-[var(--header-h)] md:pb-0" data-immersive>
-      <script
-        type="application/ld+json"
-        // JSON.stringify escapes quotes; < is escaped so the text can't close the script tag.
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(productJsonLd).replace(/</g, '\\u003c'),
-        }}
-      />
-      <RememberPiece
-        slug={product.slug}
-        title={product.title}
-        imageUrl={product.images[0]?.url ?? null}
-      />
-      {preview && (
-        <p
-          className="relative z-[1] bg-stone-light px-4 py-2 text-center text-[11px] uppercase tracking-label"
-          role="status"
-        >
-          Preview — this listing isn’t visible to shoppers yet
-        </p>
-      )}
-      <div
-        className="fixed inset-x-3 top-[calc(env(safe-area-inset-top)+12px)] z-[5] flex items-center justify-between md:hidden"
-        data-testid="phone-product-actions"
-      >
-        <Link
-          href="/"
-          aria-label="Back to Discover"
-          className="glass-chip flex h-11 w-11 items-center justify-center"
-        >
-          <ChevronIcon dir="left" width={18} height={18} />
-        </Link>
-        <div className="flex gap-2">
-          <ShareButton title={product.title} className="glass-chip" />
-          <SaveButton productId={product.id} saved={saved} title={product.title} boxed />
-        </div>
+    <>
+      {/* Phones: the app's product screen (components/app/product). */}
+      <div className="md:hidden">
+        <PhoneProduct
+          product={product}
+          saved={saved}
+          savedFit={fit}
+          following={following}
+          story={story}
+          more={related.fromMaker}
+          savedIds={savedIds}
+          typeLine={typeLine}
+          dateLine={dateLine}
+          shippingText={shippingText}
+          canBuy={checkoutOn && !previewOnly && sale.ok && !soldOne}
+          disabledLabel={previewOnly ? 'Preview only' : sale.ok ? 'Launching soon' : sale.label}
+          soldOut={soldOne || (totalStock === 0 && product.productType !== 'made_to_order')}
+          signedIn={Boolean(user)}
+        />
       </div>
-      <div className="md:grid md:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] lg:flex lg:items-start">
+      <div className="pb-28 max-md:hidden md:pb-0">
+        <script
+          type="application/ld+json"
+          // JSON.stringify escapes quotes; < is escaped so the text can't close the script tag.
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(productJsonLd).replace(/</g, '\\u003c'),
+          }}
+        />
+        <RememberPiece
+          slug={product.slug}
+          title={product.title}
+          imageUrl={product.images[0]?.url ?? null}
+        />
+        {preview && (
+          <p
+            className="relative z-[1] bg-stone-light px-4 py-2 text-center text-[11px] uppercase tracking-label"
+            role="status"
+          >
+            Preview — this listing isn’t visible to shoppers yet
+          </p>
+        )}
         <div
-          className="follow-header sticky top-0 z-0 h-[max(480px,66vh)] md:top-[var(--header-offset)] md:h-auto md:self-start lg:w-[59%] lg:shrink-0"
-          data-testid="product-gallery"
+          className="fixed inset-x-3 top-[calc(env(safe-area-inset-top)+12px)] z-[5] flex items-center justify-between md:hidden"
+          data-testid="phone-product-actions"
         >
-          <div className={soldOne ? 'contents [&_img]:grayscale' : 'contents'}>
-            <Gallery
-              images={product.images}
-              title={product.title}
-              overlay={
-                <>
-                  {soldOne && <SoldStamp />}
-                  <div className="absolute right-3 top-3 hidden md:flex">
-                    <SaveButton productId={product.id} saved={saved} title={product.title} boxed />
-                  </div>
-                </>
-              }
-            />
+          <Link
+            href="/"
+            aria-label="Back to Discover"
+            className="glass-chip flex h-11 w-11 items-center justify-center"
+          >
+            <ChevronIcon dir="left" width={18} height={18} />
+          </Link>
+          <div className="flex gap-2">
+            <ShareButton title={product.title} className="glass-chip" />
+            <SaveButton productId={product.id} saved={saved} title={product.title} boxed />
           </div>
         </div>
-
-        <div
-          className="relative z-[1] -mt-7 bg-ground px-4 pt-4 shadow-[0_-14px_32px_rgba(17,17,17,0.14)] md:mt-0 md:px-10 md:pt-8 md:shadow-none lg:min-w-0 lg:flex-1 lg:px-12"
-          data-testid="product-details"
-        >
-          <span
-            aria-hidden
-            className="mx-auto -mt-1 mb-3 block h-1 w-9 rounded-circle bg-line-strong md:hidden"
-          />
-          <nav
-            aria-label="Breadcrumb"
-            className="hidden text-[11px] uppercase tracking-label text-muted-2 md:block"
+        <div className="md:grid md:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] lg:flex lg:items-start">
+          <div
+            className="follow-header sticky top-0 z-0 h-[max(480px,66vh)] md:top-[var(--header-offset)] md:h-auto md:self-start lg:w-[59%] lg:shrink-0"
+            data-testid="product-gallery"
           >
-            <Link href="/" className="hover:underline">
-              Discover
-            </Link>{' '}
-            /{' '}
-            <Link href={`/?category=${product.category}`} className="hover:underline">
-              {product.category}
-            </Link>
-          </nav>
-          <div className="md:mt-5">
-            <MakerStrip maker={m} />
-          </div>
-          <div className="mt-5 flex flex-wrap gap-2">
-            {previewOnly && (
-              <span
-                className="inline-flex items-center bg-ink px-2 py-[3px] text-[10px] uppercase leading-4 tracking-[0.14em] text-ground"
-                data-testid="preview-only-label"
-              >
-                {PREVIEW_ONLY_LABEL}
-              </span>
-            )}
-            <ProductBadgePill badge={primaryBadge} outlined />
-          </div>
-          <h1 className="mt-3 text-[40px] leading-[0.95] md:text-[clamp(44px,4vw,58px)]">
-            {product.title}
-          </h1>
-          {!soldOne && <p className="mt-3 text-[15px]">{formatPrice(product.priceCents)}</p>}
-
-          {sale.ok && sale.holiday && (
-            <div className="mt-5">
-              <HolidayBanner message={sale.holiday.message} note={m.holidayNote} />
-            </div>
-          )}
-          {soldOne ? (
-            <div className="mt-6">
-              <SoldPanel
+            <div className={soldOne ? 'contents [&_img]:grayscale' : 'contents'}>
+              <Gallery
+                images={product.images}
                 title={product.title}
-                makerName={m.displayName}
-                similarHref={similarHref}
+                overlay={
+                  <>
+                    {soldOne && <SoldStamp />}
+                    <div className="absolute right-3 top-3 hidden md:flex">
+                      <SaveButton
+                        productId={product.id}
+                        saved={saved}
+                        title={product.title}
+                        boxed
+                      />
+                    </div>
+                  </>
+                }
               />
             </div>
-          ) : (
-            <>
-              <InfoPanel className="mt-5">
-                <span data-testid="availability" className="block">
-                  <span className="block font-normal text-ink">{typeLine}</span>
-                  <span className="block text-muted">{dateLine}</span>
-                  {product.madeToOrderOptions && (
-                    <span className="mt-1 block text-muted">{product.madeToOrderOptions}</span>
-                  )}
-                </span>
-              </InfoPanel>
+          </div>
 
+          <div
+            className="relative z-[1] -mt-7 bg-ground px-4 pt-4 shadow-[0_-14px_32px_rgba(17,17,17,0.14)] md:mt-0 md:px-10 md:pt-8 md:shadow-none lg:min-w-0 lg:flex-1 lg:px-12"
+            data-testid="product-details"
+          >
+            <span
+              aria-hidden
+              className="mx-auto -mt-1 mb-3 block h-1 w-9 rounded-circle bg-line-strong md:hidden"
+            />
+            <nav
+              aria-label="Breadcrumb"
+              className="hidden text-[11px] uppercase tracking-label text-muted-2 md:block"
+            >
+              <Link href="/" className="hover:underline">
+                Discover
+              </Link>{' '}
+              /{' '}
+              <Link href={`/?category=${product.category}`} className="hover:underline">
+                {product.category}
+              </Link>
+            </nav>
+            <div className="md:mt-5">
+              <MakerStrip maker={m} />
+            </div>
+            <div className="mt-5 flex flex-wrap gap-2">
+              {previewOnly && (
+                <span
+                  className="inline-flex items-center bg-ink px-2 py-[3px] text-[10px] uppercase leading-4 tracking-[0.14em] text-ground"
+                  data-testid="preview-only-label"
+                >
+                  {PREVIEW_ONLY_LABEL}
+                </span>
+              )}
+              <ProductBadgePill badge={primaryBadge} outlined />
+            </div>
+            <h1 className="mt-3 text-[40px] leading-[0.95] md:text-[clamp(44px,4vw,58px)]">
+              {product.title}
+            </h1>
+            {!soldOne && <p className="mt-3 text-[15px]">{formatPrice(product.priceCents)}</p>}
+
+            {sale.ok && sale.holiday && (
+              <div className="mt-5">
+                <HolidayBanner message={sale.holiday.message} note={m.holidayNote} />
+              </div>
+            )}
+            {soldOne ? (
               <div className="mt-6">
-                <PurchasePanel
-                  productId={product.id}
-                  productSlug={product.slug}
-                  productType={product.productType}
-                  priceCents={product.priceCents}
-                  colours={product.colours}
-                  variants={product.variants}
-                  askHref={`/products/${product.slug}`}
-                  requestHref={similarHref}
-                  modelLine={modelLine}
-                  savedSizes={fit}
-                  sizeNotes={m.sizeNotes}
-                  signedIn={!!user}
-                  makeToOrder={
-                    product.productType === 'ready_to_ship' &&
-                    product.madeToOrderOptions &&
-                    m.customCommissionsEnabled
-                      ? {
-                          makerName: m.displayName,
-                          leadDays: product.leadTimeDays ?? 14,
-                          href: similarHref,
-                        }
-                      : null
-                  }
-                  checkoutEnabled={(await checkoutEnabled()) && !previewOnly && sale.ok}
-                  previewMessage={
-                    previewOnly
-                      ? PREVIEW_ONLY_NOTE
-                      : !sale.ok
-                        ? [sale.message, sale.kind === 'away' ? m.holidayNote : null]
-                            .filter(Boolean)
-                            .join(' ')
-                        : PREVIEW_MESSAGE
-                  }
-                  disabledLabel={
-                    previewOnly ? 'Preview only' : sale.ok ? 'Launching soon' : sale.label
-                  }
+                <SoldPanel
+                  title={product.title}
+                  makerName={m.displayName}
+                  similarHref={similarHref}
                 />
               </div>
-            </>
-          )}
-          <div className="mt-6">
-            <TrustList shipsFrom={`${m.displayName}, ${m.city}`} shipping={shippingText} />
-          </div>
+            ) : (
+              <>
+                <InfoPanel className="mt-5">
+                  <span data-testid="availability" className="block">
+                    <span className="block font-normal text-ink">{typeLine}</span>
+                    <span className="block text-muted">{dateLine}</span>
+                    {product.madeToOrderOptions && (
+                      <span className="mt-1 block text-muted">{product.madeToOrderOptions}</span>
+                    )}
+                  </span>
+                </InfoPanel>
 
-          {story && <StoryLink data={story} />}
-          <div className="mt-2">
-            <Accordion id="returns" title="Returns" open={custom}>
-              <ReturnsPolicy productType={product.productType} link testId="returns-row" />
-            </Accordion>
-            <Accordion title="Description" open>
-              <p className="whitespace-pre-line">{product.description}</p>
-            </Accordion>
-            <Accordion title="Garment details" open>
-              <dl className="grid grid-cols-[110px_1fr] gap-y-1.5">
-                <dt className="text-muted-2">Fabric</dt>
-                <dd>{product.fabricComposition}</dd>
-                <dt className="text-muted-2">Care</dt>
-                <dd>{product.careInstructions}</dd>
-                <dt className="text-muted-2">Made in</dt>
-                <dd>
-                  {m.city}, {product.countryOfMaking}
-                </dd>
-                {modelLine && (
-                  <>
-                    <dt className="text-muted-2">Model</dt>
-                    <dd>
-                      {product.modelHeightCm} cm, wears size {product.modelSizeWorn}
-                    </dd>
-                  </>
+                <div className="mt-6">
+                  <PurchasePanel
+                    productId={product.id}
+                    productSlug={product.slug}
+                    productType={product.productType}
+                    priceCents={product.priceCents}
+                    colours={product.colours}
+                    variants={product.variants}
+                    askHref={`/products/${product.slug}`}
+                    requestHref={similarHref}
+                    modelLine={modelLine}
+                    savedSizes={fit}
+                    sizeNotes={m.sizeNotes}
+                    signedIn={!!user}
+                    makeToOrder={
+                      product.productType === 'ready_to_ship' &&
+                      product.madeToOrderOptions &&
+                      m.customCommissionsEnabled
+                        ? {
+                            makerName: m.displayName,
+                            leadDays: product.leadTimeDays ?? 14,
+                            href: similarHref,
+                          }
+                        : null
+                    }
+                    checkoutEnabled={(await checkoutEnabled()) && !previewOnly && sale.ok}
+                    previewMessage={
+                      previewOnly
+                        ? PREVIEW_ONLY_NOTE
+                        : !sale.ok
+                          ? [sale.message, sale.kind === 'away' ? m.holidayNote : null]
+                              .filter(Boolean)
+                              .join(' ')
+                          : PREVIEW_MESSAGE
+                    }
+                    disabledLabel={
+                      previewOnly ? 'Preview only' : sale.ok ? 'Launching soon' : sale.label
+                    }
+                  />
+                </div>
+              </>
+            )}
+            <div className="mt-6">
+              <TrustList shipsFrom={`${m.displayName}, ${m.city}`} shipping={shippingText} />
+            </div>
+
+            {story && <StoryLink data={story} />}
+            <div className="mt-2">
+              <Accordion id="returns" title="Returns" open={custom}>
+                <ReturnsPolicy productType={product.productType} link testId="returns-row" />
+              </Accordion>
+              <Accordion title="Description" open>
+                <p className="whitespace-pre-line">{product.description}</p>
+              </Accordion>
+              <Accordion title="Garment details" open>
+                <dl className="grid grid-cols-[110px_1fr] gap-y-1.5">
+                  <dt className="text-muted-2">Fabric</dt>
+                  <dd>{product.fabricComposition}</dd>
+                  <dt className="text-muted-2">Care</dt>
+                  <dd>{product.careInstructions}</dd>
+                  <dt className="text-muted-2">Made in</dt>
+                  <dd>
+                    {m.city}, {product.countryOfMaking}
+                  </dd>
+                  {modelLine && (
+                    <>
+                      <dt className="text-muted-2">Model</dt>
+                      <dd>
+                        {product.modelHeightCm} cm, wears size {product.modelSizeWorn}
+                      </dd>
+                    </>
+                  )}
+                </dl>
+              </Accordion>
+              <Accordion id="garment-measurements" title="Garment measurements">
+                {product.measurements.length ? (
+                  <table className="w-full text-left">
+                    <caption className="mb-2 text-left text-[12px] text-muted-2">
+                      Measured flat
+                      {product.measurements[0]?.size
+                        ? ` on size ${product.measurements[0].size}`
+                        : ''}
+                      , in centimetres
+                    </caption>
+                    <tbody>
+                      {product.measurements.map((ms) => (
+                        <tr key={ms.name} className="border-t border-line">
+                          <th scope="row" className="py-2 font-light">
+                            {ms.name}
+                          </th>
+                          <td className="py-2 text-right tabular-nums">{ms.valueCm} cm</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <p>Ask the maker for exact measurements.</p>
                 )}
-              </dl>
-            </Accordion>
-            <Accordion id="garment-measurements" title="Garment measurements">
-              {product.measurements.length ? (
-                <table className="w-full text-left">
-                  <caption className="mb-2 text-left text-[12px] text-muted-2">
-                    Measured flat
-                    {product.measurements[0]?.size
-                      ? ` on size ${product.measurements[0].size}`
-                      : ''}
-                    , in centimetres
-                  </caption>
-                  <tbody>
-                    {product.measurements.map((ms) => (
-                      <tr key={ms.name} className="border-t border-line">
-                        <th scope="row" className="py-2 font-light">
-                          {ms.name}
-                        </th>
-                        <td className="py-2 text-right tabular-nums">{ms.valueCm} cm</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <p>Ask the maker for exact measurements.</p>
-              )}
-            </Accordion>
-            <Accordion title="Shipping">
-              <p>{shippingText}</p>
-            </Accordion>
+              </Accordion>
+              <Accordion title="Shipping">
+                <p>{shippingText}</p>
+              </Accordion>
+            </div>
+            {/* With a story, reviews follow it below instead. */}
+            {!story && (
+              <section aria-labelledby="reviews-title-desktop" className="mt-16 hidden lg:block">
+                {reviewsBlock('reviews-title-desktop')}
+              </section>
+            )}
           </div>
-          {/* With a story, reviews follow it below instead. */}
-          {!story && (
-            <section aria-labelledby="reviews-title-desktop" className="mt-16 hidden lg:block">
-              {reviewsBlock('reviews-title-desktop')}
+        </div>
+
+        {story && (
+          <div className="mt-16 md:mt-20">
+            <StorySection data={story} />
+          </div>
+        )}
+        <div className="relative z-[1] bg-ground pt-20">
+          {/* On desktop, reviews sit in the details column (above) so the gallery stays pinned. */}
+          <section
+            aria-labelledby="reviews-title"
+            className={`container-page ${story ? '' : 'lg:hidden'}`}
+          >
+            {reviewsBlock('reviews-title')}
+          </section>
+
+          <section
+            id="questions"
+            aria-labelledby="questions-title"
+            className="container-page mt-20 scroll-mt-[calc(var(--header-h)+16px)]"
+          >
+            <h2 id="questions-title" className="text-[44px] leading-none md:text-[56px]">
+              Questions
+            </h2>
+            <p className="mb-6 mt-2 text-[13px] text-muted">
+              Asked in public and answered by {m.displayName}. For anything personal, ask the maker
+              privately.
+            </p>
+            <div className="grid gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+              <Questions entries={questions} slug={product.slug} canReply={isMaker} />
+              <div className="md:max-w-md">
+                <AskQuestionForm
+                  productId={product.id}
+                  slug={product.slug}
+                  makerName={m.displayName}
+                  signedIn={Boolean(user)}
+                  isMaker={isMaker}
+                />
+              </div>
+            </div>
+          </section>
+
+          {related.fromMaker.length > 0 && (
+            <section aria-labelledby="more-maker" className="mt-20">
+              <div className="container-page">
+                <SectionTitle>
+                  <span id="more-maker">More from {m.displayName}</span>
+                </SectionTitle>
+              </div>
+              <ProductGrid products={related.fromMaker} savedIds={savedIds} priorityCount={0} />
+            </section>
+          )}
+          {related.similar.length > 0 && (
+            <section aria-labelledby="similar" className="mt-20">
+              <div className="container-page">
+                <SectionTitle>
+                  <span id="similar">You may also like</span>
+                </SectionTitle>
+              </div>
+              <ProductGrid products={related.similar} savedIds={savedIds} priorityCount={0} />
             </section>
           )}
         </div>
       </div>
-
-      {story && (
-        <div className="mt-16 md:mt-20">
-          <StorySection data={story} />
-        </div>
-      )}
-      <div className="relative z-[1] bg-ground pt-20">
-        {/* On desktop, reviews sit in the details column (above) so the gallery stays pinned. */}
-        <section
-          aria-labelledby="reviews-title"
-          className={`container-page ${story ? '' : 'lg:hidden'}`}
-        >
-          {reviewsBlock('reviews-title')}
-        </section>
-
-        <section
-          id="questions"
-          aria-labelledby="questions-title"
-          className="container-page mt-20 scroll-mt-[calc(var(--header-h)+16px)]"
-        >
-          <h2 id="questions-title" className="text-[44px] leading-none md:text-[56px]">
-            Questions
-          </h2>
-          <p className="mb-6 mt-2 text-[13px] text-muted">
-            Asked in public and answered by {m.displayName}. For anything personal, ask the maker
-            privately.
-          </p>
-          <div className="grid gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-            <Questions entries={questions} slug={product.slug} canReply={isMaker} />
-            <div className="md:max-w-md">
-              <AskQuestionForm
-                productId={product.id}
-                slug={product.slug}
-                makerName={m.displayName}
-                signedIn={Boolean(user)}
-                isMaker={isMaker}
-              />
-            </div>
-          </div>
-        </section>
-
-        {related.fromMaker.length > 0 && (
-          <section aria-labelledby="more-maker" className="mt-20">
-            <div className="container-page">
-              <SectionTitle>
-                <span id="more-maker">More from {m.displayName}</span>
-              </SectionTitle>
-            </div>
-            <ProductGrid products={related.fromMaker} savedIds={savedIds} priorityCount={0} />
-          </section>
-        )}
-        {related.similar.length > 0 && (
-          <section aria-labelledby="similar" className="mt-20">
-            <div className="container-page">
-              <SectionTitle>
-                <span id="similar">You may also like</span>
-              </SectionTitle>
-            </div>
-            <ProductGrid products={related.similar} savedIds={savedIds} priorityCount={0} />
-          </section>
-        )}
-      </div>
-    </div>
+    </>
   );
 }

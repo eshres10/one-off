@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { toggleSaveAction } from '@/lib/actions/social';
 import { onLocalSavesChange, readLocalSaves, toggleLocalSave } from '@/lib/local-saves';
 import { requestInstallSheet } from '@/lib/install/trigger';
@@ -50,6 +50,14 @@ export function Heart({
     return onLocalSavesChange(sync);
   }, [productId, saved]);
 
+  useEffect(() => {
+    const onLike = (e: Event) => {
+      if ((e as CustomEvent<string>).detail === productId && !onRef.current) toggleRef.current();
+    };
+    window.addEventListener('oo:like', onLike);
+    return () => window.removeEventListener('oo:like', onLike);
+  }, [productId]);
+
   const toggle = () => {
     const next = !on;
     setOn(next);
@@ -69,6 +77,11 @@ export function Heart({
       }
     });
   };
+
+  const onRef = useRef(on);
+  onRef.current = on;
+  const toggleRef = useRef(toggle);
+  toggleRef.current = toggle;
 
   return (
     <button
