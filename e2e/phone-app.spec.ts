@@ -381,7 +381,10 @@ test.describe.serial('phone app', () => {
     await expect(page.getByTestId('you-keep')).toHaveText(formatPrice(youKeep(36_000, pct)));
     await sheet.locator('[data-testid^="ready-"]').first().click();
     const canMake = page.getByTestId('can-make');
-    if ((await canMake.getAttribute('aria-checked')) !== 'true') await canMake.click();
+    if (!(await canMake.isChecked())) await canMake.check();
+    await page
+      .getByTestId('quote-note')
+      .fill('Cut on the bias with a cowl back; flutter sleeves in a lighter silk.');
     await shot(page, 'quote-sheet');
     await page.getByTestId('send-quote').click();
     await expect(page.getByTestId('quote-sent')).toBeVisible();
