@@ -132,7 +132,7 @@ test.describe.serial('discover', () => {
     await expect(page.getByTestId('discover-empty')).toBeVisible();
     await expect(page.getByTestId('discover-empty').getByTestId('have-it-made')).toHaveAttribute(
       'href',
-      '/custom?q=zzqxvbnonsense',
+      '/have-it-made?q=zzqxvbnonsense',
     );
   });
 

@@ -35,7 +35,7 @@ test.describe('empty and edge states', () => {
     await expect(page.getByTestId('search-words')).toContainText('velvet');
     await expect(page.getByTestId('have-it-made')).toHaveAttribute(
       'href',
-      '/custom?q=velvet%20opera%20cape',
+      '/have-it-made?q=velvet%20opera%20cape',
     );
     await expect(page.getByTestId('popular-searches')).toBeVisible();
   });

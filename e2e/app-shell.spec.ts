@@ -97,7 +97,10 @@ test.describe.serial('app shell', () => {
 
     await page.getByTestId('search-input').fill('qwxzyplk');
     await expect(page.getByTestId('search-empty')).toContainText('Nothing for “qwxzyplk”, yet.');
-    await expect(page.getByTestId('have-it-made')).toHaveAttribute('href', '/custom?q=qwxzyplk');
+    await expect(page.getByTestId('have-it-made')).toHaveAttribute(
+      'href',
+      '/have-it-made?q=qwxzyplk',
+    );
   });
 
   test('saving and unsaving from search shows on /saved', async ({ browser }) => {
