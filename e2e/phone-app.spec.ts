@@ -29,9 +29,20 @@ const ready = PRODUCTS.filter(
     p.variants.some((v) => v.stock >= 4),
 );
 const product = ready[0]!;
-const size = product.variants.find((v) => v.stock >= 4)!.size;
 const other = ready.find((p) => p.maker.id !== product.maker.id)!;
-const otherSize = other.variants.find((v) => v.stock >= 4)!.size;
+// Earlier suites sell sizes out, so the size to pick is read from the database when the test runs.
+let size = '';
+let otherSize = '';
+test.beforeAll(async () => {
+  const pick = async (productId: string) => {
+    const [v] = await db<{ size: string }[]>`
+      select size from public.product_variants where product_id = ${productId} and is_active
+        and stock_quantity >= 4 order by sort_order limit 1`;
+    return v!.size.replace(/^AU\s*/i, '');
+  };
+  size = await pick(product.id);
+  otherSize = await pick(other.id);
+});
 const oneOfOne = PRODUCTS.find(
   (p) => p.productType === 'one_of_one' && !p.tags?.includes('preview-only'),
 )!;

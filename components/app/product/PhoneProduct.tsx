@@ -169,7 +169,7 @@ export function PhoneProduct({
 
         {story && (
           <a
-            href="#story"
+            href="#story-phone"
             className="mt-4 flex items-center gap-3 rounded-app bg-stone px-4 py-3"
             data-testid="story-link-phone"
           >
@@ -235,7 +235,11 @@ export function PhoneProduct({
       </div>
 
       {story && (
-        <section id="story" className="mt-8 bg-stone px-4 py-6" aria-label="Story of the garment">
+        <section
+          id="story-phone"
+          className="mt-8 bg-stone px-4 py-6"
+          aria-label="Story of the garment"
+        >
           <p className="text-[11px] uppercase tracking-label text-muted-2">
             The story of this piece
           </p>

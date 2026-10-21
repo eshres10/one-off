@@ -122,7 +122,7 @@ test.describe('story of the garment', () => {
     try {
       const page = await (await browser.newContext(DESKTOP)).newPage();
       await page.goto(`/products/${piece!.slug}`);
-      await expect(page.getByText('Sold').first()).toBeVisible();
+      await expect(page.getByTestId('sold-stamp').filter({ visible: true }).first()).toBeVisible();
       await expect(page.getByTestId('story-quote')).toHaveText('“Cut from the last of the roll.”');
     } finally {
       await db`delete from public.product_stories where product_id = ${piece!.id}`;

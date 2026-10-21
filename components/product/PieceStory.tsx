@@ -49,7 +49,7 @@ const Label = ({ children }: { children: React.ReactNode }) => (
  * reviews. Every part hides when it's empty. Phones get one column, a shortened inspiration with
  * "Read the full story", and close-ups that scroll sideways.
  */
-export function StorySection({ data }: { data: StoryForPage }) {
+export function StorySection({ data, id = 'story' }: { data: StoryForPage; id?: string }) {
   const { story: s, writer: w } = data;
   const people =
     w.teamSize === 1
@@ -67,15 +67,15 @@ export function StorySection({ data }: { data: StoryForPage }) {
 
   return (
     <section
-      id="story"
-      aria-labelledby="story-heading"
+      id={id}
+      aria-labelledby={`${id}-heading`}
       className="relative z-[1] scroll-mt-[calc(var(--header-h)+8px)] bg-stone-light py-14 md:py-20"
-      data-testid="story"
+      data-testid={id}
     >
       <div className="container-page">
         <div className="flex items-baseline justify-between gap-4 border-b border-ink pb-3">
           <h2
-            id="story-heading"
+            id={`${id}-heading`}
             className="font-sans text-[11px] font-normal uppercase tracking-[0.18em]"
           >
             The story of this piece
