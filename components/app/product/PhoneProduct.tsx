@@ -9,6 +9,7 @@ import { Img as Image } from '@/components/ui/Img';
 import { ChevronIcon } from '@/components/ui/icons';
 import { FollowButton } from '@/components/maker/FollowButton';
 import { ReturnsPolicy } from '@/components/ui/ReturnsPolicy';
+import { SoldPanel, SoldStamp } from '@/components/product/SoldPanel';
 import { PhoneGallery } from './PhoneGallery';
 import { PhoneBuy } from './PhoneBuy';
 
@@ -67,6 +68,8 @@ export function PhoneProduct({
   soldOut,
   signedIn,
   makeToOrder = null,
+  soldOne = false,
+  similarHref,
 }: {
   product: ProductDetail;
   saved: boolean;
@@ -83,18 +86,24 @@ export function PhoneProduct({
   soldOut: boolean;
   signedIn: boolean;
   makeToOrder?: { makerName: string; leadDays: number; href: string } | null;
+  /** A sold one-of-one: greyed photos with a Sold stamp, and the panel instead of the buy bar. */
+  soldOne?: boolean;
+  similarHref: string;
 }) {
   const m = product.maker;
   const instalment = Math.ceil(product.priceCents / SITE.payments.afterpayInstalments);
   return (
     <div className="pb-[96px]" data-testid="phone-product">
-      <PhoneGallery
-        images={product.images}
-        title={product.title}
-        productId={product.id}
-        saved={saved}
-        slug={product.slug}
-      />
+      <div className={soldOne ? 'relative [&_img]:grayscale' : 'relative'}>
+        <PhoneGallery
+          images={product.images}
+          title={product.title}
+          productId={product.id}
+          saved={saved}
+          slug={product.slug}
+        />
+        {soldOne && <SoldStamp />}
+      </div>
       <div className="px-4">
         <div className="flex items-center gap-3 py-4">
           <Link
@@ -132,26 +141,30 @@ export function PhoneProduct({
           <span className="block text-muted">{dateLine}</span>
         </p>
         <div className="mt-4">
-          <PhoneBuy
-            productId={product.id}
-            productType={product.productType}
-            priceCents={product.priceCents}
-            variants={product.variants.filter((v) => v.isActive)}
-            colours={product.colours}
-            savedFit={savedFit}
-            canBuy={canBuy}
-            disabledLabel={disabledLabel}
-            askHref={
-              signedIn
-                ? `/products/${product.slug}/ask`
-                : `/login?next=/products/${product.slug}/ask`
-            }
-            soldOut={soldOut}
-            signedIn={signedIn}
-            makeToOrder={
-              makeToOrder ? { ...makeToOrder, price: formatPrice(product.priceCents) } : null
-            }
-          />
+          {soldOne ? (
+            <SoldPanel title={product.title} makerName={m.displayName} similarHref={similarHref} />
+          ) : (
+            <PhoneBuy
+              productId={product.id}
+              productType={product.productType}
+              priceCents={product.priceCents}
+              variants={product.variants.filter((v) => v.isActive)}
+              colours={product.colours}
+              savedFit={savedFit}
+              canBuy={canBuy}
+              disabledLabel={disabledLabel}
+              askHref={
+                signedIn
+                  ? `/products/${product.slug}/ask`
+                  : `/login?next=/products/${product.slug}/ask`
+              }
+              soldOut={soldOut}
+              signedIn={signedIn}
+              makeToOrder={
+                makeToOrder ? { ...makeToOrder, price: formatPrice(product.priceCents) } : null
+              }
+            />
+          )}
         </div>
 
         {story && (

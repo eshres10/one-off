@@ -240,6 +240,8 @@ export default async function ProductPage({ params }: { params: { slug: string }
           disabledLabel={previewOnly ? 'Preview only' : sale.ok ? 'Launching soon' : sale.label}
           soldOut={soldOne || (totalStock === 0 && product.productType !== 'made_to_order')}
           signedIn={Boolean(user)}
+          soldOne={soldOne}
+          similarHref={similarHref}
           makeToOrder={
             product.productType === 'ready_to_ship' &&
             product.madeToOrderOptions &&
