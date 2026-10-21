@@ -319,7 +319,11 @@ export async function PhoneHome({
                   key={mk.id}
                   className="w-[260px] shrink-0 overflow-hidden rounded-app border border-line bg-surface"
                 >
-                  <Link href={`/makers/${mk.slug}`} className="relative block h-[120px] bg-stone">
+                  <Link
+                    href={`/makers/${mk.slug}`}
+                    className="relative block h-[120px] bg-stone"
+                    aria-label={mk.displayName}
+                  >
                     {(mk.coverUrl ?? mk.avatarUrl) && (
                       <Image
                         src={(mk.coverUrl ?? mk.avatarUrl)!}
