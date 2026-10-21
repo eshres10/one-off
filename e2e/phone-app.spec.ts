@@ -419,7 +419,11 @@ test.describe.serial('phone app', () => {
     // Picking a second size moves the one size, it doesn't add one.
     await expect(page.getByTestId('size-control').locator('[aria-pressed="true"]')).toHaveCount(1);
     await expect(page.getByTestId('size-12')).toHaveAttribute('aria-pressed', 'true');
-    await page.getByTestId('piece-description').fill('Cut on the bias from deadstock silk.');
+    await page
+      .getByTestId('piece-description')
+      .fill(
+        'Cut on the bias from a single length of deadstock silk satin, with French seams inside and a hand-rolled hem. One made, this size only.',
+      );
     await shot(page, 'studio-new-details');
     await page.getByTestId('publish').click();
     await page.waitForURL((u) => u.pathname === '/studio/shop');
