@@ -22,12 +22,13 @@ export function adminHour(at: Date): number {
 }
 
 /**
- * The daily jobs. The cron runs at 21:00, 22:00, 23:00 and 00:00 UTC, so every Australian zone
- * gets a run at or just after 8am local (Perth's is 00:00 UTC; Adelaide and Darwin land at 8:30).
- * Maker messages (ship-by reminders, Monday summaries, case due reminders) go out at the first
- * run at or after 8am in the maker's own time zone, once each. The admin's applications summary
- * stays on SITE.adminTimeZone. Each job is idempotent and isolated, so one failure doesn't stop
- * the rest. An hourly schedule works too, if the hosting plan allows it.
+ * The daily jobs. The cron runs at 23:00 and 00:00 UTC (vercel.json: Vercel's Hobby plan allows
+ * two daily crons), so every Australian zone gets a run at or after 8am local: Perth's is 00:00
+ * UTC, the east coast's first is 23:00. Maker messages (ship-by reminders, Monday summaries, case
+ * due reminders) go out at the first run at or after 8am in the maker's own time zone, once each.
+ * The admin's applications summary goes at the first run at or after SITE.adminDigestHour, once
+ * a day. Custom-request deadlines tick here too (the hourly /api/cron/custom needs a Pro plan).
+ * Each job is idempotent and isolated, so one failure doesn't stop the rest.
  */
 export async function runDailyJobs(now: Date) {
   const out: Record<string, unknown> = { adminHour: adminHour(now) };
@@ -42,7 +43,7 @@ export async function runDailyJobs(now: Date) {
     ['restockAlerts', () => sendRestockAlerts()],
     ['dropAlerts', () => sendDropAlerts(now)],
   ];
-  if (adminHour(now) === SITE.adminDigestHour)
+  if (adminHour(now) >= SITE.adminDigestHour)
     jobs.push(['applicationsDigest', () => applicationsDigest(now)]);
   jobs.push(
     ['shipByReminders', () => shipByReminders(now)],

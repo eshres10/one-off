@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
 
 /**
- * Runs at 21:00, 22:00 and 23:00 UTC (vercel.json), so 8am and 9am in Melbourne are both covered
+ * Runs at 23:00 and 00:00 UTC (vercel.json), so every Australian zone sees a run after 8am local
  * whatever the daylight-saving season. Every job is idempotent, so the extra runs are harmless;
  * jobs tied to a local hour only act on the run that lands on it.
  */
