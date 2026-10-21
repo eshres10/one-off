@@ -330,7 +330,11 @@ test.describe.serial('phone app', () => {
     await next.click();
     const sheet = page.getByTestId('ship-sheet');
     await expect(sheet).toBeVisible();
+    // Prepaid labels sit behind SITE.shipping.auspostLabels (off): the option says "Coming soon".
+    await page.getByTestId('ship-label').click();
     await expect(page.getByTestId('label-coming-soon')).toBeVisible();
+    await expect(page.getByTestId('mark-shipped-phone')).toBeDisabled();
+    await page.getByTestId('ship-self').click();
     await page.getByTestId('tracking-input').fill('36LB9999999901000930501');
     await shot(page, 'ship-sheet');
     await page.getByTestId('mark-shipped-phone').click();
