@@ -504,23 +504,55 @@ export function FitStep({
       </div>
       {brief.fitMode === 'measurements' && (
         <>
+          <p className="text-[12px] text-muted">
+            In centimetres. Bust, waist and hips are the three we need.
+          </p>
           <div className="grid grid-cols-2 gap-2 md:grid-cols-4" data-testid="measurements">
-            {MEASURE_FIELDS.map((f) => (
-              <label key={f.key} className="flex flex-col gap-0.5">
-                <span className="text-[11px] text-muted-2">
-                  {f.label}
-                  {['bust', 'waist', 'hips'].includes(f.key) ? '' : ' (optional)'}
-                </span>
-                <input
-                  className={`${fieldClass} min-h-[44px] px-2 text-[15px]`}
-                  inputMode="decimal"
-                  value={brief.measurements[f.key] ?? ''}
-                  onChange={(e) => num(f.key, e.target.value)}
-                  aria-label={`${f.label}, cm`}
-                  data-testid={`measure-${f.key}`}
-                />
-              </label>
-            ))}
+            {MEASURE_FIELDS.map((f) => {
+              const v = brief.measurements[f.key];
+              const low = typeof v === 'number' && v > 0 && v < f.min;
+              const high = typeof v === 'number' && v > f.max;
+              return (
+                <label key={f.key} className="flex flex-col gap-0.5">
+                  <span className="text-[11px] text-muted-2">
+                    {f.label}
+                    {['bust', 'waist', 'hips'].includes(f.key) ? '' : ' (optional)'}
+                  </span>
+                  <span className="relative">
+                    <input
+                      className={`${fieldClass} min-h-[44px] px-2 pr-9 text-[15px] ${low || high ? 'border-[#8A2E1C]' : ''}`}
+                      inputMode="decimal"
+                      value={v ?? ''}
+                      onChange={(e) => num(f.key, e.target.value)}
+                      aria-label={`${f.label}, cm`}
+                      aria-invalid={low || high ? true : undefined}
+                      data-testid={`measure-${f.key}`}
+                    />
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-[12px] text-muted-2"
+                    >
+                      cm
+                    </span>
+                  </span>
+                  {low && (
+                    <button
+                      type="button"
+                      onClick={() => num(f.key, String(Math.round(v * 2.54)))}
+                      className="text-left text-[11px] text-[#8A2E1C] underline underline-offset-[3px]"
+                      data-testid={`measure-${f.key}-inches`}
+                    >
+                      Looks like inches. Use {Math.round(v * 2.54)} cm?
+                    </button>
+                  )}
+                  {high && (
+                    <span className="text-[11px] text-[#8A2E1C]">
+                      Up to {f.max} cm. Check it and try again.
+                    </span>
+                  )}
+                </label>
+              );
+            })}
           </div>
           <div className="flex items-center justify-between gap-4">
             <Link
