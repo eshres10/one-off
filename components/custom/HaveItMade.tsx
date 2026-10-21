@@ -297,13 +297,14 @@ export function HaveItMade({
         <Link href="/" aria-label="Off One home" className="justify-self-center">
           <Wordmark size="mobile" />
         </Link>
-        <Link
+        {/* A full page load: leaving the flow should work even from a page loaded before a deploy. */}
+        <a
           href={closeHref}
           className="min-h-[44px] justify-self-end text-[11px] uppercase leading-[44px] tracking-[0.16em]"
           data-testid="flow-close"
         >
           Close ×
-        </Link>
+        </a>
       </header>
       {inBrief && (
         <div
@@ -517,12 +518,12 @@ export function HaveItMade({
               <p className="-mt-1.5 text-[13px] text-muted">
                 Your brief is with the Off One team. We’ll reply within 1 business day, by email.
               </p>
-              <Link
+              <a
                 href="/"
                 className="inline-flex min-h-[48px] items-center justify-center border border-ink text-[10px] uppercase tracking-[0.18em]"
               >
                 Back to browsing
-              </Link>
+              </a>
             </div>
           )}
 
