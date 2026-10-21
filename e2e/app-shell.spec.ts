@@ -219,16 +219,16 @@ test.describe.serial('app shell', () => {
     await expect(buyer.getByTestId('header-messages')).toHaveText('Messages (1)');
     await buyer.setViewportSize({ width: 390, height: 844 });
     await buyer.goto('/search');
-    await expect(buyer.getByTestId('tab-messages-count')).toHaveText('1');
+    await expect(buyer.getByTestId('phone-tabbar').getByTestId('tab-inbox-count')).toHaveText('1');
 
     // Reading the thread clears both.
-    await buyer.getByTestId('tab-messages').click();
+    await buyer.getByTestId('phone-tabbar').getByTestId('tab-inbox').click();
     await buyer
       .getByTestId('inbox-row')
       .filter({ hasText: enquiryPiece.maker.displayName })
       .click();
     await expect(buyer.getByTestId('bubble-theirs').last()).toContainText('Australia-wide');
     await buyer.goto('/search');
-    await expect(buyer.getByTestId('tab-messages-count')).toHaveCount(0);
+    await expect(buyer.getByTestId('phone-tabbar').getByTestId('tab-inbox-count')).toHaveCount(0);
   });
 });

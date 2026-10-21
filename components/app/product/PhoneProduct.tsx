@@ -23,14 +23,16 @@ function Row({
   children,
   open = false,
   testId,
+  id,
 }: {
   title: string;
   children: React.ReactNode;
   open?: boolean;
   testId?: string;
+  id?: string;
 }) {
   return (
-    <details className="group border-t border-line" open={open} data-testid={testId}>
+    <details className="group border-t border-line" open={open} data-testid={testId} id={id}>
       <summary className="flex min-h-[52px] cursor-pointer list-none items-center justify-between text-[15px] [&::-webkit-details-marker]:hidden">
         {title}
         <ChevronIcon
@@ -64,6 +66,7 @@ export function PhoneProduct({
   disabledLabel,
   soldOut,
   signedIn,
+  makeToOrder = null,
 }: {
   product: ProductDetail;
   saved: boolean;
@@ -79,6 +82,7 @@ export function PhoneProduct({
   disabledLabel: string;
   soldOut: boolean;
   signedIn: boolean;
+  makeToOrder?: { makerName: string; leadDays: number; href: string } | null;
 }) {
   const m = product.maker;
   const instalment = Math.ceil(product.priceCents / SITE.payments.afterpayInstalments);
@@ -123,7 +127,7 @@ export function PhoneProduct({
         <p className="mt-0.5 text-[12px] text-muted">
           or {SITE.payments.afterpayInstalments} payments of {formatPrice(instalment)} with Afterpay
         </p>
-        <p className="mt-2 text-[13px]" data-testid="availability">
+        <p className="mt-2 text-[13px]" data-testid="availability-phone">
           <span className="block">{typeLine}</span>
           <span className="block text-muted">{dateLine}</span>
         </p>
@@ -143,6 +147,10 @@ export function PhoneProduct({
                 : `/login?next=/products/${product.slug}/ask`
             }
             soldOut={soldOut}
+            signedIn={signedIn}
+            makeToOrder={
+              makeToOrder ? { ...makeToOrder, price: formatPrice(product.priceCents) } : null
+            }
           />
         </div>
 
@@ -150,7 +158,7 @@ export function PhoneProduct({
           <a
             href="#story"
             className="mt-4 flex items-center gap-3 rounded-app bg-stone px-4 py-3"
-            data-testid="story-card"
+            data-testid="story-link-phone"
           >
             <span className="relative h-10 w-10 shrink-0 overflow-hidden rounded-circle bg-surface">
               {story.writer.avatarUrl && (
@@ -167,9 +175,16 @@ export function PhoneProduct({
               <span className="block text-[11px] uppercase tracking-label text-muted-2">
                 Story of the garment
               </span>
-              <span className="block truncate font-display text-[17px] leading-tight">
-                “{story.story.quote}”
-              </span>
+              {story.story.quote && (
+                <span className="block truncate font-display text-[17px] leading-tight">
+                  “{story.story.quote}”
+                </span>
+              )}
+              {story.story.hoursToMake != null && (
+                <span className="block text-[12px] text-muted">
+                  {story.story.hoursToMake} hours of making
+                </span>
+              )}
             </span>
             <ChevronIcon width={16} height={16} />
           </a>
@@ -191,11 +206,16 @@ export function PhoneProduct({
               </dd>
             </dl>
           </Row>
-          <Row title="Delivery & returns" testId="row-delivery">
+          <Row title="Delivery" testId="row-delivery">
             <p>{shippingText}</p>
-            <div className="mt-2">
-              <ReturnsPolicy productType={product.productType} link />
-            </div>
+          </Row>
+          <Row
+            title="Returns"
+            testId="row-returns"
+            id="returns-phone"
+            open={product.productType === 'made_to_order'}
+          >
+            <ReturnsPolicy productType={product.productType} link testId="returns-row-phone" />
           </Row>
           <div className="border-t border-line" />
         </div>

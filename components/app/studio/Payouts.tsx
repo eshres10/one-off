@@ -36,7 +36,7 @@ export function PhonePayouts({
       <section
         className="mt-4 rounded-app bg-ink p-5 text-ground"
         aria-label="Next payout"
-        data-testid="next-payout"
+        data-testid="next-payout-phone"
       >
         <p className="text-[10px] uppercase tracking-[0.2em] text-ground/70">Next payout</p>
         <p className="mt-2 font-display text-[40px] leading-none">

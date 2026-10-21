@@ -155,9 +155,9 @@ export async function PhoneHome({
           />
           <div className="absolute inset-x-5 bottom-5">
             <p className="text-[10px] uppercase tracking-wide2">{hero.subtitle}</p>
-            <p className="mt-2 max-w-[11ch] font-display text-[40px] leading-[0.95]">
+            <h1 className="mt-2 max-w-[11ch] font-display text-[40px] leading-[0.95]">
               {hero.title}
-            </p>
+            </h1>
             <div className="mt-4 flex gap-2">
               <Link
                 href="/discover"

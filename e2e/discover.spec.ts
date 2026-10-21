@@ -53,10 +53,7 @@ test.describe.serial('discover', () => {
     await expect(page.getByTestId('mega-panel')).toHaveCount(0);
   });
 
-  test('Discover is in the nav and the tab bar; the phone header heart goes to /saved', async ({
-    page,
-    browser,
-  }) => {
+  test('Discover is in the nav and the phone tab bar', async ({ page, browser }) => {
     await page.goto('/');
     const nav = page.getByRole('navigation', { name: 'Primary' });
     await expect(nav.getByRole('link', { name: 'Discover' })).toBeVisible();
@@ -66,11 +63,11 @@ test.describe.serial('discover', () => {
       await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true })
     ).newPage();
     await phone.goto('/');
-    const tabs = phone.getByRole('navigation', { name: 'App' });
+    const tabs = phone.getByTestId('phone-tabbar');
     await expect(tabs.getByTestId('tab-discover')).toBeVisible();
     await expect(tabs.getByRole('link', { name: /^Saved/ })).toHaveCount(0);
-    await phone.getByTestId('header-saved').click();
-    await expect(phone).toHaveURL(/\/saved$/);
+    await tabs.getByTestId('tab-discover').click();
+    await expect(phone).toHaveURL(/\/discover$/);
     await phone.context().close();
   });
 

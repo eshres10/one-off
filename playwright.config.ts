@@ -170,6 +170,29 @@ export default defineConfig({
         video: { mode: 'on', size: { width: 1280, height: 900 } },
       },
     },
+    // The phone app (iPhone 14) and its one desktop check at 1440.
+    {
+      name: 'phone-app',
+      testMatch: 'phone-app.spec.ts',
+      dependencies: ['have-it-made-1280'],
+      use: {
+        browserName: 'chromium',
+        viewport: { width: 390, height: 844 },
+        deviceScaleFactor: 1,
+        isMobile: true,
+        hasTouch: true,
+      },
+    },
+    {
+      name: 'phone-app-desktop',
+      testMatch: 'phone-app.spec.ts',
+      dependencies: ['phone-app'],
+      use: {
+        browserName: 'chromium',
+        viewport: { width: 1440, height: 900 },
+        deviceScaleFactor: 1,
+      },
+    },
   ],
   webServer: {
     command:

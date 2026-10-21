@@ -103,11 +103,9 @@ test('3. never paths: no sheet even when a trigger fires', async ({ browser }) =
   const { ctx, page } = await open(browser, phone(UA.ios));
   // Something in the bag, so /checkout opens rather than sending us back to the bag.
   await page.goto(`/products/${product.slug}`);
+  await page.getByTestId('add-to-bag').click();
   await page.getByRole('button', { name: `Size ${size}`, exact: true }).click();
-  await page
-    .getByRole('button', { name: /^Add to bag/ })
-    .filter({ visible: true })
-    .click();
+  await page.getByTestId('size-sheet-add').click();
   await expect(page.getByTestId('view-bag')).toBeVisible();
   for (const path of ['/login', '/signup', '/sell/apply', '/checkout', '/studio']) {
     await page.goto(path);

@@ -114,7 +114,7 @@ export function ShipSheet({
             onClick={ship}
             disabled={pending || method === 'label'}
             className="w-full"
-            data-testid="mark-shipped"
+            data-testid="mark-shipped-phone"
           >
             {pending ? 'Sending…' : 'Mark as shipped'}
           </AppButton>

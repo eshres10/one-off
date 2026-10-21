@@ -82,7 +82,7 @@ export function PhoneBag({
               const line = cart.lines.find((l) => l.id === raw.id) ?? null;
               if (!line) return null;
               return (
-                <li key={line.id} className="flex gap-3 px-4 py-3" data-testid="bag-line">
+                <li key={line.id} className="flex gap-3 px-4 py-3" data-testid="bag-line-phone">
                   <Link
                     href={`/products/${line.productSlug}`}
                     className="relative block h-[100px] w-[80px] shrink-0 overflow-hidden rounded-[8px] bg-stone"
@@ -153,13 +153,13 @@ export function PhoneBag({
         </div>
         <div className="flex justify-between">
           <dt className="text-muted">Delivery{delivery.from ? ' (from)' : ''}</dt>
-          <dd data-testid="bag-delivery">
+          <dd data-testid="bag-delivery-phone">
             {delivery.cents ? formatPrice(delivery.cents) : 'Free'}
           </dd>
         </div>
         <div className="flex justify-between border-t border-line pt-2 text-[17px]">
           <dt>Total</dt>
-          <dd data-testid="bag-total">{formatPrice(total)}</dd>
+          <dd data-testid="bag-total-phone">{formatPrice(total)}</dd>
         </div>
       </dl>
       <p className="mt-1 text-[12px] text-muted">
@@ -177,7 +177,7 @@ export function PhoneBag({
           <Link
             href="/checkout"
             className={appButtonLinkClass('ink', 'w-full')}
-            data-testid="checkout-button"
+            data-testid="checkout-button-phone"
           >
             Checkout · {formatPrice(total)}
           </Link>

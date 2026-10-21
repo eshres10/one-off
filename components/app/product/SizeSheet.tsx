@@ -9,6 +9,7 @@ import { Sheet } from '../Sheet';
 import { AppButton } from '../ui';
 import { buzz } from '../Heart';
 import { toast } from '../Toast';
+import { SoldOutSize } from '@/components/product/SoldOutSize';
 
 export interface SheetVariant {
   id: string;
@@ -47,6 +48,8 @@ export function SizeSheet({
   canBuy,
   disabledLabel,
   onAdded,
+  signedIn = false,
+  makeToOrder = null,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
@@ -59,6 +62,8 @@ export function SizeSheet({
   canBuy: boolean;
   disabledLabel: string;
   onAdded?: () => void;
+  signedIn?: boolean;
+  makeToOrder?: { makerName: string; leadDays: number; price: string; href: string } | null;
 }) {
   const router = useRouter();
   const [colour, setColour] = useState<string | null>(colours[0] ?? null);
@@ -119,9 +124,9 @@ export function SizeSheet({
       <button
         key={au}
         type="button"
-        disabled={soldOut}
+        disabled={!v}
         aria-pressed={on}
-        aria-label={`AU ${au}${soldOut ? ', sold out' : ''}`}
+        aria-label={`Size ${au}${soldOut ? ', sold out' : ''}`}
         data-testid={`size-${au}`}
         onClick={() => {
           setVariantId(v!.id);
@@ -133,7 +138,7 @@ export function SizeSheet({
             : soldOut
               ? 'border-line text-muted-2 line-through'
               : 'border-line-strong bg-surface'
-        }`}
+        } ${soldOut && v ? 'no-underline' : ''} }`}
       >
         <span>AU {au}</span>
         <span
@@ -145,11 +150,14 @@ export function SizeSheet({
     );
   };
 
+  const selectedSoldOut = !!selected && selected.stockQuantity <= 0 && !measurements;
   const label = !canBuy
     ? disabledLabel
-    : selected || measurements
-      ? `Add to bag · ${formatPrice(priceCents)}`
-      : 'Choose a size';
+    : selectedSoldOut
+      ? `Size ${norm(selected!.size)} sold out`
+      : selected || measurements
+        ? `Add to bag · ${formatPrice(priceCents)}`
+        : 'Choose a size';
 
   return (
     <Sheet
@@ -161,7 +169,7 @@ export function SizeSheet({
         <>
           <AppButton
             onClick={add}
-            disabled={!canBuy || !selected || pending}
+            disabled={!canBuy || !selected || selectedSoldOut || pending}
             className="w-full"
             data-testid="size-sheet-add"
           >
@@ -202,6 +210,14 @@ export function SizeSheet({
           {AU.map((au) => tile(byAu.get(au) ?? null, au))}
           {others.map((v) => tile(v, norm(v.size)))}
         </div>
+      )}
+      {selectedSoldOut && productType === 'ready_to_ship' && (
+        <SoldOutSize
+          variantId={selected!.id}
+          size={norm(selected!.size)}
+          signedIn={signedIn}
+          makeToOrder={makeToOrder}
+        />
       )}
       {mto && (
         <button

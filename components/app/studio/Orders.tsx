@@ -81,7 +81,8 @@ export function PhoneOrders({ rows, bucket }: { rows: StudioOrderRow[]; bucket: 
                         <span className="min-w-0">
                           <span className="block truncate text-[14px]">{o.title}</span>
                           <span className="block truncate text-[12px] text-muted">
-                            {o.buyerName ?? 'Guest'} · {o.variantLabel.replace(/^AU /, 'Size ')}
+                            #{o.orderNumber.replace(/^OO-/, '')} · {o.buyerName ?? 'Guest'} ·{' '}
+                            {o.variantLabel.replace(/^AU /, 'Size ')}
                           </span>
                         </span>
                         <span

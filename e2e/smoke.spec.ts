@@ -1,4 +1,4 @@
-import { checkoutAsGuest } from './checkout-steps';
+import { addToBag, checkoutAsGuest, isPhone } from './checkout-steps';
 import { expect, test, type Page } from '@playwright/test';
 import { BUYERS, MAKERS, PASSWORD, PRODUCTS } from '../scripts/seed-data';
 
@@ -27,35 +27,40 @@ test.describe.serial('marketplace smoke', () => {
     await expect(
       page.getByRole('heading', { name: /Bespoke pieces made just for you/i }),
     ).toBeVisible();
-    const cards = page.getByTestId('product-card');
+    const phone = isPhone(page);
+    const cards = page.getByTestId(phone ? 'phone-tile' : 'product-card');
     await expect(cards.first()).toBeVisible();
     expect(await cards.count()).toBeGreaterThanOrEqual(8);
     // Every card shows the maker.
     await expect(cards.first()).toContainText(
       new RegExp(MAKERS.map((m) => m.displayName).join('|')),
     );
-    await page.getByRole('tab', { name: 'New this week' }).click();
+    if (phone) await page.getByTestId('pill-new-in').click();
+    else await page.getByRole('tab', { name: 'New this week' }).click();
     await expect(page).toHaveURL(/tab=new/);
-    await expect(page.getByTestId('product-card').first()).toBeVisible();
+    await expect(cards.first()).toBeVisible();
   });
 
   test('open a product, add to bag and pay with Stripe (test mode)', async ({ page }) => {
     await page.goto(`/products/${product.slug}`);
     await expect(page.getByRole('heading', { level: 1, name: product.title })).toBeVisible();
-    await expect(
-      page.getByLabel('Shipping, returns and protection').getByText('Buyer protection'),
-    ).toBeVisible();
-    await expect(page.getByTestId('availability')).toContainText('Ready to ship');
+    const phone = isPhone(page);
+    if (phone) await expect(page.getByTestId('availability-phone')).toContainText('Ready to ship');
+    else {
+      await expect(
+        page.getByLabel('Shipping, returns and protection').getByText('Buyer protection'),
+      ).toBeVisible();
+      await expect(page.getByTestId('availability')).toContainText('Ready to ship');
+    }
 
-    await page.getByRole('button', { name: `Size ${size}`, exact: true }).click();
-    await page
-      .getByRole('button', { name: /^Add to bag/ })
-      .filter({ visible: true })
-      .click();
-    await page.getByTestId('view-bag').click();
+    await addToBag(page, size);
 
-    await expect(page.getByTestId('bag-line')).toHaveCount(1);
-    await expect(page.getByText(`Ships from ${product.maker.displayName}`)).toBeVisible();
+    await expect(page.getByTestId(phone ? 'bag-line-phone' : 'bag-line')).toHaveCount(1);
+    if (phone)
+      await expect(
+        page.getByRole('region', { name: `From ${product.maker.displayName}` }),
+      ).toBeVisible();
+    else await expect(page.getByText(`Ships from ${product.maker.displayName}`)).toBeVisible();
     orderNumber = await checkoutAsGuest(page, 'e2e-guest@buyer.test');
     expect(orderNumber).toMatch(/^OO-\d+$/);
     await expect(page.getByTestId('order-confirmed')).toContainText(product.title);
@@ -85,14 +90,29 @@ test.describe.serial('marketplace smoke', () => {
   test('seller logs in and sees the order', async ({ page }) => {
     expect(orderNumber).not.toBe('');
     await login(page, product.maker.email, '/studio/orders');
-    // On a phone, orders are cards showing "#10002".
-    const card = page
-      .getByTestId('order-card')
-      .filter({ hasText: orderNumber.replace(/^OO-/, '#') });
-    await expect(card).toBeVisible();
-    await card.click();
-    await page.getByTestId('tracking-number').fill('AP998877AU');
-    await page.getByTestId('mark-shipped').click();
-    await expect(page.getByTestId('toast')).toContainText(/shipped/i);
+    const short = orderNumber.replace(/^OO-/, '#');
+    if (isPhone(page)) {
+      // The app's Orders: a row per order showing "#10002"; its detail has one next-step button.
+      const row = page.getByTestId('phone-order-row').filter({ hasText: short });
+      await expect(row).toBeVisible();
+      await row.click();
+      await page.waitForURL(/\/studio\/orders\/[0-9a-f-]{36}/);
+      await expect(page.getByTestId('next-step')).toHaveText('It’s packed');
+      await page.getByTestId('next-step').click();
+      await expect(page.getByTestId('next-step')).toHaveText('Ship it');
+      await page.getByTestId('next-step').click();
+      await expect(page.getByTestId('ship-sheet')).toBeVisible();
+      await page.getByTestId('tracking-input').fill('AP998877AU');
+      await page.getByTestId('mark-shipped-phone').click();
+      await expect(page.getByTestId('app-toast')).toContainText(/shipped/i);
+      await expect(page.getByTestId('order-timeline')).toContainText('Shipped');
+    } else {
+      const card = page.getByTestId('order-card').filter({ hasText: short });
+      await expect(card).toBeVisible();
+      await card.click();
+      await page.getByTestId('tracking-number').fill('AP998877AU');
+      await page.getByTestId('mark-shipped').click();
+      await expect(page.getByTestId('toast')).toContainText(/shipped/i);
+    }
   });
 });

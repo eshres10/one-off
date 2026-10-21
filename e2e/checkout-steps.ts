@@ -1,5 +1,23 @@
 import { expect, type Page } from '@playwright/test';
 
+export const isPhone = (page: Page) => (page.viewportSize()?.width ?? 1280) < 768;
+
+/** Picks a size and adds to the bag: the size sheet on phones, the size pills on desktop. */
+export async function addToBag(page: Page, size: string) {
+  if (isPhone(page)) {
+    await page.getByTestId('add-to-bag').click();
+    await page.getByRole('button', { name: `Size ${size}`, exact: true }).click();
+    await page.getByTestId('size-sheet-add').click();
+  } else {
+    await page.getByRole('button', { name: `Size ${size}`, exact: true }).click();
+    await page
+      .getByRole('button', { name: /^Add to bag/ })
+      .filter({ visible: true })
+      .click();
+  }
+  await page.getByTestId('view-bag').click();
+}
+
 /**
  * From the bag, through /checkout (Details → Delivery → Payment) with the mock card, to the
  * Thank you page. Returns the order number. Works at desktop and phone widths.
@@ -11,9 +29,9 @@ export async function checkoutAsGuest(
   opts: { saveDetails?: boolean; onStep?: (step: string) => Promise<void> } = {},
 ): Promise<string> {
   const step = async (name: string) => opts.onStep?.(name);
-  await page.getByTestId('checkout-button').click();
+  const phone = isPhone(page);
+  await page.getByTestId(phone ? 'checkout-button-phone' : 'checkout-button').click();
   await page.waitForURL(/\/checkout$/);
-  const phone = (page.viewportSize()?.width ?? 1280) < 768;
   const next = async (label: string) => {
     if (phone) await page.getByTestId('checkout-sticky-button').click();
     else await page.getByRole('button', { name: label }).click();

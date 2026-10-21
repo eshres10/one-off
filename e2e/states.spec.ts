@@ -75,6 +75,8 @@ test.describe('empty and edge states', () => {
       where id = (select id from public.product_variants where product_id = ${ready.id} order by sort_order limit 1)
       returning id, size`;
     await page.goto(`/products/${ready.slug}`);
+    // On a phone the sizes live in the size sheet.
+    await page.getByTestId('add-to-bag').click();
     await page.getByRole('button', { name: `Size ${v!.size}, sold out` }).click();
     await expect(page.getByTestId('size-sold-out')).toContainText(`Size ${v!.size} is sold out`);
     await page.getByTestId('notify-restock').click();
@@ -146,7 +148,7 @@ test.describe('long press to add', () => {
     await page.getByTestId('quick-add-submit').click();
     await expect(page.getByTestId('quick-add-done')).toContainText('Added to your bag');
     await page.goto('/bag');
-    await expect(page.getByTestId('bag-line')).toHaveCount(1);
+    await expect(page.getByTestId('bag-line-phone')).toHaveCount(1);
   });
 
   test('a one-of-one goes straight in, and a tap still opens the piece', async ({ page }) => {

@@ -279,7 +279,7 @@ export function YouScreen({
           {studio && (
             <li>
               <Link
-                href="/studio?mode=studio"
+                href="/api/mode?to=studio&next=/studio"
                 className="flex min-h-[52px] items-center justify-between text-[15px] font-medium"
                 data-testid="menu-studio"
               >

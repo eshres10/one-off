@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import postgres from 'postgres';
 import { getReturnPolicy } from '../lib/returns/policy';
-import { checkoutAsGuest } from './checkout-steps';
+import { addToBag, checkoutAsGuest } from './checkout-steps';
 import { BUYERS, PASSWORD, PRODUCTS } from '../scripts/seed-data';
 
 const db = postgres(
@@ -28,15 +28,16 @@ test.describe.serial('returns policy', () => {
   test('product pages show the right returns line', async ({ page }) => {
     const ready = PRODUCTS.find((p) => p.productType === 'ready_to_ship')!;
     const mto = PRODUCTS.find((p) => p.productType === 'made_to_order')!;
+    const phone = (page.viewportSize()?.width ?? 1280) < 768;
+    const rowId = phone ? 'returns-row-phone' : 'returns-row';
+    const details = phone ? 'details#returns-phone' : 'details#returns';
     await page.goto(`/products/${mto.slug}`);
-    const row = page.getByTestId('returns-row');
+    const row = page.getByTestId(rowId);
     await expect(row).toBeVisible(); // open by default for made-to-order
     await expect(row).toContainText(getReturnPolicy('made_to_order').detail);
     await page.goto(`/products/${ready.slug}`);
-    await expect(page.locator('details#returns')).not.toHaveAttribute('open', '');
-    await expect(page.getByTestId('returns-row')).toContainText(
-      getReturnPolicy('ready_to_ship').detail,
-    );
+    await expect(page.locator(details)).not.toHaveAttribute('open', '');
+    await expect(page.getByTestId(rowId)).toContainText(getReturnPolicy('ready_to_ship').detail);
   });
 
   test('payment shows the no change-of-mind line, and paying records that it was shown', async ({
@@ -47,12 +48,7 @@ test.describe.serial('returns policy', () => {
     )!;
     const size = product.variants.find((v) => v.stock >= 3)!.size;
     await page.goto(`/products/${product.slug}`);
-    await page.getByRole('button', { name: `Size ${size}`, exact: true }).click();
-    await page
-      .getByRole('button', { name: /^Add to bag/ })
-      .filter({ visible: true })
-      .click();
-    await page.getByTestId('view-bag').click();
+    await addToBag(page, size);
     await expect(page.getByTestId('bag-returns-note').first()).toHaveText(
       getReturnPolicy('ready_to_ship').summary,
     );

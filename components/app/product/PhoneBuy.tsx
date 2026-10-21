@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { formatPrice } from '@/lib/domain/money';
 import type { SavedFit } from '@/components/product/CustomMeasurements';
 import { ChevronIcon } from '@/components/ui/icons';
+import { openThreadAction } from '@/lib/actions/messages';
 import { SizeSheet, type SheetVariant } from './SizeSheet';
 
 /**
@@ -22,6 +23,8 @@ export function PhoneBuy({
   disabledLabel,
   askHref,
   soldOut,
+  signedIn = false,
+  makeToOrder = null,
 }: {
   productId: string;
   productType: 'ready_to_ship' | 'made_to_order' | 'one_of_one';
@@ -33,8 +36,11 @@ export function PhoneBuy({
   disabledLabel: string;
   askHref: string;
   soldOut: boolean;
+  signedIn?: boolean;
+  makeToOrder?: { makerName: string; leadDays: number; price: string; href: string } | null;
 }) {
   const [open, setOpen] = useState(false);
+  const [added, setAdded] = useState(false);
   const sizes = variants
     .filter((v) => v.stockQuantity > 0 || productType === 'made_to_order')
     .map((v) => v.size.replace(/^AU\s*/i, ''));
@@ -59,17 +65,30 @@ export function PhoneBuy({
         </span>
         <ChevronIcon width={16} height={16} />
       </button>
+      {added && (
+        <Link
+          href="/bag"
+          className="mt-2 inline-block text-[13px] underline underline-offset-[3px]"
+          data-testid="view-bag"
+        >
+          View bag
+        </Link>
+      )}
       <div
         className="glass-nav fixed inset-x-0 bottom-0 z-40 flex gap-2 px-3 pb-[max(12px,env(safe-area-inset-bottom))] pt-3 md:hidden"
         data-testid="buy-bar"
       >
-        <Link
-          href={askHref}
-          className="flex min-h-[52px] flex-1 items-center justify-center rounded-app border border-ink text-[12px] uppercase tracking-[0.14em]"
-          data-testid="ask-the-maker"
-        >
-          Ask the maker
-        </Link>
+        <form action={openThreadAction} className="flex flex-1">
+          <input type="hidden" name="productId" value={productId} />
+          <input type="hidden" name="returnTo" value={askHref} />
+          <button
+            type="submit"
+            className="flex min-h-[52px] w-full items-center justify-center rounded-app border border-ink text-[12px] uppercase tracking-[0.14em]"
+            data-testid="ask-the-maker"
+          >
+            Ask the maker
+          </button>
+        </form>
         <button
           type="button"
           onClick={() => setOpen(true)}
@@ -95,6 +114,9 @@ export function PhoneBuy({
         savedFit={savedFit}
         canBuy={canBuy && !soldOut}
         disabledLabel={soldOut ? 'Sold out' : disabledLabel}
+        signedIn={signedIn}
+        makeToOrder={makeToOrder}
+        onAdded={() => setAdded(true)}
       />
     </>
   );

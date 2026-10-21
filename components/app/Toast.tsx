@@ -34,7 +34,7 @@ export function ToastHost() {
       key={item.id}
       role="status"
       aria-live="polite"
-      data-testid="toast"
+      data-testid="app-toast"
       className="toast-in pointer-events-none fixed inset-x-0 bottom-[calc(var(--tabbar-h)+14px)] z-[90] flex justify-center px-4"
     >
       <span className="rounded-pill bg-ink px-4 py-2.5 text-[13px] text-ground shadow-[0_8px_24px_rgba(17,17,17,0.18)]">

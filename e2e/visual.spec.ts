@@ -1,4 +1,4 @@
-import { checkoutAsGuest } from './checkout-steps';
+import { addToBag, checkoutAsGuest } from './checkout-steps';
 import { expect, test, type Page } from '@playwright/test';
 import { BUYERS, PASSWORD, PRODUCTS, MAKERS } from '../scripts/seed-data';
 
@@ -31,6 +31,7 @@ async function settle(page: Page) {
 function masks(page: Page) {
   return [
     page.getByTestId('availability'),
+    page.getByTestId('availability-phone'),
     page.getByTestId('order-number'),
     page.locator('time'),
     page.locator('[data-dynamic]'),
@@ -73,13 +74,9 @@ test.describe.serial('visual', () => {
 
   test('bag and order confirmation', async ({ page }) => {
     await page.goto(`/products/${product.slug}`);
-    await page.getByRole('button', { name: `Size ${size}`, exact: true }).click();
-    await page
-      .getByRole('button', { name: /^Add to bag/ })
-      .filter({ visible: true })
-      .click();
-    await page.getByTestId('view-bag').click();
-    await expect(page.getByTestId('bag-line')).toHaveCount(1);
+    await addToBag(page, size);
+    const phone = (page.viewportSize()?.width ?? 1280) < 768;
+    await expect(page.getByTestId(phone ? 'bag-line-phone' : 'bag-line')).toHaveCount(1);
     await snap(page, 'bag');
 
     await checkoutAsGuest(page, 'visual-guest@buyer.test', 'Visual Guest', {
