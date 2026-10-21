@@ -110,7 +110,9 @@ export function HaveItMade({
         sourceListingId: d.brief.sourceListingId ?? b.sourceListingId,
       }));
       setSourceShown(Boolean(d.brief.sourceListingId ?? source));
-      if (resume && signedIn) setStep(FINDING);
+      // Back from sign-in: straight into matching only when that's where they left (the draft is
+      // saved at FINDING by "Find my makers"); signing in for photos at step 3 comes back to step 3.
+      if (resume && signedIn && d.step === FINDING) setStep(FINDING);
       else
         setStep(
           d.step > 0 && d.step <= STEP_COUNT ? d.step : d.step === FINDING ? STEP_COUNT : INTRO,
