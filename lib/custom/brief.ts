@@ -437,3 +437,20 @@ export function clearDraft() {
     // ignore
   }
 }
+
+/** What's missing on a step, in the words the screens use. */
+export function stepMessage(step: number): string {
+  return step === 3
+    ? `Tell the makers a little more: at least ${WORDS_MIN} characters.`
+    : step === 5
+      ? 'Add your bust, waist and hips so makers can check the fit.'
+      : step === 7
+        ? 'Add your postcode so we can find makers near you.'
+        : 'Finish the brief first.';
+}
+
+/** The first step that isn't ready, or null when the whole brief is. */
+export function firstIncompleteStep(b: Brief): number | null {
+  for (let step = 1; step <= 7; step++) if (!stepReady(step, b)) return step;
+  return null;
+}

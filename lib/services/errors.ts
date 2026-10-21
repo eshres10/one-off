@@ -6,6 +6,15 @@ export class UserError extends Error {
   }
 }
 
+/** A brief that can't go on yet: which step to send the buyer back to. */
+export class IncompleteBriefError extends UserError {
+  step: number;
+  constructor(step: number, message: string) {
+    super(message);
+    this.step = step;
+  }
+}
+
 export function isUserFacing(err: unknown): err is Error {
   return (
     err instanceof Error &&

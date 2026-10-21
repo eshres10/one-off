@@ -18,16 +18,23 @@ import {
   type MatchResult,
 } from '@/lib/services/custom';
 import { prepareCustomPayment } from '@/lib/services/custom-orders';
-import { isUserFacing } from '@/lib/services/errors';
+import { IncompleteBriefError, isUserFacing } from '@/lib/services/errors';
 import { openRequestThread } from '@/lib/services/messaging';
 
-export type Result<T> = { ok: true; value: T } | { ok: false; message: string; signIn?: boolean };
+export type Result<T> =
+  | { ok: true; value: T }
+  | { ok: false; message: string; signIn?: boolean; step?: number };
 
 async function run<T>(fn: () => Promise<T>, where: string): Promise<Result<T>> {
   try {
     return { ok: true, value: await fn() };
   } catch (err) {
-    if (isUserFacing(err)) return { ok: false, message: (err as Error).message };
+    if (isUserFacing(err))
+      return {
+        ok: false,
+        message: (err as Error).message,
+        ...(err instanceof IncompleteBriefError ? { step: err.step } : {}),
+      };
     reportError(err, { where });
     return { ok: false, message: 'Something went wrong. Please try again.' };
   }

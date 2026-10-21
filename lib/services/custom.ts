@@ -5,16 +5,17 @@ import { sanitizeText } from '@/lib/domain/moderation';
 import { BUDGET_BANDS, CUSTOM, CUSTOM_KINDS, kindCategories } from '@/lib/custom/config';
 import {
   EMPTY_BRIEF,
+  firstIncompleteStep,
   FITTING_OPTIONS,
   INSPIRATION_MAX,
   MAKERS_CHOICE,
   MEASURE_FIELDS,
-  OCCASIONS,
-  PATTERNS,
-  WORDS_MIN,
   measurementOk,
   neededBy,
+  OCCASIONS,
+  PATTERNS,
   pieceTitle,
+  stepMessage,
   stepReady,
   type Brief,
   type Measurements,
@@ -24,7 +25,7 @@ import { matchMakers, widenOptions, type Match, type MatchBrief } from '@/lib/cu
 import { isOwnImageUrl } from '@/lib/storage';
 import { rateLimit } from '@/lib/rate-limit';
 import { reportError } from '@/lib/log';
-import { UserError } from './errors';
+import { IncompleteBriefError, UserError } from './errors';
 import { notifyMakerNewRequest, notifyTeamHelp } from './custom-notify';
 
 type Actor = Pick<SessionUser, 'id' | 'role' | 'makerId'>;
@@ -113,17 +114,8 @@ export function cleanMeasurements(m: unknown): Measurements {
 
 /** Everything a brief needs before it can be matched or sent. */
 export function assertComplete(b: Brief) {
-  for (let step = 1; step <= 7; step++)
-    if (!stepReady(step, b))
-      throw new UserError(
-        step === 3
-          ? `Tell the makers a little more: at least ${WORDS_MIN} characters.`
-          : step === 5
-            ? 'Add your bust, waist and hips so makers can check the fit.'
-            : step === 7
-              ? 'Add your postcode so we can find makers near you.'
-              : 'Finish the brief first.',
-      );
+  const step = firstIncompleteStep(b);
+  if (step !== null) throw new IncompleteBriefError(step, stepMessage(step));
 }
 
 async function placeFor(b: Brief): Promise<Place> {

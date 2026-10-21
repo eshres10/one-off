@@ -16,6 +16,8 @@ import {
   stepReady,
   writeDraft,
   type Brief,
+  firstIncompleteStep,
+  stepMessage,
 } from '@/lib/custom/brief';
 import type { MatchResult } from '@/lib/services/custom';
 import { BriefCard } from './BriefCard';
@@ -149,7 +151,8 @@ export function HaveItMade({
         if (!res.ok) {
           if (res.signIn) return router.push(SIGN_IN);
           setError(res.message);
-          setStep(STEP_COUNT);
+          // Back to the step that needs something, not just the last one.
+          setStep(res.step && res.step >= 1 && res.step <= STEP_COUNT ? res.step : STEP_COUNT);
           return;
         }
         setResult(res.value);
@@ -187,6 +190,12 @@ export function HaveItMade({
     setError(null);
     if (step === INTRO) return setStep(1);
     if (step === STEP_COUNT) {
+      // Everything before this step has to be in too (a restored draft can be missing a bit).
+      const missing = firstIncompleteStep(brief);
+      if (missing !== null && missing < STEP_COUNT) {
+        setError(stepMessage(missing));
+        return setStep(missing);
+      }
       if (!signedIn) {
         writeDraft(brief, FINDING);
         return router.push(SIGN_IN);
@@ -221,7 +230,9 @@ export function HaveItMade({
       setBusy(false);
       if (!res.ok) {
         if (res.signIn) return router.push(SIGN_IN);
-        return setError(res.message);
+        setError(res.message);
+        if (res.step && res.step >= 1 && res.step <= STEP_COUNT) setStep(res.step);
+        return;
       }
       setSent({
         number: res.value.number,
