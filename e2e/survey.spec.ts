@@ -70,7 +70,10 @@ test.describe.serial('maker survey', () => {
       await expect(page.getByTestId('survey-intro'), p).toBeVisible();
       await expect(page.getByTestId('site-header'), p).toHaveCount(0);
     }
-    const og = await request.get(`${SURVEY}/og/survey`);
+    // Node's resolver doesn't know survey.localhost (Chromium does): the host header stands in.
+    const og = await request.get(`${MAIN}/og/survey`, {
+      headers: { host: `survey.localhost:${PORT}` },
+    });
     expect(og.status()).toBe(200);
     expect(og.headers()['content-type']).toContain('image/png');
     // On the production domain /survey redirects to the survey host.
