@@ -3,7 +3,11 @@ import type { ReactNode } from 'react';
 import type { StudioShop } from '@/lib/queries/studio';
 import { Img as Image } from '@/components/ui/Img';
 import { Wordmark } from '@/components/ui/Wordmark';
-import { StudioNav, StudioTabs, type StudioCounts } from './StudioNav';
+import { StudioNav, type StudioCounts } from './StudioNav';
+import { StudioTabBar } from '@/components/app/studio/StudioTabBar';
+import { NavTransitions } from '@/components/app/NavTransitions';
+import { Suspense } from 'react';
+import { ToastHost as AppToastHost } from '@/components/app/Toast';
 import { ToastHost } from './ToastHost';
 
 function Avatar({ shop, size }: { shop: StudioShop; size: number }) {
@@ -43,6 +47,7 @@ export function StudioShell({
   return (
     <div
       className="min-h-screen bg-ground pb-[calc(64px+env(safe-area-inset-bottom))] md:pb-0"
+      data-app-shell
       data-studio
     >
       <header
@@ -57,7 +62,16 @@ export function StudioShell({
             <span className="text-[10px] uppercase tracking-[0.24em] text-ground/70">Studio</span>
           </div>
           <StudioNav counts={counts} />
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-3 md:gap-5">
+            {/* Phones: back to shopping (the mode cookie remembers). */}
+            <a
+              href="/api/mode?to=shop&next=/"
+              className="flex min-h-[32px] items-center rounded-pill border border-ground/50 px-3 text-[11px] uppercase tracking-[0.12em] text-ground md:hidden"
+              data-testid="mode-shopping"
+              data-no-transition=""
+            >
+              Shopping
+            </a>
             <a
               href={`/makers/${shop.slug}`}
               target="_blank"
@@ -122,8 +136,14 @@ export function StudioShell({
       <main id="main" className="container-page py-6 md:py-10">
         {children}
       </main>
-      <StudioTabs counts={counts} />
+      <Suspense fallback={null}>
+        <StudioTabBar
+          counts={{ orders: counts.toShip, inbox: counts.requests + counts.needsReply }}
+        />
+        <NavTransitions />
+      </Suspense>
       <ToastHost />
+      <AppToastHost />
     </div>
   );
 }

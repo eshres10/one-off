@@ -13,6 +13,8 @@ import { NavTransitions } from './NavTransitions';
 import { PhoneTopBar } from './PhoneTopBar';
 import { PhoneTabBar } from './TabBar';
 import { ToastHost } from './Toast';
+import { ModeGate } from './ModeGate';
+import { STUDIO_STATUSES } from '@/lib/auth/session';
 
 /**
  * Wraps every shop page. Below md it is the phone app: the phone top bar for the screen, the
@@ -50,6 +52,9 @@ export async function AppShell({ children, modal }: { children: ReactNode; modal
         <NavTransitions />
       </Suspense>
       <ToastHost />
+      <ModeGate
+        isMaker={user?.role === 'seller' && STUDIO_STATUSES.includes(user.shopStatus ?? '')}
+      />
       {modal}
     </div>
   );

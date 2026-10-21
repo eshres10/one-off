@@ -19,7 +19,7 @@ describe('Acknowledgement of Country', () => {
     // git grep covers every tracked file (code, emails, content, seed, tests' fixtures).
     const out = execSync(
       // The postcode data names the WA town of Kulin, which isn't the nation.
-      `git grep -n -i -E "wurundjeri|kulin" -- . ':!tests/unit/content-pages.test.ts' ':!supabase/seed/postcodes.sql' || true`,
+      `git grep -n -i -E "wurundjeri|kulin" -- . ':!tests/unit/content-pages.test.ts' ':!supabase/seed/postcodes.sql' ':!public/data/postcodes.json' || true`,
       { cwd: ROOT, encoding: 'utf8' },
     );
     expect(out.trim()).toBe('');

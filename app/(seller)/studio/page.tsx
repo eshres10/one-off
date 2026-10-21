@@ -11,6 +11,8 @@ import { StockStepper } from '@/components/studio/StockStepper';
 import { CheckIcon, PlusIcon } from '@/components/ui/icons';
 import { Img as Image } from '@/components/ui/Img';
 import { Monogram } from '@/components/ui/Monogram';
+import { Today } from '@/components/app/studio/Today';
+import { photoNudge, todayStats } from '@/lib/queries/studio-phone';
 
 export const metadata = { title: 'Studio' };
 
@@ -174,7 +176,12 @@ function NeedsList({ rows, testId }: { rows: NeedsRow[]; testId: string }) {
 
 export default async function StudioOverview() {
   const seller = await requireSeller();
-  const [o, shop] = await Promise.all([getOverview(seller), getStudioShop(seller.makerId)]);
+  const [o, shop, stats, nudge] = await Promise.all([
+    getOverview(seller),
+    getStudioShop(seller.makerId),
+    todayStats(seller.makerId),
+    photoNudge(seller.makerId),
+  ]);
   // Greeting and date in the maker's own time zone.
   const g = greeting(new Date(), shop.timezone);
   const change = pct(o.kpi.salesThisMonth, o.kpi.salesLastMonth);
@@ -183,241 +190,259 @@ export default async function StudioOverview() {
   const firstWord = shop.displayName.split(/\s+/)[0];
 
   return (
-    <div>
-      <header className="flex items-end justify-between gap-4">
+    <>
+      <div className="md:hidden">
+        <Today
+          shopName={shop.displayName}
+          o={o}
+          stats={stats}
+          nudge={nudge}
+          firstName={firstWord ?? ''}
+        />
+      </div>
+      <div className="max-md:hidden">
         <div>
-          <p className="text-[11px] uppercase tracking-label text-muted-2">
-            {longDate(new Date(), shop.timezone)}
-          </p>
-          <h1 className="mt-2 text-[40px] leading-none md:text-[56px]">
-            <span className="md:hidden">
-              {g.short}, {firstWord}
-            </span>
-            <span className="hidden md:inline">
-              {g.long}, {shop.displayName}
-            </span>
-          </h1>
-        </div>
-        <Link
-          href="/studio/listings/new"
-          className="glass-dark hidden min-h-[48px] shrink-0 items-center gap-2 px-5 text-[11px] uppercase tracking-[0.18em] text-ground md:flex"
-          data-tour="add-piece"
-        >
-          <PlusIcon width={14} height={14} /> Add a piece
-        </Link>
-      </header>
-
-      {/* Desktop */}
-      <div className="mt-8 hidden gap-8 md:grid md:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="space-y-8">
-          <div className="grid grid-cols-5 gap-3" data-testid="kpis">
-            <Kpi
-              label="Sales"
-              value={formatPrice(o.kpi.salesThisMonth)}
-              sub={
-                change === null
-                  ? monthName()
-                  : `${change >= 0 ? '↑' : '↓'} ${Math.abs(change)}% on ${monthName(-1).slice(0, 3)}`
-              }
-            />
-            <Kpi label="Orders" value={String(o.kpi.ordersThisMonth)} sub={monthName()} />
-            <Kpi
-              label="To ship"
-              value={String(o.kpi.toShip)}
-              sub={
-                o.kpi.oldestDueToday ? 'Oldest due today' : o.kpi.toShip ? 'On track' : 'All sent'
-              }
-              alert={o.kpi.oldestDueToday}
-              testId="kpi-to-ship"
-            />
-            <Kpi
-              label="Shop views"
-              value={o.kpi.viewsThisMonth.toLocaleString('en-AU')}
-              sub={monthName()}
-            />
-            <Kpi
-              label="Saves"
-              value={o.kpi.savesThisMonth.toLocaleString('en-AU')}
-              sub={monthName()}
-            />
-          </div>
-          <section aria-labelledby="needs-title" data-tour="needs-today">
-            <h2 id="needs-title" className="mb-3 text-[32px] leading-none">
-              Needs you today
-            </h2>
-            <NeedsList rows={o.needs} testId="needs-today" />
-          </section>
-          <section className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] gap-8">
-            <WeeklyBars weeks={o.weekly} />
+          <header className="flex items-end justify-between gap-4">
             <div>
-              <h2 className="font-sans text-[11px] font-normal uppercase tracking-label text-muted-2">
-                Top pieces
-              </h2>
-              <ul className="mt-4 space-y-3" role="list">
-                {o.topPieces.map((p) => (
-                  <li key={p.id} className="flex items-center gap-3">
-                    <span className="relative aspect-4/5 w-9 shrink-0 overflow-hidden bg-stone">
-                      {p.imageUrl && (
-                        <Image
-                          src={p.imageUrl}
-                          alt=""
-                          fill
-                          sizes="36px"
-                          className="object-cover object-top"
-                        />
-                      )}
-                    </span>
-                    <span className="min-w-0 flex-1 truncate text-[13px]">{p.title}</span>
-                    <span className="shrink-0 text-[12px] tabular-nums text-muted">
-                      {p.sold} sold · {p.saves} {p.saves === 1 ? 'save' : 'saves'}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              <p className="text-[11px] uppercase tracking-label text-muted-2">
+                {longDate(new Date(), shop.timezone)}
+              </p>
+              <h1 className="mt-2 text-[40px] leading-none md:text-[56px]">
+                <span className="md:hidden">
+                  {g.short}, {firstWord}
+                </span>
+                <span className="hidden md:inline">
+                  {g.long}, {shop.displayName}
+                </span>
+              </h1>
             </div>
-          </section>
-        </div>
-        <aside className="space-y-6">
-          <FoundingPanel o={o} shopName={shop.displayName} />
-          <Checklist items={o.checklist} />
-        </aside>
-      </div>
+            <Link
+              href="/studio/listings/new"
+              className="glass-dark hidden min-h-[48px] shrink-0 items-center gap-2 px-5 text-[11px] uppercase tracking-[0.18em] text-ground md:flex"
+              data-tour="add-piece"
+            >
+              <PlusIcon width={14} height={14} /> Add a piece
+            </Link>
+          </header>
 
-      {/* Phone */}
-      <div className="mt-6 space-y-6 md:hidden">
-        <Link
-          href="/studio/payouts"
-          className="glass-dark relative block overflow-hidden p-5 text-ground"
-          data-testid="payout-card"
-        >
-          <Monogram className="pointer-events-none absolute -right-8 -top-4 h-[150px] w-[150px] text-ground opacity-[0.07]" />
-          <p className="text-[10px] uppercase tracking-[0.2em] text-ground/70">
-            Next payout ·{' '}
-            {new Date(`${o.payout.nextDate}T00:00:00Z`).toLocaleDateString('en-AU', {
-              weekday: 'short',
-              day: 'numeric',
-              month: 'short',
-              timeZone: 'UTC',
-            })}
-          </p>
-          <p className="mt-2 font-display text-[40px] leading-none">
-            {formatPrice(o.payout.nextAmount)}
-          </p>
-          <p className="mt-2 text-[12px] text-ground/70">
-            {formatPrice(o.payout.onTheWay)} on the way{o.payout.bank ? ` · ${o.payout.bank}` : ''}
-          </p>
-        </Link>
-        <div className="grid grid-cols-3 border-y border-line py-3 text-center">
-          {[
-            [monthName(), formatPrice(o.kpi.salesThisMonth)],
-            ['Views', o.kpi.viewsThisMonth.toLocaleString('en-AU')],
-            ['Saves', o.kpi.savesThisMonth.toLocaleString('en-AU')],
-          ].map(([l, v]) => (
-            <div key={l}>
-              <p className="font-display text-[26px] tabular-nums leading-none">{v}</p>
-              <p className="mt-1 text-[10px] uppercase tracking-label text-muted-2">{l}</p>
-            </div>
-          ))}
-        </div>
-        <Checklist items={o.checklist} />
-        <section aria-labelledby="ship-title">
-          <h2 id="ship-title" className="text-[28px] leading-none">
-            To ship ({o.toShipList.length})
-          </h2>
-          {o.toShipList.length === 0 ? (
-            <p className="py-4 text-[13px] text-muted">Nothing to ship right now.</p>
-          ) : (
-            <ul
-              className="mt-3 divide-y divide-line border-y border-line"
-              role="list"
-              data-testid="phone-to-ship"
-            >
-              {o.toShipList.map((s) => {
-                const d = daysUntil(s.shipBy);
-                return (
-                  <li key={s.id} className="flex items-center gap-3 py-3">
-                    <span className="relative aspect-4/5 w-11 shrink-0 overflow-hidden bg-stone">
-                      {s.imageUrl && (
-                        <Image
-                          src={s.imageUrl}
-                          alt=""
-                          fill
-                          sizes="44px"
-                          className="object-cover object-top"
-                        />
-                      )}
-                    </span>
-                    <Link href={`/studio/orders?order=${s.id}`} className="min-w-0 flex-1">
-                      <span className="block truncate text-[13px]">{s.title}</span>
-                      <span className="block text-[12px] text-muted-2">
-                        {s.buyerName ?? 'Guest'} ·{' '}
-                        <span className={d !== null && d <= 0 ? 'text-alert' : ''}>
-                          Ship by {shipByLabel(s.shipBy).toLowerCase()}
+          {/* Desktop */}
+          <div className="mt-8 hidden gap-8 md:grid md:grid-cols-[minmax(0,1fr)_340px]">
+            <div className="space-y-8">
+              <div className="grid grid-cols-5 gap-3" data-testid="kpis">
+                <Kpi
+                  label="Sales"
+                  value={formatPrice(o.kpi.salesThisMonth)}
+                  sub={
+                    change === null
+                      ? monthName()
+                      : `${change >= 0 ? '↑' : '↓'} ${Math.abs(change)}% on ${monthName(-1).slice(0, 3)}`
+                  }
+                />
+                <Kpi label="Orders" value={String(o.kpi.ordersThisMonth)} sub={monthName()} />
+                <Kpi
+                  label="To ship"
+                  value={String(o.kpi.toShip)}
+                  sub={
+                    o.kpi.oldestDueToday
+                      ? 'Oldest due today'
+                      : o.kpi.toShip
+                        ? 'On track'
+                        : 'All sent'
+                  }
+                  alert={o.kpi.oldestDueToday}
+                  testId="kpi-to-ship"
+                />
+                <Kpi
+                  label="Shop views"
+                  value={o.kpi.viewsThisMonth.toLocaleString('en-AU')}
+                  sub={monthName()}
+                />
+                <Kpi
+                  label="Saves"
+                  value={o.kpi.savesThisMonth.toLocaleString('en-AU')}
+                  sub={monthName()}
+                />
+              </div>
+              <section aria-labelledby="needs-title" data-tour="needs-today">
+                <h2 id="needs-title" className="mb-3 text-[32px] leading-none">
+                  Needs you today
+                </h2>
+                <NeedsList rows={o.needs} testId="needs-today" />
+              </section>
+              <section className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] gap-8">
+                <WeeklyBars weeks={o.weekly} />
+                <div>
+                  <h2 className="font-sans text-[11px] font-normal uppercase tracking-label text-muted-2">
+                    Top pieces
+                  </h2>
+                  <ul className="mt-4 space-y-3" role="list">
+                    {o.topPieces.map((p) => (
+                      <li key={p.id} className="flex items-center gap-3">
+                        <span className="relative aspect-4/5 w-9 shrink-0 overflow-hidden bg-stone">
+                          {p.imageUrl && (
+                            <Image
+                              src={p.imageUrl}
+                              alt=""
+                              fill
+                              sizes="36px"
+                              className="object-cover object-top"
+                            />
+                          )}
                         </span>
-                      </span>
-                    </Link>
-                    <ShipSheetButton
-                      fulfilmentId={s.id}
-                      title={`${s.title} · ${s.variantLabel.replace(/^AU /, 'Size ')}`}
-                      sub={`#${s.orderNumber.replace(/^OO-/, '')} for ${s.buyerName ?? 'a guest'}`}
-                    />
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </section>
-        <section aria-labelledby="waiting-title">
-          <h2 id="waiting-title" className="text-[28px] leading-none">
-            Waiting on you
-          </h2>
-          <div className="mt-3">
-            <NeedsList
-              rows={waiting.length ? waiting : shipNow.filter((r) => r.tag === 'Making')}
-              testId="waiting-on-you"
-            />
+                        <span className="min-w-0 flex-1 truncate text-[13px]">{p.title}</span>
+                        <span className="shrink-0 text-[12px] tabular-nums text-muted">
+                          {p.sold} sold · {p.saves} {p.saves === 1 ? 'save' : 'saves'}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </section>
+            </div>
+            <aside className="space-y-6">
+              <FoundingPanel o={o} shopName={shop.displayName} />
+              <Checklist items={o.checklist} />
+            </aside>
           </div>
-        </section>
-        {o.lowStock.length > 0 && (
-          <section aria-labelledby="low-title">
-            <h2 id="low-title" className="text-[28px] leading-none">
-              Low stock
-            </h2>
-            <ul
-              className="mt-3 divide-y divide-line border-y border-line"
-              role="list"
-              data-testid="low-stock"
+
+          {/* Phone */}
+          <div className="mt-6 space-y-6 md:hidden">
+            <Link
+              href="/studio/payouts"
+              className="glass-dark relative block overflow-hidden p-5 text-ground"
+              data-testid="payout-card"
             >
-              {o.lowStock.map((v) => (
-                <li key={v.variantId} className="flex items-center gap-3 py-2">
-                  <span className="relative aspect-4/5 w-9 shrink-0 overflow-hidden bg-stone">
-                    {v.imageUrl && (
-                      <Image
-                        src={v.imageUrl}
-                        alt=""
-                        fill
-                        sizes="36px"
-                        className="object-cover object-top"
-                      />
-                    )}
-                  </span>
-                  <span className="min-w-0 flex-1 text-[13px]">
-                    <span className="block truncate">{v.title}</span>
-                    <span className="text-[12px] text-muted-2">Size {v.size}</span>
-                  </span>
-                  <StockStepper
-                    variantId={v.variantId}
-                    stock={v.stock}
-                    label={`${v.title} size ${v.size}`}
-                    compact
-                  />
-                </li>
+              <Monogram className="pointer-events-none absolute -right-8 -top-4 h-[150px] w-[150px] text-ground opacity-[0.07]" />
+              <p className="text-[10px] uppercase tracking-[0.2em] text-ground/70">
+                Next payout ·{' '}
+                {new Date(`${o.payout.nextDate}T00:00:00Z`).toLocaleDateString('en-AU', {
+                  weekday: 'short',
+                  day: 'numeric',
+                  month: 'short',
+                  timeZone: 'UTC',
+                })}
+              </p>
+              <p className="mt-2 font-display text-[40px] leading-none">
+                {formatPrice(o.payout.nextAmount)}
+              </p>
+              <p className="mt-2 text-[12px] text-ground/70">
+                {formatPrice(o.payout.onTheWay)} on the way
+                {o.payout.bank ? ` · ${o.payout.bank}` : ''}
+              </p>
+            </Link>
+            <div className="grid grid-cols-3 border-y border-line py-3 text-center">
+              {[
+                [monthName(), formatPrice(o.kpi.salesThisMonth)],
+                ['Views', o.kpi.viewsThisMonth.toLocaleString('en-AU')],
+                ['Saves', o.kpi.savesThisMonth.toLocaleString('en-AU')],
+              ].map(([l, v]) => (
+                <div key={l}>
+                  <p className="font-display text-[26px] tabular-nums leading-none">{v}</p>
+                  <p className="mt-1 text-[10px] uppercase tracking-label text-muted-2">{l}</p>
+                </div>
               ))}
-            </ul>
-          </section>
-        )}
-        <FoundingPanel o={o} shopName={shop.displayName} />
+            </div>
+            <Checklist items={o.checklist} />
+            <section aria-labelledby="ship-title">
+              <h2 id="ship-title" className="text-[28px] leading-none">
+                To ship ({o.toShipList.length})
+              </h2>
+              {o.toShipList.length === 0 ? (
+                <p className="py-4 text-[13px] text-muted">Nothing to ship right now.</p>
+              ) : (
+                <ul
+                  className="mt-3 divide-y divide-line border-y border-line"
+                  role="list"
+                  data-testid="phone-to-ship"
+                >
+                  {o.toShipList.map((s) => {
+                    const d = daysUntil(s.shipBy);
+                    return (
+                      <li key={s.id} className="flex items-center gap-3 py-3">
+                        <span className="relative aspect-4/5 w-11 shrink-0 overflow-hidden bg-stone">
+                          {s.imageUrl && (
+                            <Image
+                              src={s.imageUrl}
+                              alt=""
+                              fill
+                              sizes="44px"
+                              className="object-cover object-top"
+                            />
+                          )}
+                        </span>
+                        <Link href={`/studio/orders?order=${s.id}`} className="min-w-0 flex-1">
+                          <span className="block truncate text-[13px]">{s.title}</span>
+                          <span className="block text-[12px] text-muted-2">
+                            {s.buyerName ?? 'Guest'} ·{' '}
+                            <span className={d !== null && d <= 0 ? 'text-alert' : ''}>
+                              Ship by {shipByLabel(s.shipBy).toLowerCase()}
+                            </span>
+                          </span>
+                        </Link>
+                        <ShipSheetButton
+                          fulfilmentId={s.id}
+                          title={`${s.title} · ${s.variantLabel.replace(/^AU /, 'Size ')}`}
+                          sub={`#${s.orderNumber.replace(/^OO-/, '')} for ${s.buyerName ?? 'a guest'}`}
+                        />
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </section>
+            <section aria-labelledby="waiting-title">
+              <h2 id="waiting-title" className="text-[28px] leading-none">
+                Waiting on you
+              </h2>
+              <div className="mt-3">
+                <NeedsList
+                  rows={waiting.length ? waiting : shipNow.filter((r) => r.tag === 'Making')}
+                  testId="waiting-on-you"
+                />
+              </div>
+            </section>
+            {o.lowStock.length > 0 && (
+              <section aria-labelledby="low-title">
+                <h2 id="low-title" className="text-[28px] leading-none">
+                  Low stock
+                </h2>
+                <ul
+                  className="mt-3 divide-y divide-line border-y border-line"
+                  role="list"
+                  data-testid="low-stock"
+                >
+                  {o.lowStock.map((v) => (
+                    <li key={v.variantId} className="flex items-center gap-3 py-2">
+                      <span className="relative aspect-4/5 w-9 shrink-0 overflow-hidden bg-stone">
+                        {v.imageUrl && (
+                          <Image
+                            src={v.imageUrl}
+                            alt=""
+                            fill
+                            sizes="36px"
+                            className="object-cover object-top"
+                          />
+                        )}
+                      </span>
+                      <span className="min-w-0 flex-1 text-[13px]">
+                        <span className="block truncate">{v.title}</span>
+                        <span className="text-[12px] text-muted-2">Size {v.size}</span>
+                      </span>
+                      <StockStepper
+                        variantId={v.variantId}
+                        stock={v.stock}
+                        label={`${v.title} size ${v.size}`}
+                        compact
+                      />
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+            <FoundingPanel o={o} shopName={shop.displayName} />
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

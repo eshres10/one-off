@@ -1,4 +1,6 @@
 import { audit } from '@/lib/audit';
+import { sendPushToUser } from '@/lib/push/send';
+import { reportError } from '@/lib/log';
 import { sql, withUser, type Db } from '@/lib/db';
 import { formatPrice } from '@/lib/domain/money';
 import { blockedMessage, moderateMessage, sanitizeText } from '@/lib/domain/moderation';
@@ -434,7 +436,16 @@ async function notify(sender: Actor, thread: ThreadRow, fromBuyer: boolean) {
         (mk.message_digest_sent_at is null or mk.message_digest_sent_at < now() - interval '1 hour') as digest_due,
         (select count(*) from public.message_threads t where t.maker_id = mk.id and t.maker_unread > 0)::int as unread_threads
       from public.makers mk join public.users u on u.id = mk.user_id where mk.id = ${thread.makerId}`;
-    if (!maker || !(await prefsFor(maker.userId)).message.email) return;
+    if (!maker) return;
+    const prefs = await prefsFor(maker.userId);
+    if (prefs.message.push)
+      await sendPushToUser(maker.userId, {
+        title: 'New message',
+        body: `${sender.displayName ?? 'A shopper'}: ${thread.context?.productTitle ?? 'a question'}`,
+        url: `/studio/messages/${thread.id}`,
+        tag: `thread-${thread.id}`,
+      }).catch((err) => reportError(err, { where: 'push:buyer message' }));
+    if (!prefs.message.email) return;
     if (maker.firstMessage) {
       await sendEmail(
         emails.newMessage(

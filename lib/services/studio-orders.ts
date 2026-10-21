@@ -8,6 +8,10 @@ import { CARRIERS, trackingError, trackingUrl, type Carrier } from '@/lib/studio
 import { UserError } from './errors';
 import { reportError } from '@/lib/log';
 import { sendOrderShippedPush } from './push';
+import { sendMessage } from './messaging';
+import { sendPushToUser } from '@/lib/push/send';
+import { SITE } from '@/lib/site/config';
+import { payMtoAdvance } from './custom-orders';
 
 export {
   CARRIERS,
@@ -28,7 +32,8 @@ export const ORDER_TABS = [
 ] as const;
 export type OrderTab = (typeof ORDER_TABS)[number]['key'];
 
-export const MAKING_STEPS = ['Ordered', 'Cutting', 'Sewing', 'Ready'] as const;
+export { MAKING_STEPS, NEXT_STEP_LABEL, READY_STEP, STEP_BUYER_LINE } from '@/lib/studio/steps';
+import { MAKING_STEPS, READY_STEP, STEP_BUYER_LINE } from '@/lib/studio/steps';
 
 const MTO = `exists (select 1 from public.order_items oi where oi.fulfilment_id = f.id and oi.product_type = 'made_to_order')`;
 
@@ -220,7 +225,7 @@ export async function setShipmentStage(
     seller,
     async (db) => (await lockOwn(db, seller, fulfilmentId)).isMto,
   );
-  if (isMto) return setMakingStep(seller, fulfilmentId, stage === 'making' ? 1 : 3);
+  if (isMto) return setMakingStep(seller, fulfilmentId, stage === 'making' ? 2 : READY_STEP);
   if (stage === 'making') throw new UserError('Ready-to-ship pieces go straight to Packed.');
   await withUser(seller, async (db) => {
     const f = await lockOwn(db, seller, fulfilmentId);
@@ -235,8 +240,9 @@ export async function setShipmentStage(
 }
 
 /**
- * Made-to-order progress: Ordered → Cutting → Sewing → Ready. The buyer sees it on their order
- * page and gets an email when it reaches Sewing and Ready.
+ * Made-to-order progress: Ordered → Fabric bought → Cutting → Sewing → Finishing (ready). Each
+ * step tells the buyer: a line in the order conversation, a push, and an email at Sewing and
+ * Finishing. "Fabric bought" can release the fabric advance (SITE.payouts.advanceOnMadeToOrder).
  */
 export async function setMakingStep(seller: Seller, fulfilmentId: string, step: number) {
   if (!Number.isInteger(step) || step < 0 || step >= MAKING_STEPS.length)
@@ -246,7 +252,7 @@ export async function setMakingStep(seller: Seller, fulfilmentId: string, step: 
     if (!f.isMto) throw new UserError('Making steps are for made-to-order pieces.');
     if (!['paid', 'making', 'ready', 'preparing'].includes(f.status))
       throw new UserError('This piece has already been shipped.');
-    const status = step === 3 ? 'ready' : step === 0 ? 'paid' : 'making';
+    const status = step === READY_STEP ? 'ready' : step === 0 ? 'paid' : 'making';
     await db`update public.fulfilments set mto_step = ${step}, status = ${status}::fulfilment_status where id = ${f.id}`;
     await db`
       update public.order_items set fulfilment_status = ${step === 0 ? 'paid' : 'preparing'}::fulfilment_status
@@ -259,18 +265,69 @@ export async function setMakingStep(seller: Seller, fulfilmentId: string, step: 
     { step },
     seller.id,
   );
-  if (step > before && (step === 2 || step === 3)) {
+  if (step > before) {
     const b = await buyerContact(fulfilmentId);
-    await sendEmail(
-      emails.makingUpdate(
-        b.email,
-        { id: b.orderId, orderNumber: b.orderNumber },
-        b.makerName,
-        b.title,
-        step === 3,
-      ),
+    if (step === 3 || step === READY_STEP)
+      await sendEmail(
+        emails.makingUpdate(
+          b.email,
+          { id: b.orderId, orderNumber: b.orderNumber },
+          b.makerName,
+          b.title,
+          step === READY_STEP,
+        ),
+      );
+    await tellBuyerStep(seller, fulfilmentId, step).catch((err) =>
+      reportError(err, { fulfilmentId, where: 'making step notify' }),
     );
+    if (step === 1 && SITE.payouts.advanceOnMadeToOrder)
+      await payMtoAdvance(b.orderId, fulfilmentId).catch((err) =>
+        reportError(err, { fulfilmentId, where: 'mto advance' }),
+      );
   }
+}
+
+/** The maker as a message sender (sendMessage wants their name and email too). */
+async function asSender(seller: Seller) {
+  const [u] = await sql()<{ email: string; displayName: string | null }[]>`
+    select email, display_name from public.users where id = ${seller.id}`;
+  return { ...seller, email: u?.email ?? '', displayName: u?.displayName ?? null };
+}
+
+/** A line in the order's conversation and a push for the step just reached. */
+async function tellBuyerStep(seller: Seller, fulfilmentId: string, step: number) {
+  const line = STEP_BUYER_LINE[step];
+  if (!line) return;
+  const [o] = await sql()<{ buyerUserId: string | null; orderNumber: string; orderId: string }[]>`
+    select o.buyer_user_id, o.order_number, o.id as order_id from public.fulfilments f
+    join public.orders o on o.id = f.order_id where f.id = ${fulfilmentId}`;
+  if (!o?.buyerUserId) return;
+  const threadId = await openOrderThread(seller, fulfilmentId);
+  await sendMessage(await asSender(seller), { threadId, body: line, imageUrls: [] }).catch((err) =>
+    reportError(err, { threadId, where: 'making step message' }),
+  );
+  await sendPushToUser(o.buyerUserId, {
+    title: 'Off One',
+    body: `${MAKING_STEPS[step]}: order ${o.orderNumber}`,
+    url: `/account/orders/${o.orderNumber}`,
+    tag: `order-${o.orderId}-step`,
+  }).catch((err) => reportError(err, { where: 'push:making step' }));
+}
+
+/** A progress photo from the studio, sent into the order's conversation. */
+export async function sendProgressPhoto(
+  seller: Seller,
+  fulfilmentId: string,
+  imageUrl: string,
+  note = '',
+): Promise<{ threadId: string }> {
+  const threadId = await openOrderThread(seller, fulfilmentId);
+  await sendMessage(await asSender(seller), {
+    threadId,
+    body: note.trim() || 'A progress photo from the studio.',
+    imageUrls: [imageUrl],
+  });
+  return { threadId };
 }
 
 /** Marks the maker's part of an order shipped and emails the buyer the tracking link. */
@@ -289,7 +346,7 @@ export async function markShipped(
     const t = input.carrier === 'hand' ? null : tracking;
     await db`
       update public.fulfilments set status = 'shipped', carrier = ${input.carrier}, tracking_number = ${t},
-        shipped_at = now(), mto_step = case when ${f.isMto} then 3 else mto_step end
+        shipped_at = now(), mto_step = case when ${f.isMto} then ${READY_STEP} else mto_step end
       where id = ${f.id}`;
     await db`
       update public.order_items set fulfilment_status = 'shipped', carrier = ${input.carrier}, tracking_number = ${t},

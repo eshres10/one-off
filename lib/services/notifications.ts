@@ -1,5 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { sql, type Db } from '@/lib/db';
+import { reportError } from '@/lib/log';
+import { sendPushToUser } from '@/lib/push/send';
 import { formatPrice } from '@/lib/domain/money';
 import { env } from '@/lib/env';
 import { sendEmail } from '@/lib/email/send';
@@ -208,6 +210,13 @@ export async function notifyNewOrder(fulfilmentId: string) {
       }),
     );
   }
+  if (prefs.new_order.push && shop.userId)
+    await sendPushToUser(shop.userId, {
+      title: 'New order',
+      body: `${items[0]!.title}, size ${items[0]!.variant}. Ship by ${shipBy}.`,
+      url: `/studio/orders/${fulfilmentId}`,
+      tag: `order-${fulfilmentId}`,
+    }).catch((err) => reportError(err, { where: 'push:new order' }));
   const to = toE164(shop.mobile);
   if (to && prefs.new_order.sms && env().SMS_ENABLED) {
     const first = items[0]!;

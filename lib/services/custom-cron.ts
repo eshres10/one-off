@@ -2,6 +2,8 @@ import { audit } from '@/lib/audit';
 import { sql } from '@/lib/db';
 import { CUSTOM } from '@/lib/custom/config';
 import { reportError } from '@/lib/log';
+import { sendPushToUser } from '@/lib/push/send';
+import { prefsFor } from './notifications';
 import {
   notifyBuyerQuoteExpiring,
   notifyBuyerReplies,
@@ -15,6 +17,7 @@ export interface CustomTick {
   quotesExpired: number;
   expiryWarnings: number;
   requestsExpired: number;
+  expiringPushes: number;
 }
 
 /**
@@ -31,6 +34,7 @@ export async function customRequestsTick(now = new Date()): Promise<CustomTick> 
     quotesExpired: 0,
     expiryWarnings: 0,
     requestsExpired: 0,
+    expiringPushes: 0,
   };
 
   // 48 hours up: the maker's row expires and counts as no reply.
@@ -70,6 +74,26 @@ export async function customRequestsTick(now = new Date()): Promise<CustomTick> 
       reportError(err, { requestId: r.requestId, where: 'request reminder' }),
     );
     out.remindersSent++;
+  }
+
+  // Six hours left to reply: one push to the maker.
+  const expiring = await sql()<
+    { requestId: string; makerId: string; userId: string; piece: string }[]
+  >`
+    update public.custom_request_recipients x set expiring_pushed_at = ${now}
+    from public.custom_requests r, public.makers m
+    where r.id = x.request_id and m.id = x.maker_id and x.status = 'pending' and x.expiring_pushed_at is null
+      and x.reply_by > ${now} and x.reply_by < ${new Date(now.getTime() + 6 * 3_600_000)} and r.status in ('sent', 'quoted')
+    returning x.request_id, x.maker_id, m.user_id, r.kind as piece`;
+  for (const e of expiring) {
+    if (!(await prefsFor(e.userId)).message.push) continue;
+    await sendPushToUser(e.userId, {
+      title: 'Request expires in 6 hours',
+      body: `Quote or pass on the ${e.piece.replace(/_/g, ' ')} before the buyer moves on.`,
+      url: `/studio/inbox/requests/${e.requestId}`,
+      tag: `custom-expiring-${e.requestId}`,
+    }).catch((err) => reportError(err, { requestId: e.requestId, where: 'push:expiring' }));
+    out.expiringPushes++;
   }
 
   // Quotes: a warning the day before, then expiry.

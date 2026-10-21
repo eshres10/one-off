@@ -11,7 +11,7 @@ import { confirmReceivedAction } from '@/lib/actions/studio-orders';
 import { isDelivered } from '@/lib/domain/types';
 import { carrierLabel, trackingUrl } from '@/lib/studio/carriers';
 
-const MAKING = ['Ordered', 'Cutting', 'Sewing', 'Ready'];
+const MAKING = ['Ordered', 'Fabric bought', 'Cutting', 'Sewing', 'Finishing'];
 
 /** What the buyer sees of a made-to-order piece's progress, and the shipping line. */
 function Progress({ f }: { f: BuyerFulfilment }) {

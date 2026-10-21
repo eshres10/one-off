@@ -53,7 +53,7 @@ export function OrderPanel({ order }: { order: StudioOrderDetail }) {
   const canShip = custom
     ? Boolean(order.milestones.made) && !dispatched
     : ['paid', 'preparing', 'ready'].includes(order.status) ||
-      (order.status === 'making' && order.mtoStep >= 3);
+      (order.status === 'making' && order.mtoStep >= 4);
   const shipDays = daysUntil(order.shipBy);
   const urgent = shipDays !== null && shipDays <= 0 && canShip;
   const to = order.shipTo ?? {};

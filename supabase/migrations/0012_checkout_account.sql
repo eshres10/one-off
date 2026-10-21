@@ -226,10 +226,16 @@ drop policy if exists orders_select on public.orders;
 create policy orders_select on public.orders for select
   using (buyer_user_id = auth.uid() or public.is_admin());
 
-create or replace view public.order_summaries with (security_barrier = true) as
-  select o.id, o.order_number, o.buyer_user_id, o.buyer_name, o.status, o.subtotal_cents, o.shipping_total_cents,
-    o.total_cents, o.refunded_cents, o.currency, o.shipping_address, o.gift_note, o.agreed_spec, o.returns_ack_at,
-    o.external_store, o.paid_at, o.created_at, o.updated_at
-  from public.orders o
-  where o.buyer_user_id = auth.uid() or public.is_order_maker(o.id) or public.is_admin();
+-- Created once; later migrations widen it with create or replace (a re-run must not narrow it).
+do $$
+begin
+  if not exists (select 1 from pg_views where schemaname = 'public' and viewname = 'order_summaries') then
+    create view public.order_summaries with (security_barrier = true) as
+      select o.id, o.order_number, o.buyer_user_id, o.buyer_name, o.status, o.subtotal_cents, o.shipping_total_cents,
+        o.total_cents, o.refunded_cents, o.currency, o.shipping_address, o.gift_note, o.agreed_spec, o.returns_ack_at,
+        o.external_store, o.paid_at, o.created_at, o.updated_at
+      from public.orders o
+      where o.buyer_user_id = auth.uid() or public.is_order_maker(o.id) or public.is_admin();
+  end if;
+end $$;
 grant select on public.order_summaries to authenticated;

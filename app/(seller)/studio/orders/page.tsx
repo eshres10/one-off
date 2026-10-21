@@ -21,6 +21,8 @@ import { NoOrdersYet } from '@/components/studio/states/NoOrdersYet';
 import { env } from '@/lib/env';
 import { countOpenMakerReturns, listMakerReturns } from '@/lib/services/returns';
 import { StudioReturns } from '@/components/studio/returns/StudioReturns';
+import { PhoneOrders } from '@/components/app/studio/Orders';
+import { BUCKETS, type OrderBucket } from '@/lib/app/studio-orders';
 
 export const metadata = { title: 'Orders · Studio' };
 
@@ -126,162 +128,171 @@ export default async function StudioOrdersPage({
   const everOrdered = Object.values(counts).some((n) => n > 0);
   const checklist = everOrdered ? null : await firstOrderChecklist(seller.makerId!);
   const href = (id?: string) => `/studio/orders?tab=${tab}${id ? `&order=${id}` : ''}`;
+  const allRows = tab === 'all' ? rows : await listStudioOrders(seller, 'all');
+  const bucket = (
+    BUCKETS.some((b) => b.key === searchParams.tab) ? searchParams.tab : 'to-ship'
+  ) as OrderBucket;
 
   return (
-    <div>
-      <h1 className="text-[40px] leading-none md:text-[56px]">Orders</h1>
-      <OrdersNav active={tab} counts={counts} problems={problems} returns={openReturns} />
+    <>
+      <div className="md:hidden">
+        <PhoneOrders rows={allRows} bucket={bucket} />
+      </div>
+      <div className="max-md:hidden">
+        <h1 className="text-[40px] leading-none md:text-[56px]">Orders</h1>
+        <OrdersNav active={tab} counts={counts} problems={problems} returns={openReturns} />
 
-      {rows.length === 0 && checklist ? (
-        <NoOrdersYet list={checklist} shopUrl={`${env().APP_URL}/makers/${checklist.slug}`} />
-      ) : rows.length === 0 ? (
-        <p className="py-16 text-center text-[14px] text-muted">
-          {tab === 'to-ship' ? 'Nothing to ship. Nice work.' : 'No orders here yet.'}
-        </p>
-      ) : (
-        <>
-          <table
-            className="mt-2 hidden w-full text-left text-[13px] md:table"
-            data-testid="orders-table"
-          >
-            <thead>
-              <tr className="border-b border-line text-[10px] uppercase tracking-label text-muted-2">
-                <th scope="col" className="py-3 font-normal">
-                  Order
-                </th>
-                <th scope="col" className="py-3 font-normal">
-                  Piece
-                </th>
-                <th scope="col" className="py-3 font-normal">
-                  Buyer
-                </th>
-                <th scope="col" className="py-3 font-normal">
-                  Ship by
-                </th>
-                <th scope="col" className="py-3 text-right font-normal">
-                  Total
-                </th>
-                <th scope="col" className="py-3 pl-6 font-normal">
-                  Status
-                </th>
-                <th scope="col" className="py-3 font-normal">
-                  <span className="sr-only">Action</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((o) => (
-                <tr
-                  key={o.id}
-                  className="border-b border-line hover:bg-stone/60"
-                  data-testid="order-row"
-                >
-                  <td className="py-3 pr-4 align-middle">
-                    <span className="block">#{o.orderNumber.replace(/^OO-/, '')}</span>
-                    <span className="text-[12px] text-muted-2">{placed(o.placedAt)}</span>
-                  </td>
-                  <td className="py-3 pr-4">
-                    <span className="flex items-center gap-3">
-                      <span className="relative aspect-4/5 w-10 shrink-0 overflow-hidden bg-stone">
-                        {o.imageUrl && (
-                          <Image
-                            src={o.imageUrl}
-                            alt=""
-                            fill
-                            sizes="40px"
-                            className="object-cover object-top"
-                          />
-                        )}
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block truncate">
-                          {o.title}
-                          {o.itemCount > 1 ? ` +${o.itemCount - 1}` : ''}
-                        </span>
-                        <span className="text-[12px] text-muted-2">
-                          {o.variantLabel.replace(/^AU /, 'Size ')}
-                        </span>
-                      </span>
-                    </span>
-                  </td>
-                  <td className="py-3 pr-4">
-                    <span className="block">{o.buyerName ?? 'Guest'}</span>
-                    <span className="text-[12px] text-muted-2">
-                      {[o.suburb, o.state].filter(Boolean).join(' ')}
-                    </span>
-                  </td>
-                  <td className="py-3 pr-4">
-                    <ShipBy o={o} />
-                  </td>
-                  <td className="py-3 text-right tabular-nums">{formatPrice(o.totalCents)}</td>
-                  <td className="py-3 pl-6">
-                    <OrderStatusPill status={o.status} mto={o.isMto} />
-                  </td>
-                  <td className="py-3 text-right">
-                    <Link
-                      href={href(o.id)}
-                      scroll={false}
-                      className="inline-flex min-h-[44px] items-center text-[11px] uppercase tracking-label underline underline-offset-[6px]"
-                      data-testid="order-open"
-                    >
-                      {action(o)}
-                      <span className="sr-only"> order {o.orderNumber}</span>
-                    </Link>
-                  </td>
+        {rows.length === 0 && checklist ? (
+          <NoOrdersYet list={checklist} shopUrl={`${env().APP_URL}/makers/${checklist.slug}`} />
+        ) : rows.length === 0 ? (
+          <p className="py-16 text-center text-[14px] text-muted">
+            {tab === 'to-ship' ? 'Nothing to ship. Nice work.' : 'No orders here yet.'}
+          </p>
+        ) : (
+          <>
+            <table
+              className="mt-2 hidden w-full text-left text-[13px] md:table"
+              data-testid="orders-table"
+            >
+              <thead>
+                <tr className="border-b border-line text-[10px] uppercase tracking-label text-muted-2">
+                  <th scope="col" className="py-3 font-normal">
+                    Order
+                  </th>
+                  <th scope="col" className="py-3 font-normal">
+                    Piece
+                  </th>
+                  <th scope="col" className="py-3 font-normal">
+                    Buyer
+                  </th>
+                  <th scope="col" className="py-3 font-normal">
+                    Ship by
+                  </th>
+                  <th scope="col" className="py-3 text-right font-normal">
+                    Total
+                  </th>
+                  <th scope="col" className="py-3 pl-6 font-normal">
+                    Status
+                  </th>
+                  <th scope="col" className="py-3 font-normal">
+                    <span className="sr-only">Action</span>
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <ul className="mt-4 space-y-2 md:hidden" role="list">
-            {rows.map((o) => (
-              <li key={o.id}>
-                <Link
-                  href={href(o.id)}
-                  scroll={false}
-                  className="flex gap-3 border border-line bg-surface p-3"
-                  data-testid="order-card"
-                >
-                  <span className="relative aspect-4/5 w-14 shrink-0 overflow-hidden bg-stone">
-                    {o.imageUrl && (
-                      <Image
-                        src={o.imageUrl}
-                        alt=""
-                        fill
-                        sizes="56px"
-                        className="object-cover object-top"
-                      />
-                    )}
-                  </span>
-                  <span className="min-w-0 flex-1 text-[13px]">
-                    <span className="flex items-start justify-between gap-2">
-                      <span className="truncate">{o.title}</span>
+              </thead>
+              <tbody>
+                {rows.map((o) => (
+                  <tr
+                    key={o.id}
+                    className="border-b border-line hover:bg-stone/60"
+                    data-testid="order-row"
+                  >
+                    <td className="py-3 pr-4 align-middle">
+                      <span className="block">#{o.orderNumber.replace(/^OO-/, '')}</span>
+                      <span className="text-[12px] text-muted-2">{placed(o.placedAt)}</span>
+                    </td>
+                    <td className="py-3 pr-4">
+                      <span className="flex items-center gap-3">
+                        <span className="relative aspect-4/5 w-10 shrink-0 overflow-hidden bg-stone">
+                          {o.imageUrl && (
+                            <Image
+                              src={o.imageUrl}
+                              alt=""
+                              fill
+                              sizes="40px"
+                              className="object-cover object-top"
+                            />
+                          )}
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block truncate">
+                            {o.title}
+                            {o.itemCount > 1 ? ` +${o.itemCount - 1}` : ''}
+                          </span>
+                          <span className="text-[12px] text-muted-2">
+                            {o.variantLabel.replace(/^AU /, 'Size ')}
+                          </span>
+                        </span>
+                      </span>
+                    </td>
+                    <td className="py-3 pr-4">
+                      <span className="block">{o.buyerName ?? 'Guest'}</span>
+                      <span className="text-[12px] text-muted-2">
+                        {[o.suburb, o.state].filter(Boolean).join(' ')}
+                      </span>
+                    </td>
+                    <td className="py-3 pr-4">
+                      <ShipBy o={o} />
+                    </td>
+                    <td className="py-3 text-right tabular-nums">{formatPrice(o.totalCents)}</td>
+                    <td className="py-3 pl-6">
                       <OrderStatusPill status={o.status} mto={o.isMto} />
-                    </span>
-                    <span className="block text-[12px] text-muted-2">
-                      #{o.orderNumber.replace(/^OO-/, '')} · {o.buyerName ?? 'Guest'} ·{' '}
-                      {formatPrice(o.totalCents)}
-                    </span>
-                    <span className="mt-1 block text-[12px]">
-                      Ship by <ShipBy o={o} />
-                    </span>
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
+                    </td>
+                    <td className="py-3 text-right">
+                      <Link
+                        href={href(o.id)}
+                        scroll={false}
+                        className="inline-flex min-h-[44px] items-center text-[11px] uppercase tracking-label underline underline-offset-[6px]"
+                        data-testid="order-open"
+                      >
+                        {action(o)}
+                        <span className="sr-only"> order {o.orderNumber}</span>
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
 
-      {open && (
-        <RouteSheet
-          closeHref={href()}
-          title={<OrderPanelTitle order={open} />}
-          testId="order-sheet"
-        >
-          <OrderPanel order={open} />
-        </RouteSheet>
-      )}
-    </div>
+            <ul className="mt-4 space-y-2 md:hidden" role="list">
+              {rows.map((o) => (
+                <li key={o.id}>
+                  <Link
+                    href={href(o.id)}
+                    scroll={false}
+                    className="flex gap-3 border border-line bg-surface p-3"
+                    data-testid="order-card"
+                  >
+                    <span className="relative aspect-4/5 w-14 shrink-0 overflow-hidden bg-stone">
+                      {o.imageUrl && (
+                        <Image
+                          src={o.imageUrl}
+                          alt=""
+                          fill
+                          sizes="56px"
+                          className="object-cover object-top"
+                        />
+                      )}
+                    </span>
+                    <span className="min-w-0 flex-1 text-[13px]">
+                      <span className="flex items-start justify-between gap-2">
+                        <span className="truncate">{o.title}</span>
+                        <OrderStatusPill status={o.status} mto={o.isMto} />
+                      </span>
+                      <span className="block text-[12px] text-muted-2">
+                        #{o.orderNumber.replace(/^OO-/, '')} · {o.buyerName ?? 'Guest'} ·{' '}
+                        {formatPrice(o.totalCents)}
+                      </span>
+                      <span className="mt-1 block text-[12px]">
+                        Ship by <ShipBy o={o} />
+                      </span>
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+
+        {open && (
+          <RouteSheet
+            closeHref={href()}
+            title={<OrderPanelTitle order={open} />}
+            testId="order-sheet"
+          >
+            <OrderPanel order={open} />
+          </RouteSheet>
+        )}
+      </div>
+    </>
   );
 }

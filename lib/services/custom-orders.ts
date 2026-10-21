@@ -6,6 +6,7 @@ import { commissionCents } from '@/lib/domain/commission';
 import { sanitizeText } from '@/lib/domain/moderation';
 import { formatPrice } from '@/lib/domain/money';
 import { CUSTOM } from '@/lib/custom/config';
+import { SITE } from '@/lib/site/config';
 import { fmtDayLong, pieceTitle, type Measurements } from '@/lib/custom/brief';
 import { env } from '@/lib/env';
 import { assertCheckoutEnabled } from '@/lib/features';
@@ -369,13 +370,7 @@ export async function setMilestone(
       : milestones.fabric_bought || milestones.sketch_shared
         ? 'making'
         : 'paid';
-    const step = milestones.made
-      ? 3
-      : milestones.fabric_bought
-        ? 2
-        : milestones.sketch_shared
-          ? 1
-          : 0;
+    const step = milestones.made ? 4 : milestones.fabric_bought ? 1 : 0;
     await db`update public.orders set milestones = ${db.json(milestones as never)} where id = ${o.id}`;
     await db`
       update public.fulfilments set status = ${status}::fulfilment_status, mto_step = greatest(mto_step, ${step})
@@ -461,6 +456,59 @@ export async function payFabricAdvance(orderId: string, now = new Date()) {
     where id = ${orderId} and fabric_advance_cents is null`;
   await audit(
     'transfer.custom_advance',
+    { type: 'order', id: orderId },
+    { amount, transferId: t.id, at: now.toISOString() },
+  );
+  return { amount, created: true };
+}
+
+/**
+ * The same advance on a standard made-to-order order, when SITE.payouts.advanceOnMadeToOrder is
+ * on: 30% of the maker's part, once per order, at "Fabric bought".
+ */
+export async function payMtoAdvance(orderId: string, fulfilmentId: string, now = new Date()) {
+  if (!SITE.payouts.advanceOnMadeToOrder) return null;
+  const [o] = await sql()<
+    {
+      status: string;
+      advanceCents: number | null;
+      chargeId: string | null;
+      makerId: string;
+      stripeAccountId: string | null;
+      chargesEnabled: boolean;
+      price: number;
+      feeBps: number;
+    }[]
+  >`
+    select o.status, o.fabric_advance_cents as advance_cents, o.stripe_charge_id as charge_id, f.maker_id,
+      m.stripe_account_id, m.stripe_charges_enabled as charges_enabled, f.subtotal_cents as price,
+      round(coalesce(f.commission_pct_applied, ${TERMS.standardCommissionPct}) * 100)::int as fee_bps
+    from public.orders o join public.fulfilments f on f.order_id = o.id join public.makers m on m.id = f.maker_id
+    where o.id = ${orderId} and f.id = ${fulfilmentId} and o.order_type = 'standard'`;
+  if (!o) return null;
+  if (o.advanceCents != null) return { amount: o.advanceCents, created: false };
+  if (!['paid', 'partially_refunded'].includes(o.status)) return null;
+  if (!o.stripeAccountId || !o.chargesEnabled) return null;
+  const gross = Math.round((o.price * CUSTOM.advancePct) / 100);
+  const amount = gross - commissionCents(gross, o.feeBps);
+  const t = await payments().createTransfer({
+    amountCents: amount,
+    destination: o.stripeAccountId,
+    transferGroup: orderId,
+    sourceTransaction: o.chargeId,
+    metadata: {
+      order_id: orderId,
+      fulfilment_id: fulfilmentId,
+      maker_id: o.makerId,
+      kind: 'mto_fabric_advance',
+    },
+    idempotencyKey: `advance:${orderId}`,
+  });
+  await sql()`
+    update public.orders set fabric_advance_cents = ${amount}, fabric_advance_transfer_id = ${t.id}
+    where id = ${orderId} and fabric_advance_cents is null`;
+  await audit(
+    'transfer.mto_advance',
     { type: 'order', id: orderId },
     { amount, transferId: t.id, at: now.toISOString() },
   );

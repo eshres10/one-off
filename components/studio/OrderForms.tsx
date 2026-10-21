@@ -160,7 +160,7 @@ export function ShipmentSteps({
 }) {
   const [state, action] = useFormState<FormState, FormData>(shipmentStageAction, undefined);
   const dispatched = ['shipped', 'delivered', 'completed', 'issue'].includes(status);
-  const packed = dispatched || status === 'ready' || (isMto && mtoStep >= 3);
+  const packed = dispatched || status === 'ready' || (isMto && mtoStep >= 4);
   const making = packed || (isMto && (status === 'making' || mtoStep >= 1));
   const steps = [
     ...(isMto ? [{ key: 'making', label: 'Being made', done: making }] : []),
