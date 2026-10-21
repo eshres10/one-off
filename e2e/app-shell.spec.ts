@@ -204,6 +204,7 @@ test.describe.serial('app shell', () => {
     // Reading the thread clears both.
     await buyer.getByTestId('phone-tabbar').getByTestId('tab-inbox').click();
     await buyer
+      .getByTestId('phone-inbox')
       .getByTestId('inbox-row')
       .filter({ hasText: enquiryPiece.maker.displayName })
       .click();

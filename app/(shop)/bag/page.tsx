@@ -21,6 +21,7 @@ import { ProductBadgePill } from '@/components/ui/Badge';
 import { InfoPanel } from '@/components/ui/Panels';
 import { MinusIcon, PlusIcon, ShieldIcon } from '@/components/ui/icons';
 import { PhoneBag } from '@/components/app/bag/PhoneBag';
+import { OrderPlaced } from '@/components/app/bag/OrderPlaced';
 import { CartError } from '@/lib/services/cart';
 import { bagDeliveryEstimate, openCheckout, type CheckoutView } from '@/lib/services/checkout';
 import { env } from '@/lib/env';
@@ -60,7 +61,11 @@ function Stepper({ itemId, quantity, max }: { itemId: string; quantity: number; 
   );
 }
 
-export default async function BagPage({ searchParams }: { searchParams: { cancelled?: string } }) {
+export default async function BagPage({
+  searchParams,
+}: {
+  searchParams: { cancelled?: string; placed?: string };
+}) {
   if (!(await checkoutEnabled())) {
     return (
       <div className="container-page pt-16">
@@ -82,6 +87,15 @@ export default async function BagPage({ searchParams }: { searchParams: { cancel
     );
   }
   const [cart, user] = await Promise.all([getCart(getCartSessionId()), getSessionUser()]);
+  if (!cart.lines.length && searchParams.placed && /^OO-\d+$/.test(searchParams.placed)) {
+    // Just paid with Apple Pay or Google Pay on a phone: the bag is empty, the order is placed.
+    return (
+      <div className="md:container-page px-4 pt-6 md:pt-16">
+        <h1 className="sr-only">Your bag</h1>
+        <OrderPlaced number={searchParams.placed} />
+      </div>
+    );
+  }
   if (!cart.lines.length) {
     return (
       <div className="container-page pt-10 md:pt-16" data-testid="bag-empty">
