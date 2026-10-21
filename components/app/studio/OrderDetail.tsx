@@ -39,6 +39,8 @@ export function PhoneOrderDetail({
   const [ship, setShip] = useState(false);
   const [pending, start] = useTransition();
   const [sending, setSending] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const saving = useRef(false);
   const camera = useRef<HTMLInputElement>(null);
   const steps = stepsOf(order);
   const d = daysUntil(order.shipBy);
@@ -52,11 +54,14 @@ export function PhoneOrderDetail({
 
   const advance = () => {
     const n = steps.next;
-    if (!n) return;
+    if (!n || saving.current) return;
     if (n.kind === 'ship') {
       setShip(true);
       return;
     }
+    // One step per tap: the transition's pending flag doesn't cover the server round trip.
+    saving.current = true;
+    setBusy(true);
     start(async () => {
       const fd = new FormData();
       let res;
@@ -79,6 +84,8 @@ export function PhoneOrderDetail({
         toast(`${steps.labels[steps.current + 1] ?? 'Done'} · the buyer knows`);
         router.refresh();
       }
+      saving.current = false;
+      setBusy(false);
     });
   };
 
@@ -262,11 +269,11 @@ export function PhoneOrderDetail({
           />
           <AppButton
             onClick={advance}
-            disabled={pending}
+            disabled={pending || busy}
             className="flex-1"
             data-testid="next-step"
           >
-            {pending ? 'Saving…' : steps.next?.label}
+            {pending || busy ? 'Saving…' : steps.next?.label}
           </AppButton>
         </div>
       )}

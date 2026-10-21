@@ -311,9 +311,14 @@ test.describe.serial('phone app', () => {
           return r?.mtoStep;
         })
         .toBe(step);
-      const [m] = await db<{ n: number }[]>`
-        select count(*)::int as n from public.messages where body = ${STEP_BUYER_LINE[step]!}`;
-      expect(m!.n).toBeGreaterThan(0);
+      // The buyer's line lands in the order's conversation just after the step is saved.
+      await expect
+        .poll(async () => {
+          const [m] = await db<{ n: number }[]>`
+            select count(*)::int as n from public.messages where body = ${STEP_BUYER_LINE[step]!}`;
+          return m?.n ?? 0;
+        })
+        .toBeGreaterThan(0);
       if (step === 4) await shot(page, 'studio-order-ready');
     }
     // "Fabric bought" on a standard made-to-order order with advances off: no advance payout.
