@@ -193,6 +193,20 @@ export default defineConfig({
         deviceScaleFactor: 1,
       },
     },
+    // The maker survey on survey.localhost (phone), with the admin page on the main host.
+    {
+      name: 'survey',
+      testMatch: 'survey.spec.ts',
+      dependencies: ['phone-app-desktop'],
+      timeout: 120_000,
+      use: {
+        browserName: 'chromium',
+        viewport: { width: 390, height: 844 },
+        deviceScaleFactor: 1,
+        isMobile: true,
+        hasTouch: true,
+      },
+    },
   ],
   webServer: {
     command:
