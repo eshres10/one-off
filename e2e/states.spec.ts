@@ -58,8 +58,10 @@ test.describe('empty and edge states', () => {
     await db`update public.product_variants set stock_quantity = 0 where product_id = ${ooo.id}`;
     const res = await page.goto(`/products/${ooo.slug}`);
     expect(res?.status()).toBe(200);
-    await expect(page.getByTestId('sold-stamp').first()).toBeVisible();
-    await expect(page.getByTestId('sold-panel')).toContainText('This one found its person.');
+    await expect(page.getByTestId('sold-stamp').filter({ visible: true })).toBeVisible();
+    await expect(page.getByTestId('sold-panel').filter({ visible: true })).toContainText(
+      'This one found its person.',
+    );
     await expect(page.getByRole('button', { name: /Add to bag/ })).toHaveCount(0);
   });
 
