@@ -26,6 +26,8 @@ async function shot(page: Page, name: string) {
 }
 
 async function axe(page: Page, where: string) {
+  // Colour transitions mid-flight read as low contrast: let them finish first.
+  await page.waitForTimeout(350);
   const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
   expect(
     results.violations,
@@ -239,7 +241,8 @@ test.describe.serial('maker survey', () => {
     await context.clearCookies();
     await login(page, ADMIN.email, '/admin/survey');
     await expect(page.getByTestId('stat-total')).toContainText(/[2-9]/);
-    await expect(page.getByTestId('stat-founding')).toContainText('1');
+    // Test 2 asked for a founding spot and test 4 chose "Want in".
+    await expect(page.getByTestId('stat-founding')).toContainText('2');
     await expect(page.getByTestId('chart-q4_commission')).toContainText('12–18%');
     await expect(page.getByTestId('optin-row')).toHaveCount(1);
     await expect(page.getByTestId('optin-row')).toContainText('fern@example.com');
