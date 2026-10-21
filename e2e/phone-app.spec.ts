@@ -42,10 +42,14 @@ test.beforeAll(async () => {
   };
   size = await pick(product.id);
   otherSize = await pick(other.id);
+  const [ooo] = await db<{ slug: string }[]>`
+    select p.slug from public.products p join public.product_variants v on v.product_id = p.id
+    where p.product_type = 'one_of_one' and p.status = 'approved' and v.is_active and v.stock_quantity > 0
+      and not ('preview-only' = any(p.tags)) order by p.slug limit 1`;
+  oneOfOne = ooo!;
 });
-const oneOfOne = PRODUCTS.find(
-  (p) => p.productType === 'one_of_one' && !p.tags?.includes('preview-only'),
-)!;
+// Picked when the test runs: an earlier suite sells one of the seeded one-of-ones.
+let oneOfOne = { slug: '' };
 const mto = PRODUCTS.find(
   (p) => p.productType === 'made_to_order' && !p.tags?.includes('preview-only'),
 )!;
