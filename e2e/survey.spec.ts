@@ -249,7 +249,7 @@ test.describe.serial('maker survey', () => {
     await page.getByTestId('link-src').fill('ig dm');
     await page.getByTestId('link-ref').fill('Fern Thread');
     await expect(page.getByTestId('link-url')).toHaveText(
-      'https://survey.offone.com.au/?src=ig-dm&ref=fern-thread',
+      'https://offone.com.au/survey?src=ig-dm&ref=fern-thread',
     );
     await page.setViewportSize({ width: 1280, height: 900 });
     await shot(page, 'admin');

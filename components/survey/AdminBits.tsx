@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { markContactedAction } from '@/lib/actions/survey';
-import { SURVEY_HOME } from '@/lib/survey/host';
+import { BRAND } from '@/lib/brand';
 import { TAG_RE } from '@/lib/survey/questions';
 
 /** The "Mark contacted" toggle on an opt-in row. */
@@ -37,7 +37,7 @@ const clean = (v: string) =>
     .replace(/[^a-z0-9_-]/g, '')
     .slice(0, 40);
 
-/** Builds a share link like https://survey.offone.com.au/?src=ig-dm&ref=fern-thread. */
+/** Builds a share link like https://offone.com.au/survey?src=ig-dm&ref=fern-thread. */
 export function MakeLink() {
   const [src, setSrc] = useState('ig-dm');
   const [ref, setRef] = useState('');
@@ -47,7 +47,7 @@ export function MakeLink() {
   const p = new URLSearchParams();
   if (s && TAG_RE.test(s)) p.set('src', s);
   if (r && TAG_RE.test(r)) p.set('ref', r);
-  const url = `${SURVEY_HOME}/${p.toString() ? `?${p}` : ''}`;
+  const url = `${BRAND.url}/survey${p.toString() ? `?${p}` : ''}`;
   const field =
     'min-h-[40px] w-full border border-line bg-surface px-3 text-[14px] outline-none focus:border-ink';
   return (

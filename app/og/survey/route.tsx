@@ -66,7 +66,7 @@ export async function GET() {
             color: MUTED,
           }}
         >
-          Maker survey · survey.offone.com.au
+          Maker survey · offone.com.au/survey
         </div>
       </div>
     ),
