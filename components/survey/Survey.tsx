@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Wordmark } from '@/components/ui/Wordmark';
-import { BRAND } from '@/lib/brand';
 import {
   FOLLOW_UP,
   MIN_SECONDS,
@@ -555,7 +554,7 @@ export function Survey({ src, refTag }: { src: string | null; refTag: string | n
       )}
 
       <footer className="mt-10 text-center text-[12px] text-muted">
-        <a href={`${BRAND.url}/privacy`} className="underline underline-offset-[3px]">
+        <a href="https://offone.com.au/privacy" className="underline underline-offset-[3px]">
           Privacy policy
         </a>
       </footer>

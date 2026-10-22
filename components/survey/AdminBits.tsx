@@ -37,7 +37,7 @@ const clean = (v: string) =>
     .replace(/[^a-z0-9_-]/g, '')
     .slice(0, 40);
 
-/** Builds a share link like https://survey.offone.world/?src=ig-dm&ref=fern-thread. */
+/** Builds a share link like https://survey.offone.com.au/?src=ig-dm&ref=fern-thread. */
 export function MakeLink() {
   const [src, setSrc] = useState('ig-dm');
   const [ref, setRef] = useState('');

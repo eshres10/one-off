@@ -1,6 +1,6 @@
 # Off One — independent Australian fashion marketplace (MVP)
 
-Live domain: **[offone.world](https://offone.world)** (offone.com.au and the older shoponeoff.com.au redirect to it)
+Live domain: **[offone.com.au](https://offone.com.au)** (the old shoponeoff.com.au redirects to it)
 
 > Discover and buy original fashion made by independent Australian makers.
 
@@ -153,7 +153,7 @@ Set `EMAIL_DRIVER=resend`, `RESEND_API_KEY` and a verified `EMAIL_FROM` domain. 
 
 ## Preview mode (browse-only launch)
 
-Put offone.world live before Stripe and Resend are connected. With `PREVIEW_MODE=true`:
+Put offone.com.au live before Stripe and Resend are connected. With `PREVIEW_MODE=true`:
 
 - Shoppers can browse the feed, collections, makers and products, create an account, save pieces, follow makers and message makers.
 - “Add to bag” becomes **Launching soon**, the bag icon is hidden, and the bag and checkout are switched off on the server (not just hidden).
@@ -164,8 +164,8 @@ Put offone.world live before Stripe and Resend are connected. With `PREVIEW_MODE
 
 1. Create a Supabase project (region: Sydney). Copy the **transaction pooler** connection string (port 6543) (Project settings → Database) and the URL, anon key and service-role key (Project settings → API).
 2. Apply the schema once, either by pasting `supabase/production-setup.sql` into **SQL Editor** and clicking Run (one transaction; regenerate it with `scripts/build-production-sql.sh` after adding a migration), or with `DATABASE_URL="<connection string>" npm run db:migrate`.
-3. Storage: create a public bucket named `marketplace` (JPEG/PNG/WebP, 8 MB limit). Auth → URL configuration: Site URL `https://offone.world`, redirect URL `https://offone.com.au/auth/callback`.
-4. In Vercel set: `PREVIEW_MODE=true`, `APP_URL=https://offone.world`, `DATABASE_URL`, `AUTH_DRIVER=supabase`, `STORAGE_DRIVER=supabase`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`. Leave payments and email on their defaults.
+3. Storage: create a public bucket named `marketplace` (JPEG/PNG/WebP, 8 MB limit). Auth → URL configuration: Site URL `https://offone.com.au`, redirect URL `https://offone.com.au/auth/callback`.
+4. In Vercel set: `PREVIEW_MODE=true`, `APP_URL=https://offone.com.au`, `DATABASE_URL`, `AUTH_DRIVER=supabase`, `STORAGE_DRIVER=supabase`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`. Leave payments and email on their defaults.
 5. Deploy, sign up on the site with your own email, then in the Supabase SQL editor run
    `update public.users set role = 'admin' where email = 'you@example.com';`
 6. Invite makers from **Admin → Makers**. Supabase sends their invite email (its built-in sender is rate-limited, which is fine for a handful of makers). Other app emails are recorded at **Admin → Emails** until Resend is connected.
@@ -174,20 +174,19 @@ Put offone.world live before Stripe and Resend are connected. With `PREVIEW_MODE
 
 **At launch:** connect Stripe and Resend (sections above), then set `PREVIEW_MODE=false`.
 
-## Going live on offone.world
+## Going live on offone.com.au
 
-The production URL is `https://offone.world` (apex). Once `APP_URL=https://offone.world`, `www.offone.world` (via Vercel), `offone.com.au`, `www.offone.com.au`, `shoponeoff.com.au` and `www.shoponeoff.com.au` all permanently redirect to it, keeping the path (`next.config.mjs`). Keep the old domains connected in Vercel so those redirects keep working.
+The production URL is `https://offone.com.au` (apex). Once `APP_URL=https://offone.com.au`, `www.offone.com.au`, `shoponeoff.com.au` and `www.shoponeoff.com.au` all permanently redirect to it, keeping the path (`next.config.mjs`). Keep the old domains connected in Vercel so those redirects keep working.
 
-1. **Vercel domain:** Project → Settings → Domains → add `offone.world` (primary) and `www.offone.world` (redirect to the apex), plus `survey.offone.world`. Keep `offone.com.au`, `www.offone.com.au`, `shoponeoff.com.au` and `www.shoponeoff.com.au` connected: they point at this project and the app redirects them to the apex.
-2. **DNS at the offone.world registrar** (or move nameservers to Vercel):
+1. **Vercel domain:** Project → Settings → Domains → add `offone.com.au` and `www.offone.com.au`, and keep `shoponeoff.com.au` and `www.shoponeoff.com.au` (all four point at this project; the app redirects to the apex).
+2. **DNS at your .com.au registrar** (or move nameservers to Vercel):
    - `A` record for `@` → `76.76.21.21`
    - `CNAME` for `www` → `cname.vercel-dns.com`
-   - `CNAME` for `survey` → `cname.vercel-dns.com`
      Vercel shows the exact values on the Domains page and issues the TLS certificate automatically.
-3. **Environment:** `APP_URL=https://offone.world` (no trailing slash).
-4. **Email (Resend):** mail keeps sending from `offone.com.au` until `offone.world` is verified in Resend (add the domain, create the SPF, DKIM and DMARC records it lists), then switch `EMAIL_FROM` and `supportEmail` in `lib/brand.ts` to `hello@offone.world`. Set up a mailbox or forwarding for the support address and choose an `ADMIN_NOTIFICATION_EMAIL`.
-5. **Supabase Auth:** Site URL `https://offone.world`; redirect URLs `https://offone.world/auth/callback` and `https://offone.world/auth/callback?**` (keep `http://localhost:3000/auth/callback` for development). Optionally set a custom SMTP sender on the same domain.
-6. **Stripe:** webhook endpoints at `https://offone.world/api/webhooks/stripe` (platform + connected accounts, see above; new endpoints mean new signing secrets in Vercel); add `offone.world` under Settings → Payment method domains for Apple Pay / Google Pay; set the public business name to “Off One” and the website to `https://offone.world` (it appears on card statements, Checkout and Connect onboarding). Also set **Terms of service URL** (Settings → Public details) to `https://offone.world/terms`: Checkout requires buyers to accept it (`consent_collection`), and Stripe rejects the session if the URL isn’t set.
+3. **Environment:** `APP_URL=https://offone.com.au` (no trailing slash).
+4. **Email (Resend):** add the domain `offone.com.au` in Resend and create the SPF, DKIM and DMARC DNS records it lists. Use `EMAIL_FROM="Off One <hello@offone.com.au>"`. Set up a mailbox or forwarding for `hello@offone.com.au` (support address in `lib/brand.ts`) and choose an `ADMIN_NOTIFICATION_EMAIL`.
+5. **Supabase Auth:** Site URL `https://offone.com.au`; redirect URLs `https://offone.com.au/auth/callback` (keep `http://localhost:3000/auth/callback` for development). Optionally set a custom SMTP sender on the same domain.
+6. **Stripe:** webhook endpoints at `https://offone.com.au/api/webhooks/stripe` (platform + connected accounts, see above); add `offone.com.au` under Settings → Payment method domains for Apple Pay / Google Pay; set the public business name to “Off One” and the website to `https://offone.com.au` (it appears on card statements, Checkout and Connect onboarding). Also set **Terms of service URL** (Settings → Public details) to `https://offone.com.au/terms`: Checkout requires buyers to accept it (`consent_collection`), and Stripe rejects the session if the URL isn’t set.
 
 ## Deploying to Vercel
 
@@ -241,7 +240,7 @@ At most one push per browser per 24 hours. Test on a phone: turn on alerts from 
 screen or Account → Notifications, then `npx tsx scripts/send-test-push.ts you@example.com`.
 
 **Testing on an iPhone** (iOS 16.4 or later; web push only works for home-screen web apps):
-open offone.world in Safari, tap Share → Add to Home Screen, open Off One from the home
+open offone.com.au in Safari, tap Share → Add to Home Screen, open Off One from the home
 screen (not Safari), tap "Turn on drop alerts" and Allow. Then run the test script. If you tapped
 Don't Allow, turn it back on in Settings → Notifications → Off One.
 
@@ -252,8 +251,8 @@ The Google button shows on Sign in, Join, Apply to sell and the shop-claim page 
 from the Google name and email; an existing account with the same email is linked by Supabase.
 
 1. Google Cloud Console → APIs & Services → OAuth consent screen: External, app name "Off One",
-   support email, logo, home page `https://offone.world`, privacy `https://offone.world/legal/privacy`,
-   terms `https://offone.world/legal/terms`, authorised domain `offone.world`. Publish the app.
+   support email, logo, home page `https://offone.com.au`, privacy `https://offone.com.au/legal/privacy`,
+   terms `https://offone.com.au/legal/terms`, authorised domain `offone.com.au`. Publish the app.
 2. Credentials → Create credentials → OAuth client ID → Web application. Authorised redirect URI:
    `https://<project-ref>.supabase.co/auth/v1/callback` (shown in Supabase under the Google provider).
 3. Supabase → Authentication → Sign In / Providers → Google: enable, paste the client ID and secret.

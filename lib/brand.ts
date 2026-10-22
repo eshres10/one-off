@@ -6,8 +6,8 @@ export const BRAND = {
   name: 'Off One',
   /** The wordmark's text, for alt text and anywhere the logo can't be drawn. */
   wordmark: 'OFF ONE',
-  domain: 'offone.world',
-  url: 'https://offone.world',
+  domain: 'offone.com.au',
+  url: 'https://offone.com.au',
   tagline: 'Discover and buy original fashion made by independent Australian makers.',
   supportEmail: 'hello@offone.com.au',
   instagram: 'offone___',

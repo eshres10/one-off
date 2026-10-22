@@ -30,7 +30,7 @@ export async function middleware(request: NextRequest) {
     (pathname === '/survey' || pathname.startsWith('/survey/')) &&
     process.env.NODE_ENV === 'production' &&
     !process.env.VERCEL_ENV?.startsWith('preview') &&
-    /offone\.(world|com\.au)$/i.test((request.headers.get('host') ?? '').split(':')[0]!)
+    /offone\.com\.au$/i.test((request.headers.get('host') ?? '').split(':')[0]!)
   ) {
     const to = new URL(SURVEY_HOME);
     to.search = request.nextUrl.search;
