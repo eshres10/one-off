@@ -25,9 +25,11 @@ export async function middleware(request: NextRequest) {
     url.pathname = '/survey';
     return NextResponse.rewrite(url);
   }
-  // On the main site, /survey lives at its own address in production.
+  // On the main site, /survey moves to its own address once that address is live (set
+  // SURVEY_HOST_LIVE=true after survey.offone.com.au resolves). Until then /survey is served here.
   if (
     (pathname === '/survey' || pathname.startsWith('/survey/')) &&
+    process.env.SURVEY_HOST_LIVE === 'true' &&
     process.env.NODE_ENV === 'production' &&
     !process.env.VERCEL_ENV?.startsWith('preview') &&
     /offone\.com\.au$/i.test((request.headers.get('host') ?? '').split(':')[0]!)

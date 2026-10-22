@@ -8,6 +8,7 @@ const DATABASE_URL =
 // The e2e server runs a production build against a freshly reset + seeded database,
 // with mock Stripe (signed webhooks through the real endpoint) and the email outbox.
 const serverEnv = {
+  SURVEY_HOST_LIVE: 'true',
   DATABASE_URL,
   APP_URL: BASE,
   PAYMENTS_DRIVER: 'mock',
