@@ -1,5 +1,5 @@
 /**
- * The maker survey (survey.offone.com.au): ten tap questions, one optional text question and a
+ * The maker survey (survey.offone.world): ten tap questions, one optional text question and a
  * follow-up opt-in. Option keys are what's stored; labels are what's shown. Shared by the screens,
  * the API validation, the database constraints (see 0021_maker_survey.sql) and the admin page.
  */

@@ -4,7 +4,7 @@ import { expect, test, type Page } from '@playwright/test';
 import postgres from 'postgres';
 import { ADMIN, BUYERS, PASSWORD } from '../scripts/seed-data';
 
-// The maker survey at survey.localhost:<port> (survey.offone.com.au in production), on a 390px
+// The maker survey at survey.localhost:<port> (survey.offone.world in production), on a 390px
 // phone: routing, saved progress, keyboard-only completion, axe on every step, and the admin page
 // on the main host. Screenshots of each screen go to e2e/__screenshots__/survey/.
 
@@ -80,11 +80,11 @@ test.describe.serial('maker survey', () => {
     expect(og.headers()['content-type']).toContain('image/png');
     // On the production domain /survey redirects to the survey host.
     const redirect = await request.get(`${MAIN}/survey?src=ig-dm`, {
-      headers: { host: 'www.offone.com.au' },
+      headers: { host: 'www.offone.world' },
       maxRedirects: 0,
     });
     expect(redirect.status()).toBe(308);
-    expect(redirect.headers().location).toBe('https://survey.offone.com.au/?src=ig-dm');
+    expect(redirect.headers().location).toBe('https://survey.offone.world/?src=ig-dm');
   });
 
   test('2. a maker taps through, leaves their details, and the answers land with the tags', async ({
@@ -249,7 +249,7 @@ test.describe.serial('maker survey', () => {
     await page.getByTestId('link-src').fill('ig dm');
     await page.getByTestId('link-ref').fill('Fern Thread');
     await expect(page.getByTestId('link-url')).toHaveText(
-      'https://survey.offone.com.au/?src=ig-dm&ref=fern-thread',
+      'https://survey.offone.world/?src=ig-dm&ref=fern-thread',
     );
     await page.setViewportSize({ width: 1280, height: 900 });
     await shot(page, 'admin');

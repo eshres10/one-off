@@ -1,4 +1,4 @@
--- The maker survey at survey.offone.com.au (lib/survey/questions.ts holds the questions).
+-- The maker survey at survey.offone.world (lib/survey/questions.ts holds the questions).
 -- Answers are stored as option keys. Contact details only exist when the maker opted in.
 -- No device data: rate limiting uses a daily-salted hash in rate_limits, kept for 24 hours.
 

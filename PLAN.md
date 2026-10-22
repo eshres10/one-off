@@ -120,7 +120,7 @@ These are all the tables from the spec, with uuid primary keys, `created_at`/`up
 - **Loading and empty states:** skeleton image placeholders, and the empty-state copy given in the spec.
 - **Product page:** a scroll-snap mobile carousel with desktop thumbnails, size and colour pill buttons (sold-out options shown struck through and disabled), and a sticky mobile CTA bar. The trust block sits under the CTA.
 - **Accessibility:** focus-visible rings and semantic landmarks.
-- **Brand:** "Off One" at offone.com.au, defined once in `lib/brand.ts`.
+- **Brand:** "Off One" at offone.world, defined once in `lib/brand.ts`.
 
 ## Seed (`npm run db:seed`, idempotent)
 - Seeded rows use deterministic UUIDv5 IDs and are upserted with `on conflict do update`.

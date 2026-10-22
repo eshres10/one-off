@@ -1,9 +1,14 @@
-const NEW_HOST = 'offone.com.au';
-const OLD_HOSTS = ['shoponeoff.com.au', 'www.shoponeoff.com.au'];
+const NEW_HOST = 'offone.world';
+const OLD_HOSTS = [
+  'offone.com.au',
+  'www.offone.com.au',
+  'shoponeoff.com.au',
+  'www.shoponeoff.com.au',
+];
 
 /**
- * The old shoponeoff.com.au (and its www) moves to wherever APP_URL says the site lives, once
- * that's offone.com.au. Which of offone.com.au and www.offone.com.au is primary is set in Vercel
+ * The old offone.com.au and shoponeoff.com.au (and their www) move to wherever APP_URL says the site lives, once
+ * that's offone.world. Which of offone.world and www.offone.world is primary is set in Vercel
  * (Settings → Domains), not here.
  */
 function domainRedirects() {
@@ -19,7 +24,7 @@ function domainRedirects() {
     destination: `https://${appHost}/:path*`,
     permanent: true,
   });
-  // www.offone.com.au is left to Vercel's domain settings: redirecting it here as well loops
+  // www.offone.world is left to Vercel's domain settings: redirecting it here as well loops
   // forever if Vercel sends the apex to www.
   if (appHost === NEW_HOST || appHost === `www.${NEW_HOST}`) return OLD_HOSTS.map(to);
   return [];
