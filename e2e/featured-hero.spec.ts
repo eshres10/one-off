@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
+import { ADMIN, PASSWORD } from '../scripts/seed-data';
 import postgres from 'postgres';
 import {
   FIXTURE_MAKER_ID,
@@ -302,5 +303,60 @@ test.describe('phone 390×844', () => {
     await page.waitForTimeout(1500);
     await expect(caption(page, true)).toContainText('Sparkle dress');
     await expect(caption(page, true)).toContainText('Trench coat', { timeout: 4000 });
+  });
+});
+
+test.describe('admin card', () => {
+  test('an admin picks pieces, orders them and features the maker; the homepage follows', async ({
+    page,
+    context,
+  }) => {
+    await context.clearCookies();
+    await page.goto('/login?next=/admin/collections');
+    await page.getByLabel('Email', { exact: true }).fill(ADMIN.email);
+    await page.getByLabel('Password', { exact: true }).fill(PASSWORD);
+    await page.locator('form').getByRole('button', { name: 'Sign in' }).click();
+    await page.waitForURL((u) => u.pathname === '/admin/collections');
+    const card = page.getByTestId('featured-maker-card');
+    // The fixture's feature is running: eight thumbnails.
+    await expect(card.getByTestId('feature-active')).toContainText('Dramalicious');
+    await expect(card.getByTestId('feature-order').getByRole('listitem')).toHaveCount(8);
+    // Drop all but three, then put the skirt first.
+    for (const name of [
+      'Moss suit',
+      'Olive leather jacket',
+      'Sparkle bag',
+      'Pointed heel shoes',
+      'Tan double breasted suit',
+    ])
+      await card.getByRole('button', { name: `Remove ${name}` }).click();
+    await expect(card.getByTestId('feature-order').getByRole('listitem')).toHaveCount(3);
+    await card.getByRole('button', { name: 'Move Yellow skirt up' }).click();
+    await card.getByRole('button', { name: 'Move Yellow skirt up' }).click();
+    await card.getByLabel(/^Headline/).fill('Dramalicious, dressed up');
+    await card.getByTestId('feature-submit').click();
+    await expect(card.getByTestId('feature-message')).toContainText('Featured on the homepage');
+
+    // Fewer than two pieces cannot be submitted.
+    await card.getByRole('button', { name: 'Remove Trench coat' }).click();
+    await card.getByRole('button', { name: 'Remove Sparkle dress' }).click();
+    await expect(card.getByTestId('feature-submit')).toBeDisabled();
+
+    // The homepage shows the new feature: skirt first, three segments, the new headline.
+    await expect(async () => {
+      await page.goto('/');
+      await expect(page.getByTestId('featured-hero').getByRole('heading', { level: 1 })).toHaveText(
+        'Dramalicious, dressed up',
+        { timeout: 1000 },
+      );
+    }).toPass({ timeout: 20_000 });
+    await expect(page.getByTestId('hero-caption')).toContainText('Yellow skirt');
+    await expect(page.getByTestId('hero-segment')).toHaveCount(3);
+
+    // Stopping brings the original hero back.
+    await page.goto('/admin/collections');
+    await page.getByRole('button', { name: 'Stop featuring' }).click();
+    await expect(page.getByTestId('feature-none')).toBeVisible();
+    await expectStaticHero(page);
   });
 });

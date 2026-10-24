@@ -1,6 +1,6 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { z } from 'zod';
 import { requireAdmin } from '@/lib/auth/session';
 import { isOwnImageUrl } from '@/lib/storage';
@@ -16,6 +16,7 @@ import {
   setListingStatus,
   setMakerStatus,
 } from '@/lib/services/admin';
+import { saveHomeFeature, stopHomeFeature } from '@/lib/services/home-feature';
 import { refundOrderItem } from '@/lib/services/webhook';
 import {
   collectionSchema,
@@ -185,4 +186,58 @@ export async function collectionHeroAction(collectionId: string, url: string) {
   await setCollectionHero(admin.id, uuid.parse(collectionId), url);
   revalidatePath('/admin/collections');
   revalidatePath('/collections');
+}
+
+const day = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/)
+  .optional()
+  .or(z.literal('').transform(() => undefined));
+
+function refreshHome() {
+  revalidateTag('home-feature');
+  revalidatePath('/');
+  revalidatePath('/admin/collections');
+}
+
+/** Feature a maker on the homepage hero (Homepage → Featured maker). */
+export async function featureMakerAction(_prev: FormState, form: FormData): Promise<FormState> {
+  const admin = await requireAdmin();
+  const parsed = z
+    .object({
+      makerId: uuid,
+      productIds: z
+        .array(uuid)
+        .min(2, 'Choose at least 2 pieces.')
+        .max(10, 'Choose at most 10 pieces.'),
+      headline: z.string().trim().max(80).optional(),
+      blurb: z.string().trim().max(240).optional(),
+      startsOn: day,
+      endsOn: day,
+    })
+    .safeParse({
+      makerId: form.get('makerId'),
+      productIds: form.getAll('productIds').map(String),
+      headline: form.get('headline') ?? undefined,
+      blurb: form.get('blurb') ?? undefined,
+      startsOn: form.get('startsOn') ?? undefined,
+      endsOn: form.get('endsOn') ?? undefined,
+    });
+  if (!parsed.success) {
+    const first = parsed.error.issues[0];
+    return { ok: false, message: first?.message ?? 'Check the form and try again.' };
+  }
+  try {
+    await saveHomeFeature(admin.id, parsed.data);
+  } catch (err) {
+    return toFormState(err);
+  }
+  refreshHome();
+  return { ok: true, message: 'Featured on the homepage. It can take up to a minute to show.' };
+}
+
+export async function stopFeatureAction(form: FormData) {
+  const admin = await requireAdmin();
+  await stopHomeFeature(admin.id, uuid.parse(form.get('id')));
+  refreshHome();
 }

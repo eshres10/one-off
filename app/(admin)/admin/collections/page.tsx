@@ -3,10 +3,26 @@ import { sql } from '@/lib/db';
 import { collectionProductAction, placementAction } from '@/lib/actions/admin';
 import { CollectionForm } from '@/components/admin/CollectionForm';
 import { CollectionOrder } from '@/components/admin/CollectionOrder';
+import { FeaturedMakerForm } from '@/components/admin/FeaturedMakerForm';
+import { formatPrice } from '@/lib/domain/money';
+import { adminHomeFeature } from '@/lib/services/home-feature';
+import { stopFeatureAction } from '@/lib/actions/admin';
 
 export const metadata = { title: 'Collections & homepage' };
 
-export default async function AdminCollectionsPage() {
+export default async function AdminCollectionsPage({
+  searchParams,
+}: {
+  searchParams: Record<string, string | string[] | undefined>;
+}) {
+  const makerParam = Array.isArray(searchParams.maker) ? searchParams.maker[0] : searchParams.maker;
+  const feature = await adminHomeFeature(makerParam);
+  const selected = feature.makers.find((m) => m.id === feature.selectedMakerId) ?? null;
+  const [selectedMaker] = selected
+    ? await sql()<
+        { tagline: string | null }[]
+      >`select tagline from public.makers where id = ${selected.id}`
+    : [];
   const collections = await sql()<
     {
       id: string;
@@ -35,8 +51,93 @@ export default async function AdminCollectionsPage() {
     select id, slot, title, subtitle, href, is_active from public.editorial_placements order by slot, sort_order`;
   return (
     <div className="space-y-10">
+      <section
+        className="space-y-4"
+        aria-labelledby="featured-maker"
+        data-testid="featured-maker-card"
+      >
+        <h1 id="featured-maker" className="text-[40px] leading-none md:text-[48px]">
+          Homepage · Featured maker
+        </h1>
+        {feature.active ? (
+          <div className="card space-y-3 p-4" data-testid="feature-active">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm">
+                Featuring{' '}
+                <Link
+                  href={`/makers/${feature.active.makerSlug}`}
+                  className="font-medium hover:underline"
+                >
+                  {feature.active.makerName}
+                </Link>{' '}
+                since {feature.active.startsAt.toLocaleDateString('en-AU')}
+                {feature.active.endsAt
+                  ? `, until ${feature.active.endsAt.toLocaleDateString('en-AU')}`
+                  : ''}
+                .
+              </p>
+              <form action={stopFeatureAction}>
+                <input type="hidden" name="id" value={feature.active.id} />
+                <button className="min-h-[36px] border border-ink px-3 text-[11px] uppercase tracking-label">
+                  Stop featuring
+                </button>
+              </form>
+            </div>
+            <ol className="flex gap-2 overflow-x-auto" aria-label="Pieces in rotation">
+              {feature.active.pieces.map((p) => (
+                <li key={p.id} className="w-[72px] shrink-0 text-[11px]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={p.imageUrl} alt="" className="aspect-[3/4] w-full object-cover" />
+                  <span className="mt-1 block truncate">{p.title}</span>
+                  <span className="text-muted-2">{formatPrice(p.priceCents)}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        ) : (
+          <p className="text-sm text-ink-muted" data-testid="feature-none">
+            No maker is featured, so the homepage shows the original hero.
+          </p>
+        )}
+        <div className="card space-y-4 p-4">
+          <form method="get" className="flex flex-wrap items-end gap-3">
+            <label className="flex flex-col gap-1 text-[12px] text-ink-muted">
+              Maker (live shops only)
+              <select
+                name="maker"
+                defaultValue={feature.selectedMakerId ?? ''}
+                className="input min-h-[36px] py-1.5 text-sm"
+                data-testid="feature-maker"
+              >
+                {feature.makers.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button className="min-h-[36px] border border-ink px-4 text-[11px] uppercase tracking-label">
+              Choose
+            </button>
+          </form>
+          {selected && (
+            <FeaturedMakerForm
+              key={selected.id}
+              makerId={selected.id}
+              makerName={selected.name}
+              makerTagline={selectedMaker?.tagline ?? null}
+              pieces={feature.pieces}
+              initial={
+                feature.active && feature.active.makerId === selected.id
+                  ? feature.active.pieces.map((p) => p.id)
+                  : []
+              }
+            />
+          )}
+        </div>
+      </section>
       <section className="space-y-3">
-        <h1 className="text-[40px] leading-none md:text-[48px]">Homepage placements</h1>
+        <h2 className="text-[32px] leading-none">Homepage placements</h2>
         {placements.map((p) => (
           <form key={p.id} action={placementAction} className="card grid gap-2 p-3 sm:grid-cols-6">
             <input type="hidden" name="id" value={p.id} />

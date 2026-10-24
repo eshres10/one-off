@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { sql, withAnon, withUser } from '@/lib/db';
 import { loadHomeFeature } from '@/lib/queries/home-feature';
+import { adminHomeFeature, saveHomeFeature, stopHomeFeature } from '@/lib/services/home-feature';
 import {
   FIXTURE_MAKER_ID,
   FIXTURE_PIECES,
@@ -123,5 +124,88 @@ describe('homepage featured maker', () => {
     );
     expect(made).toHaveLength(1);
     await sql()`delete from public.home_features where id = ${made[0]!.id}`;
+  });
+});
+
+describe('admin: featuring a maker', () => {
+  beforeAll(async () => {
+    await sql()`delete from public.home_features`;
+    await installFeaturedFixture(sql(), { feature: false });
+  });
+  afterAll(async () => {
+    await removeFeaturedFixture(sql());
+  });
+
+  it('lists live makers and the chosen maker’s approved pieces with real photos', async () => {
+    const a = await adminHomeFeature(FIXTURE_MAKER_ID);
+    expect(a.active).toBeNull();
+    expect(a.selectedMakerId).toBe(FIXTURE_MAKER_ID);
+    expect(a.makers.map((m) => m.id)).toContain(FIXTURE_MAKER_ID);
+    expect(a.pieces).toHaveLength(8);
+  });
+
+  it('features a maker, in order, and switches the previous feature off', async () => {
+    const first = [ids[3]!, ids[0]!, ids[1]!];
+    await saveHomeFeature(ADMIN.id, { makerId: FIXTURE_MAKER_ID, productIds: first });
+    let f = await loadHomeFeature();
+    expect(f?.slides.map((s) => s.slug)).toEqual(['yellow-skirt', 'sparkle-dress', 'trench-coat']);
+    await saveHomeFeature(ADMIN.id, {
+      makerId: FIXTURE_MAKER_ID,
+      productIds: ids,
+      headline: 'The Dramalicious edit',
+      blurb: 'New in.',
+      startsOn: '2020-01-01',
+      endsOn: '2099-12-31',
+    });
+    f = await loadHomeFeature();
+    expect(f?.headline).toBe('The Dramalicious edit');
+    expect(f?.slides).toHaveLength(8);
+    const active = await sql()`select id from public.home_features where is_active`;
+    expect(active).toHaveLength(1);
+    const [row] = await sql()<{ startsAt: Date; endsAt: Date }[]>`
+      select starts_at, ends_at from public.home_features where is_active`;
+    // 1 Jan 2020 00:00 in Melbourne (UTC+11) and the end of 31 Dec 2099.
+    expect(row!.startsAt.toISOString()).toBe('2019-12-31T13:00:00.000Z');
+    expect(row!.endsAt.getUTCFullYear()).toBe(2099);
+    const [audited] =
+      await sql()`select 1 from public.audit_events where action = 'admin.home_feature_set' limit 1`;
+    expect(audited).toBeTruthy();
+  });
+
+  it('refuses fewer than 2 or more than 10 pieces, other makers’ pieces and non-live makers', async () => {
+    await expect(
+      saveHomeFeature(ADMIN.id, { makerId: FIXTURE_MAKER_ID, productIds: [ids[0]!] }),
+    ).rejects.toThrow(/2 and 10/);
+    const [other] = await sql()<{ id: string }[]>`
+      select p.id from public.products p where p.maker_id <> ${FIXTURE_MAKER_ID} limit 1`;
+    await expect(
+      saveHomeFeature(ADMIN.id, { makerId: FIXTURE_MAKER_ID, productIds: [ids[0]!, other!.id] }),
+    ).rejects.toThrow(/belong to this maker/);
+    await sql()`update public.products set status = 'draft' where id = ${ids[2]!}`;
+    await expect(
+      saveHomeFeature(ADMIN.id, { makerId: FIXTURE_MAKER_ID, productIds: [ids[0]!, ids[2]!] }),
+    ).rejects.toThrow(/approved/);
+    await sql()`update public.products set status = 'approved' where id = ${ids[2]!}`;
+    await sql()`update public.makers set shop_status = 'holiday' where id = ${FIXTURE_MAKER_ID}`;
+    await expect(
+      saveHomeFeature(ADMIN.id, { makerId: FIXTURE_MAKER_ID, productIds: ids }),
+    ).rejects.toThrow(/live/);
+    await sql()`update public.makers set shop_status = 'live' where id = ${FIXTURE_MAKER_ID}`;
+    await expect(
+      saveHomeFeature(ADMIN.id, {
+        makerId: FIXTURE_MAKER_ID,
+        productIds: ids,
+        startsOn: '2030-02-01',
+        endsOn: '2030-01-01',
+      }),
+    ).rejects.toThrow(/before/);
+  });
+
+  it('stopping the feature brings the original hero back', async () => {
+    const [row] = await sql()<
+      { id: string }[]
+    >`select id from public.home_features where is_active`;
+    await stopHomeFeature(ADMIN.id, row!.id);
+    expect(await loadHomeFeature()).toBeNull();
   });
 });
