@@ -94,7 +94,7 @@ test.describe('desktop 1280×800', () => {
     await expect(caption(page)).toHaveAttribute('href', '/products/trench-coat');
     // Segment 1 is done (full), segment 2 is filling.
     await expect(page.getByTestId('hero-segment').nth(1)).toHaveAttribute('aria-current', 'true');
-    await shot(page, 'desktop-mid');
+    await shot(page, 'desktop-after-switch');
     // No layout shift from the rotation.
     expect(await page.evaluate(() => (window as unknown as { __cls: number }).__cls)).toBeLessThan(
       0.01,
@@ -106,7 +106,7 @@ test.describe('desktop 1280×800', () => {
     await expect(page.locator('[data-testid="featured-hero"]')).toHaveAttribute('data-index', '1', {
       timeout: 6_000,
     });
-    await page.waitForTimeout(300);
+    await page.waitForTimeout(100);
     const states = await page
       .getByTestId('featured-hero')
       .locator('.fh-img')
@@ -295,8 +295,8 @@ test.describe('phone 390×844', () => {
     };
     await swipe(300, 80);
     await expect(caption(page, true)).toContainText('Trench coat');
-    await page.waitForTimeout(300);
-    await shot(page, 'phone-mid');
+    await page.waitForTimeout(100);
+    await shot(page, 'phone-transition');
     await swipe(80, 300);
     await expect(caption(page, true)).toContainText('Sparkle dress');
     // A swipe restarts the timer: the next automatic change is a full 2.8s away.
