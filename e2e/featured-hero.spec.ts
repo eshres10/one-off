@@ -83,8 +83,8 @@ test.describe('desktop 1280×800', () => {
     await expect(caption(page)).toHaveAttribute('href', '/products/sparkle-dress');
     await shot(page, 'desktop-rest');
 
-    // 1. After 3.5s the caption has moved from Sparkle dress to Trench coat.
-    await page.waitForTimeout(3500);
+    // 1. Each piece stays 3.4s, so by 4s the caption has moved from Sparkle dress to Trench coat.
+    await page.waitForTimeout(4000);
     await expect(caption(page)).toContainText('Trench coat');
     await expect(caption(page)).toHaveAttribute('href', '/products/trench-coat');
     // Segment 1 is done (full), segment 2 is filling.
@@ -169,7 +169,7 @@ test.describe('desktop 1280×800', () => {
     await page.getByTestId('hero-pause').click();
     await page.waitForTimeout(3000);
     await page.getByTestId('hero-pause').click();
-    // 1.8s were used, so the switch comes about 1s later, not 2.8s later.
+    // 1.8s were used, so the switch comes about 1.6s later, not 3.4s later.
     await expect(page.getByTestId('featured-hero')).toHaveAttribute('data-index', '1', {
       timeout: 2000,
     });
@@ -293,7 +293,7 @@ test.describe('phone 390×844', () => {
     await shot(page, 'phone-transition');
     await swipe(80, 300);
     await expect(caption(page, true)).toContainText('Sparkle dress');
-    // A swipe restarts the timer: the next automatic change is a full 2.8s away.
+    // A swipe restarts the timer: the next automatic change is a full 3.4s away.
     await page.waitForTimeout(1500);
     await expect(caption(page, true)).toContainText('Sparkle dress');
     await expect(caption(page, true)).toContainText('Trench coat', { timeout: 4000 });

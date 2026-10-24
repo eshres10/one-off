@@ -25,7 +25,7 @@ export interface HeroSlide {
 }
 
 /** How long each piece is the current one. The crossfade (1400ms) runs inside this. */
-export const HOLD_MS = 2800;
+export const HOLD_MS = 3400;
 
 type Pos = { cur: number; prev: number | null; moved: boolean };
 
