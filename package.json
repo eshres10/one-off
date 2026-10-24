@@ -21,6 +21,7 @@
     "db:migrate": "tsx scripts/db-setup.ts",
     "db:reset": "tsx scripts/db-setup.ts --reset",
     "db:seed": "tsx scripts/seed.ts",
+    "seed:featured": "tsx scripts/featured-fixture.ts",
     "seed:images": "tsx scripts/gen-seed-images.ts",
     "setup": "npm run db:start && npm run db:migrate && npm run seed:images && npm run db:seed",
     "local": "npm run setup && npm run dev"
