@@ -34,6 +34,8 @@ import { suggestedMakers } from '@/lib/queries/states';
 import { BoxButtonGroup, ButtonLink, boxButtonClass } from '@/components/ui/Button';
 import { Img as Image } from '@/components/ui/Img';
 import { PhoneHome } from '@/components/app/home/PhoneHome';
+import { FeaturedHeroDesktop } from '@/components/home/FeaturedHero';
+import { getHomeFeature } from '@/lib/queries/home-feature';
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -243,15 +245,18 @@ export default async function DiscoverPage({ searchParams }: { searchParams: Sea
     href: placement?.href ?? HERO.href,
   };
   const isDefault = filters.tab === 'for-you' && activeFilterCount(filters) === 0 && !filters.page;
+  // The featured maker, or null: then the static hero below shows exactly as before.
+  const feature = isDefault ? await getHomeFeature().catch(() => null) : null;
 
   return (
     <div>
       {/* Phones: the app's Home (components/app/home). */}
       <div className="md:hidden">
-        <PhoneHome filters={filters} hero={hero} />
+        <PhoneHome filters={filters} hero={hero} feature={feature} />
       </div>
       <div className="max-md:hidden">
-        {isDefault && (
+        {isDefault && feature && <FeaturedHeroDesktop feature={feature} />}
+        {isDefault && !feature && (
           <section
             data-hero
             aria-labelledby="hero-title"

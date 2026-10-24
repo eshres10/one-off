@@ -771,3 +771,93 @@ html {
   background-size: 200% 100%;
   animation: shimmer 1.4s linear infinite;
 }
+
+/* Featured maker hero: each photo breathes out as the next settles in (components/home). */
+@keyframes fh-in {
+  from {
+    opacity: 0;
+    transform: scale(1.045);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes fh-drift {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.02);
+  }
+}
+@keyframes fh-out {
+  from {
+    opacity: 1;
+    transform: scale(1.02);
+    filter: blur(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.07);
+    filter: blur(6px);
+  }
+}
+.fh-img {
+  opacity: 0;
+  transform: scale(1.045);
+  object-position: var(--fh-pos, center 28%);
+}
+.fh-phone .fh-img {
+  object-position: var(--fh-pos, center 22%);
+}
+.fh-layer {
+  will-change: opacity, transform, filter;
+}
+/* The first photo is already there when the page loads, so it only drifts. */
+.fh-img[data-state='first'] {
+  opacity: 1;
+  transform: scale(1);
+  animation: fh-drift 2800ms linear forwards;
+}
+.fh-img[data-state='current'] {
+  opacity: 1;
+  animation:
+    fh-in 1400ms cubic-bezier(0.22, 1, 0.36, 1) 80ms both,
+    fh-drift 1320ms linear 1480ms forwards;
+}
+.fh-img[data-state='out'] {
+  animation: fh-out 1400ms cubic-bezier(0.33, 0, 0.15, 1) both;
+}
+.fh-paused .fh-img {
+  animation-play-state: paused;
+}
+.fh-caption {
+  transition: opacity 300ms ease;
+}
+.fh-caption[data-on='false'] {
+  opacity: 0;
+  transition-duration: 200ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  .fh-img,
+  .fh-img[data-state] {
+    animation: none;
+    filter: none;
+    transform: none;
+    transition: opacity 300ms linear;
+  }
+  .fh-img[data-state='first'],
+  .fh-img[data-state='current'] {
+    opacity: 1;
+  }
+  .fh-img[data-state='out'] {
+    opacity: 0;
+  }
+  .fh-pause {
+    display: none;
+  }
+  .fh-caption {
+    transition: none;
+  }
+}

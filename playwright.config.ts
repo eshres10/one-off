@@ -9,6 +9,7 @@ const DATABASE_URL =
 // with mock Stripe (signed webhooks through the real endpoint) and the email outbox.
 const serverEnv = {
   SURVEY_HOST_LIVE: 'true',
+  HOME_FEATURE_REVALIDATE: '1',
   DATABASE_URL,
   APP_URL: BASE,
   PAYMENTS_DRIVER: 'mock',
@@ -206,6 +207,18 @@ export default defineConfig({
         deviceScaleFactor: 1,
         isMobile: true,
         hasTouch: true,
+      },
+    },
+    // The featured-maker hero (Dramalicious): rotation, pausing, reduced motion, phone swipe.
+    {
+      name: 'featured-hero',
+      testMatch: 'featured-hero.spec.ts',
+      dependencies: ['survey'],
+      timeout: 90_000,
+      use: {
+        browserName: 'chromium',
+        viewport: { width: 1280, height: 800 },
+        deviceScaleFactor: 1,
       },
     },
   ],

@@ -62,8 +62,8 @@ export async function installFeaturedFixture(db: Sql, opts: { feature?: boolean 
       shop_status, founding_number, approved_at, went_live_at)
     values (${FIXTURE_MAKER_ID}, ${USER_ID}, 'dramalicious', 'Dramalicious',
       'Satin slips, halters and statement dresses, made in Melbourne.', 'Melbourne, VIC', 'Melbourne', 'VIC',
-      'approved', 'live', 9001, now(), now())
-    on conflict (id) do update set shop_status = 'live', founding_number = 9001`;
+      'approved', 'live', 1, now(), now())
+    on conflict (id) do update set shop_status = 'live', founding_number = 1`;
   for (const p of FIXTURE_PIECES) {
     const id = pieceId(p.slug);
     await db`

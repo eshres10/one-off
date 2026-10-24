@@ -110,8 +110,11 @@ export async function loadHomeFeature(): Promise<HomeFeature | null> {
   };
 }
 
-/** The active homepage feature, or null (the static hero shows). Cached for a minute. */
+/**
+ * The active homepage feature, or null (the static hero shows). Cached for a minute (override
+ * with HOME_FEATURE_REVALIDATE seconds; the e2e server uses 1), and revalidated by the admin card.
+ */
 export const getHomeFeature = unstable_cache(loadHomeFeature, ['home-feature'], {
-  revalidate: 60,
+  revalidate: Number(process.env.HOME_FEATURE_REVALIDATE ?? 60) || 60,
   tags: ['home-feature'],
 });

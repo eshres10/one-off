@@ -22,6 +22,8 @@ import { PhoneProductGrid } from '../ProductGrid';
 import { Chip } from '../ui';
 import { EndlessFeed } from './EndlessFeed';
 import { PullToRefresh } from './PullToRefresh';
+import { FeaturedHeroPhone } from '@/components/home/FeaturedHero';
+import type { HomeFeature } from '@/lib/queries/home-feature';
 
 const PILLS = [
   {
@@ -62,9 +64,11 @@ function queryOf(f: FeedFilters) {
 export async function PhoneHome({
   filters,
   hero,
+  feature = null,
 }: {
   filters: FeedFilters;
   hero: { title: string; subtitle: string; imageUrl: string | null };
+  feature?: HomeFeature | null;
 }) {
   const user = await getSessionUser();
   const isDefault = filters.tab === 'for-you' && activeFilterCount(filters) === 0;
@@ -133,47 +137,50 @@ export async function PhoneHome({
     <PullToRefresh>
       <div className="px-4 pb-6" data-testid="phone-home">
         {pills}
-        <section
-          className="relative mt-2 h-[420px] overflow-hidden rounded-app bg-stone text-ground"
-          aria-label={hero.title}
-          data-testid="hero-card"
-        >
-          {hero.imageUrl && (
-            <Image
-              src={hero.imageUrl}
-              alt=""
-              fill
-              priority
-              sizes="100vw"
-              quality={70}
-              className="object-cover object-[center_30%]"
+        {feature && <FeaturedHeroPhone feature={feature} />}
+        {!feature && (
+          <section
+            className="relative mt-2 h-[420px] overflow-hidden rounded-app bg-stone text-ground"
+            aria-label={hero.title}
+            data-testid="hero-card"
+          >
+            {hero.imageUrl && (
+              <Image
+                src={hero.imageUrl}
+                alt=""
+                fill
+                priority
+                sizes="100vw"
+                quality={70}
+                className="object-cover object-[center_30%]"
+              />
+            )}
+            <span
+              aria-hidden
+              className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-black/10"
             />
-          )}
-          <span
-            aria-hidden
-            className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-black/10"
-          />
-          <div className="absolute inset-x-5 bottom-5">
-            <p className="text-[10px] uppercase tracking-wide2">{hero.subtitle}</p>
-            <h1 className="mt-2 max-w-[11ch] font-display text-[40px] leading-[0.95]">
-              {hero.title}
-            </h1>
-            <div className="mt-4 flex gap-2">
-              <Link
-                href="/discover"
-                className="flex min-h-[44px] flex-1 items-center justify-center rounded-app bg-surface text-[11px] uppercase tracking-[0.16em] text-ink"
-              >
-                Shop the edit
-              </Link>
-              <Link
-                href="/makers"
-                className="flex min-h-[44px] flex-1 items-center justify-center rounded-app border border-ground/80 text-[11px] uppercase tracking-[0.16em]"
-              >
-                The makers
-              </Link>
+            <div className="absolute inset-x-5 bottom-5">
+              <p className="text-[10px] uppercase tracking-wide2">{hero.subtitle}</p>
+              <h1 className="mt-2 max-w-[11ch] font-display text-[40px] leading-[0.95]">
+                {hero.title}
+              </h1>
+              <div className="mt-4 flex gap-2">
+                <Link
+                  href="/discover"
+                  className="flex min-h-[44px] flex-1 items-center justify-center rounded-app bg-surface text-[11px] uppercase tracking-[0.16em] text-ink"
+                >
+                  Shop the edit
+                </Link>
+                <Link
+                  href="/makers"
+                  className="flex min-h-[44px] flex-1 items-center justify-center rounded-app border border-ground/80 text-[11px] uppercase tracking-[0.16em]"
+                >
+                  The makers
+                </Link>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         <ul
           className="no-scrollbar -mx-4 mt-3 flex gap-2 overflow-x-auto px-4"
