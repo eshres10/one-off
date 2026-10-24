@@ -68,22 +68,17 @@ test.describe('desktop 1280×800', () => {
       }).observe({ type: 'layout-shift', buffered: true });
     });
     await open(page);
-    await expect(page.getByTestId('hero-kicker')).toHaveText(
-      'Featured maker · Founding maker No. 1',
+    // The original hero messaging, plus a small note naming the featured brand.
+    const hero = page.getByTestId('featured-hero');
+    await expect(hero.getByRole('heading', { level: 1 })).toHaveText(
+      'Bespoke pieces made just for you',
     );
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Dramalicious');
-    await expect(
-      page
-        .getByTestId('featured-hero')
-        .getByText('Satin slips, halters and statement dresses, made in Melbourne.'),
-    ).toBeVisible();
-    await expect(page.getByTestId('featured-hero').getByText('Melbourne, VIC')).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Shop Dramalicious' })).toHaveAttribute(
-      'href',
-      '/makers/dramalicious',
-    );
-    await expect(page.getByTestId('hero-message')).toHaveText('Message the maker');
-    await expect(page.getByRole('link', { name: 'Shop the edit', exact: true })).toHaveCount(0);
+    await expect(hero.getByRole('link', { name: 'Shop the edit', exact: true })).toBeVisible();
+    await expect(hero.getByRole('link', { name: 'Meet the makers', exact: true })).toBeVisible();
+    const note = page.getByTestId('hero-featured-note');
+    await expect(note).toContainText('Featured brand of the month: Explore Dramalicious');
+    await expect(note.getByRole('link')).toHaveAttribute('href', '/makers/dramalicious');
+    await expect(hero.getByText('Founding maker')).toHaveCount(0);
     await expect(caption(page)).toContainText('Sparkle dress · A$320');
     await expect(caption(page)).toHaveAttribute('href', '/products/sparkle-dress');
     await shot(page, 'desktop-rest');
@@ -202,17 +197,11 @@ test.describe('desktop 1280×800', () => {
     await expect(page.getByTestId('featured-hero')).toHaveAttribute('data-running', 'false');
   });
 
-  test('"Message the maker" sends a signed-out visitor to log in', async ({ page, context }) => {
-    await context.clearCookies();
-    await open(page);
-    await page.getByTestId('hero-message').click();
-    await expect(page).toHaveURL(/\/login\?next=/);
-  });
-
   test('without an active feature the original hero shows, unchanged', async ({ page }) => {
     await db`update public.home_features set is_active = false where maker_id = ${FIXTURE_MAKER_ID}`;
     try {
       await expectStaticHero(page);
+      await expect(page.getByTestId('hero-featured-note')).toHaveCount(0);
       await expect(page.getByRole('heading', { level: 1 })).toContainText('Bespoke pieces');
     } finally {
       await db`update public.home_features set is_active = true where maker_id = ${FIXTURE_MAKER_ID}`;
@@ -272,7 +261,12 @@ test.describe('phone 390×844', () => {
   }) => {
     await open(page, true);
     const card = page.getByTestId('hero-card');
-    await expect(card.getByRole('heading', { level: 1 })).toHaveText('Dramalicious');
+    await expect(card.getByRole('heading', { level: 1 })).toHaveText(
+      'Bespoke pieces made just for you',
+    );
+    await expect(page.getByTestId('hero-featured-note-phone')).toContainText(
+      'Explore Dramalicious',
+    );
     await expect(caption(page, true)).toContainText('Sparkle dress');
     await shot(page, 'phone-rest');
 
@@ -333,7 +327,6 @@ test.describe('admin card', () => {
     await expect(card.getByTestId('feature-order').getByRole('listitem')).toHaveCount(3);
     await card.getByRole('button', { name: 'Move Yellow skirt up' }).click();
     await card.getByRole('button', { name: 'Move Yellow skirt up' }).click();
-    await card.getByLabel(/^Headline/).fill('Dramalicious, dressed up');
     await card.getByTestId('feature-submit').click();
     await expect(card.getByTestId('feature-message')).toContainText('Featured on the homepage');
 
@@ -342,13 +335,10 @@ test.describe('admin card', () => {
     await card.getByRole('button', { name: 'Remove Sparkle dress' }).click();
     await expect(card.getByTestId('feature-submit')).toBeDisabled();
 
-    // The homepage shows the new feature: skirt first, three segments, the new headline.
+    // The homepage shows the new feature: skirt first, three segments.
     await expect(async () => {
       await page.goto('/');
-      await expect(page.getByTestId('featured-hero').getByRole('heading', { level: 1 })).toHaveText(
-        'Dramalicious, dressed up',
-        { timeout: 1000 },
-      );
+      await expect(page.getByTestId('hero-segment')).toHaveCount(3, { timeout: 1000 });
     }).toPass({ timeout: 20_000 });
     await expect(page.getByTestId('hero-caption')).toContainText('Yellow skirt');
     await expect(page.getByTestId('hero-segment')).toHaveCount(3);

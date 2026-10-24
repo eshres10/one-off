@@ -137,7 +137,7 @@ export async function PhoneHome({
     <PullToRefresh>
       <div className="px-4 pb-6" data-testid="phone-home">
         {pills}
-        {feature && <FeaturedHeroPhone feature={feature} />}
+        {feature && <FeaturedHeroPhone feature={feature} hero={{ ...hero, href: '/discover' }} />}
         {!feature && (
           <section
             className="relative mt-2 h-[420px] overflow-hidden rounded-app bg-stone text-ground"

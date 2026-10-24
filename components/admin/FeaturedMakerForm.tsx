@@ -16,13 +16,11 @@ export function FeaturedMakerForm({
   pieces,
   initial,
   makerName,
-  makerTagline,
 }: {
   makerId: string;
   pieces: FeaturePiece[];
   initial: string[];
   makerName: string;
-  makerTagline: string | null;
 }) {
   const [state, action] = useFormState<FormState, FormData>(featureMakerAction, undefined);
   const byId = new Map(pieces.map((p) => [p.id, p]));
@@ -138,14 +136,6 @@ export function FeaturedMakerForm({
       </fieldset>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <label className="flex flex-col gap-1 text-[12px] text-ink-muted">
-          Headline (optional, defaults to {makerName})
-          <input name="headline" maxLength={80} className="input py-1.5 text-sm" />
-        </label>
-        <label className="flex flex-col gap-1 text-[12px] text-ink-muted">
-          Line under it (optional{makerTagline ? ', defaults to their tagline' : ''})
-          <input name="blurb" maxLength={240} className="input py-1.5 text-sm" />
-        </label>
         <label className="flex flex-col gap-1 text-[12px] text-ink-muted">
           Starts (Melbourne time, blank means now)
           <input name="startsOn" type="date" className="input py-1.5 text-sm" />

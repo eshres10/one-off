@@ -125,7 +125,6 @@ export default async function AdminCollectionsPage({
               key={selected.id}
               makerId={selected.id}
               makerName={selected.name}
-              makerTagline={selectedMaker?.tagline ?? null}
               pieces={feature.pieces}
               initial={
                 feature.active && feature.active.makerId === selected.id

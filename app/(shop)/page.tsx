@@ -255,7 +255,7 @@ export default async function DiscoverPage({ searchParams }: { searchParams: Sea
         <PhoneHome filters={filters} hero={hero} feature={feature} />
       </div>
       <div className="max-md:hidden">
-        {isDefault && feature && <FeaturedHeroDesktop feature={feature} />}
+        {isDefault && feature && <FeaturedHeroDesktop feature={feature} hero={hero} />}
         {isDefault && !feature && (
           <section
             data-hero
